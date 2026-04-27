@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from backend.app.api.endpoints import properties, auth
+from app.api.endpoints import properties, auth
 
 app = FastAPI(title="nestAI API")
 
