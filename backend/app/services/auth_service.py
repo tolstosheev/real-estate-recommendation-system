@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from .repositories.user_repository import UserRepository
+from app.repositories.user_repository import UserRepository
 from sqlalchemy.ext.asyncio import AsyncSession
 
 # Configuration
