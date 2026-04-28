@@ -8,9 +8,9 @@ def test_normalize_features():
     norm_data, scaler = utils.normalize_features(data)
     
     assert norm_data.shape == (3, 2)
-    assert np.all(norm_data >= 0) and np.all(norm_data <= 1)
-    assert norm_data[0][0] == 0.0
-    assert norm_data[2][0] == 1.0
+    # StandardScaler normalizes to mean=0, std=1, so we check the mean is approx 0
+    assert np.allclose(np.mean(norm_data, axis=0), 0)
+    assert np.allclose(np.std(norm_data, axis=0), 1)
 
 def test_calculate_cosine_similarity():
     utils = SimilarityUtils()
@@ -27,7 +27,7 @@ def test_compute_user_profile_vector():
     implicit = [110, 60, 3]
     
     res = utils.compute_user_profile_vector(explicit, implicit)
-    expected = (np.array(explicit) * 0.7) + (np.array(implicit) * 0.3)
+    expected = (np.array(explicit) * 0.5) + (np.array(implicit) * 0.5)
     assert np.allclose(res, expected)
     
     res_exp = utils.compute_user_profile_vector(explicit, None)

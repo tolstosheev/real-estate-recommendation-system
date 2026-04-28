@@ -18,7 +18,6 @@ async def get_recommendations(
     service = RecommendationService(db)
     recommendations = await service.recommend(current_user.id, limit=limit)
     
-    # Enrich properties with lat/lon for PropertyOut schema
     from app.services.property_service import PropertyService
     prop_service = PropertyService(db)
     
