@@ -1,13 +1,13 @@
-from pydantic import BaseModel, EmailStr, ConfigDict
+from pydantic import BaseModel, EmailStr, ConfigDict, Field
 from typing import Optional
 from uuid import UUID
 
 class UserBase(BaseModel):
-    email: EmailStr
-    full_name: str
+    email: EmailStr = Field(..., example="user@example.com")
+    full_name: str = Field(..., example="John Doe")
 
 class UserCreate(UserBase):
-    password: str
+    password: str = Field(..., example="SecurePassword123!")
 
 class UserOut(UserBase):
     id: UUID

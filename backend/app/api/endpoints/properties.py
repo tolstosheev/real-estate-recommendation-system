@@ -9,7 +9,7 @@ from typing import List, Optional
 
 router = APIRouter()
 
-@router.get("/", response_model=List[PropertyOut])
+@router.get("/", response_model=List[PropertyOut], summary="List Properties", description="Returns a list of properties with optional filters (price, rooms, type) and spatial search (radius)")
 async def get_properties(
     limit: int = 100, 
     offset: int = 0, 
@@ -25,7 +25,7 @@ async def get_properties(
     service = PropertyService(db)
     return await service.list_properties(limit, offset, min_price, max_price, rooms, property_type, lat, lon, radius_km)
 
-@router.get("/{property_id}", response_model=PropertyOut)
+@router.get("/{property_id}", response_model=PropertyOut, summary="Get Property Details", description="Returns detailed information about a specific property by its ID")
 async def get_property(property_id: str, db: AsyncSession = Depends(get_db)):
     service = PropertyService(db)
     property_obj = await service.get_property_details(property_id)
@@ -33,7 +33,7 @@ async def get_property(property_id: str, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Property not found")
     return property_obj
 
-@router.post("/", response_model=PropertyOut, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=PropertyOut, status_code=status.HTTP_201_CREATED, summary="Create Property", description="Allows the authenticated user to post a new property listing")
 async def create_property(
     property_in: PropertyCreate, 
     current_user: User = Depends(get_current_user), 
@@ -44,7 +44,7 @@ async def create_property(
     data["user_id"] = current_user.id
     return await service.create_property(data)
 
-@router.put("/{property_id}", response_model=PropertyOut)
+@router.put("/{property_id}", response_model=PropertyOut, summary="Update Property", description="Allows the owner of the property to update its details")
 async def update_property(
     property_id: str, 
     property_in: PropertyUpdate, 
@@ -61,7 +61,7 @@ async def update_property(
     
     return await service.update_property(property_id, property_in.model_dump(exclude_unset=True))
 
-@router.delete("/{property_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{property_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete Property", description="Allows the owner to remove their property listing from the system")
 async def delete_property(
     property_id: str, 
     current_user: User = Depends(get_current_user), 

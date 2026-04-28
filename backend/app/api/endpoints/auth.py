@@ -8,7 +8,7 @@ from app.schemas.auth import UserCreate, Token, UserOut
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 
-@router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+@router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED, summary="User Registration", description="Creates a new user account in the system")
 async def register(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
     service = AuthService(db)
     try:
@@ -17,7 +17,7 @@ async def register(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.post("/token", response_model=Token)
+@router.post("/token", response_model=Token, summary="User Authentication", description="Authenticates user and returns a JWT access token")
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)):
     service = AuthService(db)
     user = await service.authenticate_user(form_data.username, form_data.password)
@@ -31,7 +31,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
     access_token = service.create_access_token(data={"id": user["id"]})
     return {"access_token": access_token, "token_type": "bearer"}
 
-@router.get("/me", response_model=UserOut)
+@router.get("/me", response_model=UserOut, summary="Get Current User", description="Returns profile information of the currently authenticated user")
 async def get_me(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
     service = AuthService(db)
     user = await service.get_current_user(token)

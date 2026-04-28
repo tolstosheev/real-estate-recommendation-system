@@ -10,7 +10,7 @@ from typing import List
 
 router = APIRouter()
 
-@router.post("/interact", response_model=InteractionOut, status_code=status.HTTP_201_CREATED)
+@router.post("/interact", response_model=InteractionOut, status_code=status.HTTP_201_CREATED, summary="Interact with Property", description="Like or dislike a property to train the recommendation engine")
 async def interact_with_property(
     interaction_in: InteractionCreate, 
     current_user: User = Depends(get_current_user), 
@@ -28,7 +28,7 @@ async def interact_with_property(
         return result["interaction"]
     return result["interaction"]
 
-@router.get("/favorites", response_model=List[PropertyOut])
+@router.get("/favorites", response_model=List[PropertyOut], summary="Get My Favorites", description="Returns a list of all properties the current user has liked")
 async def get_my_favorites(
     current_user: User = Depends(get_current_user), 
     db: AsyncSession = Depends(get_db)

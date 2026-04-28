@@ -9,7 +9,7 @@ from typing import List
 
 router = APIRouter()
 
-@router.get("/", response_model=List[PropertyOut])
+@router.get("/", response_model=List[PropertyOut], summary="Get Personalized Recommendations", description="Returns a list of properties most similar to the user's explicit preferences and implicit likes")
 async def get_recommendations(
     limit: int = 10,
     current_user: User = Depends(get_current_user), 
