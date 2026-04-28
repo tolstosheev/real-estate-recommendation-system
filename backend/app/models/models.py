@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, Numeric, Integer, ForeignKey, DateTime, Boolean, ARRAY, JSON
+from sqlalchemy import Column, String, Numeric, Integer, ForeignKey, DateTime, Boolean, ARRAY, JSON, Index
 from sqlalchemy.dialects.postgresql import UUID
 from geoalchemy2 import Geometry
 from sqlalchemy.sql import func
@@ -16,7 +16,7 @@ class User(Base):
 
 class Property(Base):
     __tablename__ = "properties"
-
+    
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     title = Column(String, nullable=False)
@@ -31,6 +31,11 @@ class Property(Base):
     location = Column(Geometry('POINT', 4326))
     images = Column(ARRAY(String))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (
+        Index('idx_properties_location', 'location', postgresql_using='gist'),
+    )
+
 
 class UserPreference(Base):
     __tablename__ = "user_preferences"
