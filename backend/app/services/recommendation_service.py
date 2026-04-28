@@ -75,6 +75,13 @@ class RecommendationService:
         properties = [row[0] for row in all_rows]
         prop_vectors = np.array([self._get_property_vector(p) for p in properties])
         
+        # Coordinate Neutralization: 
+        # If user vector has 0.0 for coordinates (indices 3 and 4), 
+        # replace them with the mean of the current property set to avoid skewing similarity.
+        mean_coords = np.mean(prop_vectors[:, 3:], axis=0)
+        if user_vec[3] == 0.0 and user_vec[4] == 0.0:
+            user_vec[3:] = mean_coords
+
         norm_prop_vectors, scaler = self.utils.normalize_features(prop_vectors.tolist())
         
         norm_user_vec = scaler.transform(user_vec.reshape(1, -1))[0]

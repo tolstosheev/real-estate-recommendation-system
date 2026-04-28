@@ -1,6 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.repositories.interactions_repository import InteractionRepository
 from app.repositories.property_repository import PropertyRepository
+from app.core.redis import RedisClient
 from typing import List, Union
 from app.models.models import Property
 
@@ -22,12 +23,14 @@ class InteractionService:
             if existing.interaction_type == interaction_data["interaction_type"]:
                 if interaction_data["interaction_type"] == "like":
                     await self.interaction_repo.remove_interaction(existing.id)
+                    await RedisClient.clear_user_cache(user_id)
                     return {"status": "removed", "interaction": None}
                 return {"status": "exists", "interaction": existing}
             
             await self.interaction_repo.remove_interaction(existing.id)
         
         interaction = await self.interaction_repo.create_interaction(interaction_data)
+        await RedisClient.clear_user_cache(user_id)
         return {"status": "created", "interaction": interaction}
 
     async def get_favorites(self, user_id: str) -> List[Property]:

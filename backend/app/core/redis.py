@@ -11,8 +11,6 @@ class RedisClient:
     @classmethod
     async def get_client(cls) -> Optional[redis.Redis]:
         try:
-            # In tests, the event loop might change. 
-            # We check if the instance exists and if it's still connected to the current loop.
             if cls._instance is not None:
                 try:
                     await cls._instance.ping()
@@ -29,7 +27,17 @@ class RedisClient:
             return None
 
     @classmethod
+    async def clear_user_cache(cls, user_id: str):
+        redis = await cls.get_client()
+        if redis:
+            await redis.delete(f"user_vec:{user_id}")
+            keys = await redis.keys(f"user_recs:{user_id}:*")
+            if keys:
+                await redis.delete(*keys)
+
+    @classmethod
     async def close(cls):
         if cls._instance:
             await cls._instance.close()
             cls._instance = None
+
