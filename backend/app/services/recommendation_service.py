@@ -3,7 +3,9 @@ from app.repositories.property_repository import PropertyRepository
 from app.repositories.preferences_repository import UserPreferenceRepository
 from app.repositories.interactions_repository import InteractionRepository
 from app.core.similarity import SimilarityUtils
+from app.core.redis import RedisClient
 import numpy as np
+import json
 from typing import List, Optional, Tuple
 from app.models.models import Property
 
@@ -24,6 +26,13 @@ class RecommendationService:
         ])
 
     async def _build_user_vector(self, user_id: str) -> Optional[np.ndarray]:
+        redis = await RedisClient.get_client()
+        if redis:
+            cache_key = f"user_vec:{user_id}"
+            cached_vec = await redis.get(cache_key)
+            if cached_vec:
+                return np.array(json.loads(cached_vec))
+
         prefs = await self.pref_repo.get_by_user_id(user_id)
         explicit_vec = None
         if prefs:
@@ -38,9 +47,22 @@ class RecommendationService:
             fav_vectors = [self._get_property_vector(p) for p in favorites]
             implicit_vec = np.mean(fav_vectors, axis=0).tolist()
 
-        return self.utils.compute_user_profile_vector(explicit_vec, implicit_vec)
+        user_vec = self.utils.compute_user_profile_vector(explicit_vec, implicit_vec)
+        if user_vec is not None and redis:
+            await redis.setex(f"user_vec:{user_id}", 3600, json.dumps(user_vec.tolist()))
+            
+        return user_vec
 
     async def recommend(self, user_id: str, limit: int = 10) -> List[Property]:
+        redis = await RedisClient.get_client()
+        if redis:
+            cache_key = f"user_recs:{user_id}:{limit}"
+            cached_recs = await redis.get(cache_key)
+            if cached_recs:
+                prop_ids = json.loads(cached_recs)
+                props = await self.prop_repo.get_by_ids(prop_ids)
+                return props
+
         user_vec = await self._build_user_vector(user_id)
         all_rows = await self.prop_repo.get_all(limit=1000) 
         
@@ -64,5 +86,11 @@ class RecommendationService:
             scored_props.append((prop, score))
 
         scored_props.sort(key=lambda x: x[1], reverse=True)
-        return [p for p, score in scored_props[:limit]]
+        top_props = [p for p, score in scored_props[:limit]]
+        
+        if top_props and redis:
+            prop_ids = [str(p.id) for p in top_props]
+            await redis.setex(f"user_recs:{user_id}:{limit}", 3600, json.dumps(prop_ids))
+            
+        return top_props
 

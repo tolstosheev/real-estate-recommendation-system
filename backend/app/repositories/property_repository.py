@@ -3,6 +3,7 @@ from sqlalchemy.future import select
 from sqlalchemy import update, delete, func, cast
 from geoalchemy2 import Geography
 from app.models.models import Property
+from typing import List
 
 class PropertyRepository:
     def __init__(self, session: AsyncSession):
@@ -53,6 +54,13 @@ class PropertyRepository:
         query = select(Property, func.ST_X(Property.location).label("lon"), func.ST_Y(Property.location).label("lat")).filter(Property.id == property_id)
         result = await self.session.execute(query)
         return result.first()
+
+    async def get_by_ids(self, property_ids: List[str]) -> List[Property]:
+        if not property_ids:
+            return []
+        query = select(Property).filter(Property.id.in_(property_ids))
+        result = await self.session.execute(query)
+        return result.scalars().all()
 
     async def update(self, property_id: str, update_data: dict) -> Property | None:
         if "lat" in update_data and "lon" in update_data:
