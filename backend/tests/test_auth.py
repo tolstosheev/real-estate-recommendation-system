@@ -29,6 +29,24 @@ async def test_register_duplicate_user(client: AsyncClient):
     assert response.json()["detail"] == "User with this email already exists"
 
 @pytest.mark.asyncio
+async def test_register_invalid_email(client: AsyncClient):
+    payload = {
+        "email": "not-an-email",
+        "password": "password123",
+        "full_name": "Invalid User"
+    }
+    response = await client.post("/auth/register", json=payload)
+    assert response.status_code == 422
+
+@pytest.mark.asyncio
+async def test_register_missing_fields(client: AsyncClient):
+    payload = {
+        "email": "missing@example.com"
+    }
+    response = await client.post("/auth/register", json=payload)
+    assert response.status_code == 422
+
+@pytest.mark.asyncio
 async def test_login_success(client: AsyncClient):
     payload = {
         "email": "login@example.com",
@@ -83,3 +101,8 @@ async def test_get_me_invalid_token(client: AsyncClient):
     response = await client.get("/auth/me", headers=headers)
     assert response.status_code == 401
     assert response.json()["detail"] == "Invalid authentication credentials"
+
+@pytest.mark.asyncio
+async def test_get_me_no_token(client: AsyncClient):
+    response = await client.get("/auth/me")
+    assert response.status_code == 401

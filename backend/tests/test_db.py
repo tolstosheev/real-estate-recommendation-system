@@ -1,6 +1,7 @@
 import pytest
+import uuid
 from sqlalchemy.future import select
-from app.models.models import Property
+from app.models.models import Property, User
 
 @pytest.mark.asyncio
 async def test_db_connection(db_session):
@@ -9,7 +10,12 @@ async def test_db_connection(db_session):
 
 @pytest.mark.asyncio
 async def test_property_creation(db_session):
+    user = User(email="test@test.com", hashed_password="pass", full_name="Test")
+    db_session.add(user)
+    await db_session.commit()
+
     new_property = Property(
+        user_id=user.id,
         title="Test House",
         price=100000,
         rooms=3,
@@ -26,7 +32,19 @@ async def test_property_creation(db_session):
 
 @pytest.mark.asyncio
 async def test_property_retrieval(db_session):
-    prop = Property(title="Searchable House", price=200000, rooms=1, area=40.0, property_type="Apartment", address="Search St, 2")
+    user = User(email="search@test.com", hashed_password="pass", full_name="Search")
+    db_session.add(user)
+    await db_session.commit()
+
+    prop = Property(
+        user_id=user.id,
+        title="Searchable House", 
+        price=200000, 
+        rooms=1, 
+        area=40.0, 
+        property_type="Apartment", 
+        address="Search St, 2"
+    )
     db_session.add(prop)
     await db_session.commit()
     

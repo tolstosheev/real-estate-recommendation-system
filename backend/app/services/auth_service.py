@@ -1,26 +1,25 @@
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from typing import Optional
-from jose import JWTError, jwt
-from passlib.context import CryptContext
+import jwt
+import bcrypt
 from app.repositories.user_repository import UserRepository
 from sqlalchemy.ext.asyncio import AsyncSession
 
-SECRET_KEY = os.getenv("SECRET_KEY", "super-secret-nestai-key-for-dev")
+SECRET_KEY = os.getenv("SECRET_KEY", "super-secret-nestai-key-for-dev-extra-long")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 class AuthService:
     def __init__(self, session: AsyncSession):
         self.repository = UserRepository(session)
 
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
-        return pwd_context.verify(plain_password, hashed_password)
+        return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
 
     def get_password_hash(self, password: str) -> str:
-        return pwd_context.hash(password)
+        salt = bcrypt.gensalt()
+        return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
 
     async def register_user(self, email: str, password: str, full_name: str):
         existing_user = await self.repository.get_by_email(email)
@@ -47,7 +46,7 @@ class AuthService:
 
     def create_access_token(self, data: dict, expires_delta: Optional[timedelta] = None):
         to_encode = data.copy()
-        expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+        expire = datetime.now(UTC) + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
         to_encode.update({"exp": expire})
         return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -57,7 +56,7 @@ class AuthService:
             user_id: str = payload.get("id")
             if user_id is None:
                 return None
-        except JWTError:
+        except jwt.PyJWTError:
             return None
         
         return await self.repository.get_by_id(user_id)
