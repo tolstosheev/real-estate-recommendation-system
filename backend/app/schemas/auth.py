@@ -3,11 +3,11 @@ from typing import Optional
 from uuid import UUID
 
 class UserBase(BaseModel):
-    email: EmailStr = Field(..., example="user@example.com")
-    full_name: str = Field(..., example="John Doe")
+    email: EmailStr = Field(..., json_schema_extra={"example": "user@example.com"})
+    full_name: str = Field(..., json_schema_extra={"example": "John Doe"})
 
 class UserCreate(UserBase):
-    password: str = Field(..., example="SecurePassword123!")
+    password: str = Field(..., json_schema_extra={"example": "SecurePassword123!"})
 
 class UserOut(UserBase):
     id: UUID

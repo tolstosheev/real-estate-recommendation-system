@@ -3,8 +3,8 @@ from uuid import UUID
 from typing import Literal
 
 class InteractionCreate(BaseModel):
-    property_id: UUID = Field(..., example="550e8400-e29b-41d4-a716-446655440000")
-    interaction_type: Literal["view", "like", "dislike"] = Field(..., example="like")
+    property_id: UUID = Field(..., json_schema_extra={"example": "550e8400-e29b-41d4-a716-446655440000"})
+    interaction_type: Literal["view", "like", "dislike"] = Field(..., json_schema_extra={"example": "like"})
 
 class InteractionOut(BaseModel):
     id: int

@@ -4,18 +4,18 @@ from uuid import UUID
 from decimal import Decimal
 
 class PropertyBase(BaseModel):
-    title: str = Field(..., example="Modern Apartment in City Center")
-    description: Optional[str] = Field(None, example="A beautiful 2-bedroom apartment with a great view")
-    price: Decimal = Field(..., example=250000.00)
-    rooms: Optional[int] = Field(None, example=2)
-    area: Optional[Decimal] = Field(None, example=65.5)
-    floor: Optional[int] = Field(None, example=5)
-    total_floors: Optional[int] = Field(None, example=10)
-    property_type: Optional[str] = Field(None, example="Apartment")
-    address: str = Field(..., example="123 Main St, New York, NY")
-    lat: float = Field(..., ge=-90, le=90, example=40.7128)
-    lon: float = Field(..., ge=-180, le=180, example=-74.0060)
-    images: Optional[List[str]] = Field(None, example=["https://example.com/img1.jpg", "https://example.com/img2.jpg"])
+    title: str = Field(..., json_schema_extra={"example": "Modern Apartment in City Center"})
+    description: Optional[str] = Field(None, json_schema_extra={"example": "A beautiful 2-bedroom apartment with a great view"})
+    price: Decimal = Field(..., json_schema_extra={"example": 250000.00})
+    rooms: Optional[int] = Field(None, json_schema_extra={"example": 2})
+    area: Optional[Decimal] = Field(None, json_schema_extra={"example": 65.5})
+    floor: Optional[int] = Field(None, json_schema_extra={"example": 5})
+    total_floors: Optional[int] = Field(None, json_schema_extra={"example": 10})
+    property_type: Optional[str] = Field(None, json_schema_extra={"example": "Apartment"})
+    address: str = Field(..., json_schema_extra={"example": "123 Main St, New York, NY"})
+    lat: float = Field(..., ge=-90, le=90, json_schema_extra={"example": 40.7128})
+    lon: float = Field(..., ge=-180, le=180, json_schema_extra={"example": -74.0060})
+    images: Optional[List[str]] = Field(None, json_schema_extra={"example": ["https://example.com/img1.jpg", "https://example.com/img2.jpg"]})
 
 class PropertyCreate(PropertyBase):
     pass
