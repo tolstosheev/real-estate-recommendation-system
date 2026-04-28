@@ -69,7 +69,4 @@ async def test_interaction_nonexistent_property(client: AsyncClient):
         "interaction_type": "like"
     }
     res = await client.post("/api/interactions/interact", json=like_data, headers=headers)
-    # Current implementation might just create it if not checked, but logically it should fail
-    # If the DB has FK constraint, it will fail with 500. 
-    # Let's see.
     assert res.status_code in [400, 404, 500]
