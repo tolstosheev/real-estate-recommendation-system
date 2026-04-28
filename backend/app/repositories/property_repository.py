@@ -9,6 +9,17 @@ class PropertyRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
+    async def get_by_bbox(self, min_lat: float, max_lat: float, min_lon: float, max_lon: float):
+        bbox = func.ST_MakeEnvelope(min_lon, min_lat, max_lon, max_lat, 4326)
+        query = select(
+            Property, 
+            func.ST_X(Property.location).label("lon"), 
+            func.ST_Y(Property.location).label("lat")
+        ).filter(func.ST_Intersects(Property.location, bbox))
+        
+        result = await self.session.execute(query)
+        return result.all()
+
     async def create(self, property_data: dict) -> Property:
         lat = property_data.pop("lat")
         lon = property_data.pop("lon")

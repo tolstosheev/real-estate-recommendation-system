@@ -9,6 +9,17 @@ from typing import List, Optional
 
 router = APIRouter()
 
+@router.get("/map", response_model=List[PropertyOut], summary="Get Properties in BBox", description="Returns properties within the specified bounding box for map display")
+async def get_properties_map(
+    min_lat: float = Query(...), 
+    max_lat: float = Query(...), 
+    min_lon: float = Query(...), 
+    max_lon: float = Query(...), 
+    db: AsyncSession = Depends(get_db)
+):
+    service = PropertyService(db)
+    return await service.get_properties_in_bbox(min_lat, max_lat, min_lon, max_lon)
+
 @router.get("/", response_model=List[PropertyOut], summary="List Properties", description="Returns a list of properties with optional filters (price, rooms, type) and spatial search (radius)")
 async def get_properties(
     limit: int = 100, 

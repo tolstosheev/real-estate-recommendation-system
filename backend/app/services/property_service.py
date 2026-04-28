@@ -1,12 +1,15 @@
 from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import HTTPException
 from app.repositories.property_repository import PropertyRepository
 from app.repositories.user_repository import UserRepository
+from app.services.geocoding_service import GeocodingService
 from typing import List, Optional
 
 class PropertyService:
     def __init__(self, session: AsyncSession):
         self.repository = PropertyRepository(session)
         self.user_repo = UserRepository(session)
+        self.geocoder = GeocodingService()
 
     async def _enrich_property(self, result):
         if result is None:
@@ -31,9 +34,23 @@ class PropertyService:
         return prop
 
     async def create_property(self, property_data: dict):
+        if "lat" not in property_data or "lon" not in property_data:
+            address = property_data.get("address")
+            if address:
+                coords = await self.geocoder.get_coords_from_address(address)
+                if coords:
+                    property_data["lat"], property_data["lon"] = coords
+
+        if "lat" not in property_data or "lon" not in property_data:
+            raise HTTPException(status_code=400, detail="Coordinates are required and could not be determined from the address")
+
         prop = await self.repository.create(property_data)
         result = await self.repository.get_by_id(str(prop.id))
         return await self._enrich_property(result)
+
+    async def get_properties_in_bbox(self, min_lat: float, max_lat: float, min_lon: float, max_lon: float):
+        results = await self.repository.get_by_bbox(min_lat, max_lat, min_lon, max_lon)
+        return [await self._enrich_property(res) for res in results]
 
     async def list_properties(self, limit: int = 100, offset: int = 0, 
                                  min_price: float = None, max_price: float = None, 

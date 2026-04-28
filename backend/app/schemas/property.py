@@ -13,8 +13,8 @@ class PropertyBase(BaseModel):
     total_floors: Optional[int] = Field(None, json_schema_extra={"example": 10})
     property_type: Optional[str] = Field(None, json_schema_extra={"example": "Apartment"})
     address: str = Field(..., json_schema_extra={"example": "123 Main St, New York, NY"})
-    lat: float = Field(..., ge=-90, le=90, json_schema_extra={"example": 40.7128})
-    lon: float = Field(..., ge=-180, le=180, json_schema_extra={"example": -74.0060})
+    lat: Optional[float] = Field(None, ge=-90, le=90, json_schema_extra={"example": 40.7128})
+    lon: Optional[float] = Field(None, ge=-180, le=180, json_schema_extra={"example": -74.0060})
     images: Optional[List[str]] = Field(None, json_schema_extra={"example": ["https://example.com/img1.jpg", "https://example.com/img2.jpg"]})
 
 class PropertyCreate(PropertyBase):
