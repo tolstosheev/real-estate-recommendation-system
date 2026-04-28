@@ -7,13 +7,12 @@ class SimilarityUtils:
     @staticmethod
     def normalize_features(features: List[List[float]]):
         if not features:
-            return np.array([])
+            return np.array([]), None
         scaler = MinMaxScaler()
-        return scaler.fit_transform(features)
+        return scaler.fit_transform(features), scaler
 
     @staticmethod
     def calculate_cosine_similarity(vec_a: np.ndarray, vec_b: np.ndarray) -> float:
-        # Ensure vectors are 2D for sklearn
         a = vec_a.reshape(1, -1)
         b = vec_b.reshape(1, -1)
         return float(cosine_similarity(a, b)[0][0])

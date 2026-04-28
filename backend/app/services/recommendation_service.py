@@ -48,14 +48,19 @@ class RecommendationService:
             return []
 
         if user_vec is None:
-            # Cold Start: Return first N properties
             return [row[0] for row in all_rows[:limit]]
 
+        properties = [row[0] for row in all_rows]
+        prop_vectors = np.array([self._get_property_vector(p) for p in properties])
+        
+        norm_prop_vectors, scaler = self.utils.normalize_features(prop_vectors.tolist())
+        
+        norm_user_vec = scaler.transform(user_vec.reshape(1, -1))[0]
+
         scored_props = []
-        for row in all_rows:
-            prop = row[0]
-            p_vec = self._get_property_vector(prop)
-            score = self.utils.calculate_cosine_similarity(user_vec, p_vec)
+        for i, prop in enumerate(properties):
+            p_vec = norm_prop_vectors[i]
+            score = self.utils.calculate_cosine_similarity(norm_user_vec, p_vec)
             scored_props.append((prop, score))
 
         scored_props.sort(key=lambda x: x[1], reverse=True)
