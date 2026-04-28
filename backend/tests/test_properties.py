@@ -132,3 +132,30 @@ async def test_invalid_coordinates(client: AsyncClient):
     }
     res = await client.post("/api/properties/", json=prop_data, headers=headers)
     assert res.status_code == 422
+
+@pytest.mark.asyncio
+async def test_property_owner_contacts(client: AsyncClient):
+    payload = {
+        "email": "contact@example.com",
+        "password": "password123",
+        "full_name": "Contact User",
+        "phone_number": "+79001112233",
+        "telegram_handle": "@contact_me"
+    }
+    await client.post("/auth/register", json=payload)
+    login_data = {"username": "contact@example.com", "password": "password123"}
+    token_res = await client.post("/auth/token", data=login_data)
+    token = token_res.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    prop_data = {
+        "title": "Contact House", "price": 100, "address": "A", "lat": 0, "lon": 0, "property_type": "House"
+    }
+    res = await client.post("/api/properties/", json=prop_data, headers=headers)
+    prop_id = res.json()["id"]
+
+    res = await client.get(f"/api/properties/{prop_id}")
+    data = res.json()
+    assert data["owner"]["full_name"] == "Contact User"
+    assert data["owner"]["phone_number"] == "+79001112233"
+    assert data["owner"]["telegram_handle"] == "@contact_me"

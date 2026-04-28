@@ -8,7 +8,6 @@ def test_normalize_features():
     norm_data, scaler = utils.normalize_features(data)
     
     assert norm_data.shape == (3, 2)
-    # StandardScaler normalizes to mean=0, std=1, so we check the mean is approx 0
     assert np.allclose(np.mean(norm_data, axis=0), 0)
     assert np.allclose(np.std(norm_data, axis=0), 1)
 
