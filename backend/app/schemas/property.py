@@ -34,6 +34,12 @@ class PropertyUpdate(BaseModel):
     lon: Optional[float] = Field(None, ge=-180, le=180)
     images: Optional[List[str]] = None
 
+class OwnerOut(BaseModel):
+    full_name: str
+    phone_number: Optional[str]
+    telegram_handle: Optional[str]
+    model_config = ConfigDict(from_attributes=True)
+
 class PropertyOut(BaseModel):
     id: UUID
     title: str
@@ -48,5 +54,6 @@ class PropertyOut(BaseModel):
     lat: float
     lon: float
     images: Optional[List[str]]
+    owner: OwnerOut
     
     model_config = ConfigDict(from_attributes=True)
