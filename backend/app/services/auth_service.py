@@ -21,7 +21,7 @@ class AuthService:
         salt = bcrypt.gensalt()
         return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
 
-    async def register_user(self, email: str, password: str, full_name: str):
+    async def register_user(self, email: str, password: str, full_name: str, phone_number: Optional[str] = None, telegram_handle: Optional[str] = None):
         existing_user = await self.repository.get_by_email(email)
         if existing_user:
             raise ValueError("User with this email already exists")
@@ -30,7 +30,9 @@ class AuthService:
         return await self.repository.create({
             "email": email,
             "hashed_password": hashed_password,
-            "full_name": full_name
+            "full_name": full_name,
+            "phone_number": phone_number,
+            "telegram_handle": telegram_handle
         })
 
     async def authenticate_user(self, email: str, password: str) -> Optional[dict]:

@@ -5,6 +5,8 @@ from uuid import UUID
 class UserBase(BaseModel):
     email: EmailStr = Field(..., json_schema_extra={"example": "user@example.com"})
     full_name: str = Field(..., json_schema_extra={"example": "John Doe"})
+    phone_number: Optional[str] = Field(None, json_schema_extra={"example": "+79991234567"})
+    telegram_handle: Optional[str] = Field(None, json_schema_extra={"example": "@username"})
 
 class UserCreate(UserBase):
     password: str = Field(..., json_schema_extra={"example": "SecurePassword123!"})

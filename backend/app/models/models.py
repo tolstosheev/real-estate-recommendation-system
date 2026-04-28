@@ -7,12 +7,15 @@ from app.core.db import Base
 
 class User(Base):
     __tablename__ = "users"
-
+    
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email = Column(String, unique=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     full_name = Column(String)
+    phone_number = Column(String)
+    telegram_handle = Column(String)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
 
 class Property(Base):
     __tablename__ = "properties"
@@ -31,10 +34,6 @@ class Property(Base):
     location = Column(Geometry('POINT', 4326))
     images = Column(ARRAY(String))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-
-    __table_args__ = (
-        Index('idx_properties_location', 'location', postgresql_using='gist'),
-    )
 
 
 class UserPreference(Base):

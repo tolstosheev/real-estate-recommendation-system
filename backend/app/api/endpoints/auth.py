@@ -12,7 +12,13 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 async def register(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
     service = AuthService(db)
     try:
-        user = await service.register_user(user_in.email, user_in.password, user_in.full_name)
+        user = await service.register_user(
+            user_in.email, 
+            user_in.password, 
+            user_in.full_name, 
+            user_in.phone_number, 
+            user_in.telegram_handle
+        )
         return user
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
