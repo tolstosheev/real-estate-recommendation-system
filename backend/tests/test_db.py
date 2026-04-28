@@ -1,17 +1,14 @@
 import pytest
 from sqlalchemy.future import select
 from app.models.models import Property
-from app.core.db import Base
 
 @pytest.mark.asyncio
 async def test_db_connection(db_session):
-    # Test if we can execute a simple query
     result = await db_session.execute(select(1))
     assert result.scalar() == 1
 
 @pytest.mark.asyncio
 async def test_property_creation(db_session):
-    # Test creating a property and retrieving it
     new_property = Property(
         title="Test House",
         price=100000,
@@ -29,7 +26,6 @@ async def test_property_creation(db_session):
 
 @pytest.mark.asyncio
 async def test_property_retrieval(db_session):
-    # Ensure the property created in previous step (or new one) can be retrieved
     prop = Property(title="Searchable House", price=200000, rooms=1, area=40.0, property_type="Apartment", address="Search St, 2")
     db_session.add(prop)
     await db_session.commit()
