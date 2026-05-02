@@ -1,3 +1,5 @@
+@use '@app/styles/index' as *;
+
 .home-page {
   min-height: 100vh;
   background-color: $color-gray-100;

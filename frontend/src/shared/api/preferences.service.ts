@@ -1,5 +1,5 @@
 import api from './api';
-import { UserPreferenceCreate } from '@entities/user/model/types';
+import type { UserPreferenceCreate } from '@entities/user/model/types';
 
 export const preferencesService = {
   async updatePreferences(prefs: UserPreferenceCreate) {

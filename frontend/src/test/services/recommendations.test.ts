@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import MockAdapter from 'axios-mock-adapter';
 import api from '@shared/api/api';
 import { recommendationsService } from '@shared/api/recommendations.service';
-import { PropertyRecommendation } from '@entities/property/model/types';
+import type { PropertyRecommendation } from '@entities/property/model/types';
 
 const mock = new MockAdapter(api);
 

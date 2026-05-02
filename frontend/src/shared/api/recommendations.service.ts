@@ -1,5 +1,5 @@
 import api from './api';
-import { PropertyRecommendation } from '@entities/property/model/types';
+import type { PropertyRecommendation } from '@entities/property/model/types';
 
 export const recommendationsService = {
   async getRecommendations(): Promise<PropertyRecommendation[]> {

@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation } from 'swiper/modules';
 import { useNavigate } from 'react-router-dom';
-import { useAppDispatch } from '@app/store/hooks';
 import { preferencesService } from '@shared/api/preferences.service';
 import './Onboarding.scss';
 
@@ -22,7 +21,6 @@ const Onboarding: React.FC = () => {
   });
 
   const navigate = useNavigate();
-  const dispatch = useAppDispatch();
 
   const steps = [
     { title: 'Budget', subtitle: 'Tell us about your price range' },

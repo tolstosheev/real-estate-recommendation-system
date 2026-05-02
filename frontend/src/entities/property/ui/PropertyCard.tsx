@@ -1,6 +1,6 @@
 import React from 'react';
 import cn from 'classnames';
-import { Property } from '@entities/property/model/types';
+import type { Property } from '@entities/property/model/types';
 import './PropertyCard.scss';
 
 interface PropertyCardProps {
