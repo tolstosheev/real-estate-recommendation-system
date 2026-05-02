@@ -1,0 +1,218 @@
+@use '@app/styles/index' as *;
+
+.onboarding-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: $color-gray-100;
+  padding: calc-rem(20);
+}
+
+.onboarding-card {
+  background-color: $color-white;
+  padding: calc-rem(40);
+  border-radius: calc-rem(16);
+  box-shadow: 0 calc-rem(8) calc-rem(30) rgba(0, 0, 0, 0.05);
+  width: 100%;
+  max-width: calc-rem(600);
+}
+
+.onboarding-header {
+  text-align: center;
+  margin-bottom: calc-rem(32);
+}
+
+.onboarding-header__title {
+  font-size: calc-rem(28);
+  font-weight: 800;
+  color: $color-primary;
+  margin-bottom: calc-rem(12);
+}
+
+.onboarding-header__subtitle {
+  font-size: calc-rem(16);
+  color: $color-gray-500;
+}
+
+.onboarding-steps {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: calc-rem(40);
+  position: relative;
+}
+
+.onboarding-steps::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: $color-gray-200;
+  z-index: 1;
+  transform: translateY(-50%);
+}
+
+.onboarding-step {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc-rem(8);
+}
+
+.onboarding-step__indicator {
+  width: calc-rem(32);
+  height: calc-rem(32);
+  border-radius: 50%;
+  background-color: $color-white;
+  border: 2px solid $color-gray-300;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+
+.onboarding-step__indicator--active {
+  border-color: $color-accent;
+  background-color: $color-accent;
+  color: $color-white;
+}
+
+.onboarding-step__label {
+  font-size: calc-rem(12);
+  color: $color-gray-400;
+  white-space: nowrap;
+}
+
+.onboarding-step__label--active {
+  color: $color-primary;
+  font-weight: 600;
+}
+
+.onboarding-content {
+  min-height: calc-rem(300);
+  margin-bottom: calc-rem(32);
+}
+
+.onboarding-form {
+  display: flex;
+  flex-direction: column;
+  gap: calc-rem(20);
+}
+
+.onboarding-form__group {
+  display: flex;
+  flex-direction: column;
+  gap: calc-rem(8);
+}
+
+.onboarding-form__label {
+  font-size: calc-rem(14);
+  color: $color-gray-600;
+}
+
+.onboarding-form__input {
+  padding: calc-rem(12);
+  border: 1px solid $color-gray-300;
+  border-radius: calc-rem(8);
+  font-size: calc-rem(16);
+  transition: border-color 0.2s;
+
+  &:focus {
+    outline: none;
+    border-color: $color-accent;
+  }
+}
+
+.onboarding-form__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc-rem(12);
+  justify-content: center;
+}
+
+.onboarding-chip {
+  padding: calc-rem(8) calc-rem(16);
+  border: 1px solid $color-gray-300;
+  border-radius: calc-rem(20);
+  cursor: pointer;
+  font-size: calc-rem(14);
+  transition: all 0.2s;
+  background-color: $color-white;
+  color: $color-gray-700;
+
+  &--active {
+    background-color: $color-accent;
+    border-color: $color-accent;
+    color: $color-white;
+  }
+
+  &:hover:not(.onboarding-chip--active) {
+    border-color: $color-accent;
+    color: $color-accent;
+  }
+}
+
+.onboarding-summary {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: calc-rem(16);
+  font-size: calc-rem(16);
+}
+
+.onboarding-summary__details {
+  background-color: $color-gray-100;
+  padding: calc-rem(20);
+  border-radius: calc-rem(12);
+  text-align: left;
+  display: inline-block;
+  margin: 0 auto;
+  color: $color-gray-600;
+  line-height: 1.8;
+}
+
+.onboarding-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.btn-secondary {
+  padding: calc-rem(12) calc-rem(24);
+  background-color: transparent;
+  color: $color-gray-600;
+  border: 1px solid $color-gray-300;
+  border-radius: calc-rem(8);
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+
+  &:hover {
+    background-color: $color-gray-100;
+  }
+}
+
+.btn-primary {
+  padding: calc-rem(12) calc-rem(24);
+  background-color: $color-primary;
+  color: $color-white;
+  border: none;
+  border-radius: calc-rem(8);
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+
+  &:hover {
+    background-color: #142c4b;
+  }
+}
+
+.btn-primary:disabled {
+  background-color: $color-gray-300;
+  cursor: not-allowed;
+}

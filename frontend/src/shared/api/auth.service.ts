@@ -1,5 +1,4 @@
 import api from './api';
-import { UserPreferenceOut } from '@entities/user/model/types';
 
 export const authService = {
   async login(credentials: any) {
