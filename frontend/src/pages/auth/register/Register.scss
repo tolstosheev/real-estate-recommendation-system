@@ -1,65 +1,67 @@
+@use '@app/styles/index' as *;
+
 .register-page {
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background-color: var(--color-gray-100);
+  background-color: $color-gray-100;
 }
 
 .register-card {
-  background-color: var(--color-white);
-  padding: rem(40);
-  border-radius: rem(12);
-  box-shadow: 0 rem(4) rem(20) rgba(0, 0, 0, 0.1);
+  background-color: $color-white;
+  padding: calc-rem(40);
+  border-radius: calc-rem(12);
+  box-shadow: 0 calc-rem(4) calc-rem(20) rgba(0, 0, 0, 0.1);
   width: 100%;
-  max-width: rem(400);
+  max-width: calc-rem(400);
 }
 
 .register-card__title {
-  font-size: rem(24);
+  font-size: calc-rem(24);
   font-weight: 700;
-  color: var(--color-primary);
-  margin-bottom: rem(24);
+  color: $color-primary;
+  margin-bottom: calc-rem(24);
   text-align: center;
 }
 
 .register-form {
   display: flex;
   flex-direction: column;
-  gap: rem(16);
+  gap: calc-rem(16);
 }
 
 .register-form__group {
   display: flex;
   flex-direction: column;
-  gap: rem(8);
+  gap: calc-rem(8);
 }
 
 .register-form__label {
-  font-size: rem(14);
-  color: var(--color-gray-600);
+  font-size: calc-rem(14);
+  color: $color-gray-600;
 }
 
 .register-form__input {
-  padding: rem(12);
-  border: 1px solid var(--color-gray-300);
-  border-radius: rem(8);
-  font-size: rem(16);
+  padding: calc-rem(12);
+  border: 1px solid $color-gray-300;
+  border-radius: calc-rem(8);
+  font-size: calc-rem(16);
   transition: border-color 0.2s;
 
   &:focus {
     outline: none;
-    border-color: var(--color-accent);
+    border-color: $color-accent;
   }
 }
 
 .register-form__submit {
-  padding: rem(12);
-  background-color: var(--color-primary);
-  color: var(--color-white);
+  padding: calc-rem(12);
+  background-color: $color-primary;
+  color: $color-white;
   border: none;
-  border-radius: rem(8);
-  font-size: rem(16);
+  border-radius: calc-rem(8);
+  font-size: calc-rem(16);
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.2s;
@@ -70,14 +72,14 @@
 }
 
 .register-card__footer {
-  margin-top: rem(20);
+  margin-top: calc-rem(20);
   text-align: center;
-  font-size: rem(14);
-  color: var(--color-gray-500);
+  font-size: calc-rem(14);
+  color: $color-gray-500;
 }
 
 .register-card__link {
-  color: var(--color-accent);
+  color: $color-accent;
   text-decoration: none;
   font-weight: 600;
 
