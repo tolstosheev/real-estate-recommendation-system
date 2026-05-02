@@ -1,0 +1,10 @@
+@import 'variables';
+@import 'mixins';
+@import 'reset';
+
+body {
+  font-family: $font-family-main;
+  font-size: rem($font-size-base);
+  background-color: $color-gray-100;
+  color: $color-gray-900;
+}
