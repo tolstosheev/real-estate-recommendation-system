@@ -3,6 +3,7 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation } from 'swiper/modules';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '@app/store/hooks';
+import { preferencesService } from '@shared/api/preferences.service';
 import './Onboarding.scss';
 
 import 'swiper/css';
@@ -10,6 +11,8 @@ import 'swiper/css/navigation';
 
 const Onboarding: React.FC = () => {
   const [step, setStep] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   const [preferences, setPreferences] = useState({
     min_price: '',
     max_price: '',
@@ -29,12 +32,26 @@ const Onboarding: React.FC = () => {
     { title: 'Ready!', subtitle: 'Let AI find your perfect home' },
   ];
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (step < steps.length - 1) {
       setStep(step + 1);
     } else {
-      console.log('Submit preferences:', preferences);
-      navigate('/');
+      setIsLoading(true);
+      setError('');
+      try {
+        await preferencesService.updatePreferences({
+          min_price: preferences.min_price ? Number(preferences.min_price) : undefined,
+          max_price: preferences.max_price ? Number(preferences.max_price) : undefined,
+          min_area: preferences.min_area ? Number(preferences.min_area) : undefined,
+          preferred_rooms: preferences.preferred_rooms,
+          tags: preferences.tags,
+        });
+        navigate('/');
+      } catch (err: any) {
+        setError(err.response?.data?.detail || 'Failed to save preferences');
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -66,6 +83,7 @@ const Onboarding: React.FC = () => {
         </div>
 
         <div className="onboarding-content">
+          {error && <div style={{ color: 'red', textAlign: 'center', marginBottom: '16px' }}>{error}</div>}
           <Swiper
             modules={[Navigation]}
             onSlideChange={(swiper) => setStep(swiper.activeIndex)}
@@ -155,10 +173,10 @@ const Onboarding: React.FC = () => {
               <div className="onboarding-summary">
                 <p>We are ready to find your home!</p>
                 <div className="onboarding-summary__details">
-                  Price: {preferences.min_price} - {preferences.max_price} <br/>
-                  Area: from {preferences.min_area} <br/>
-                  Rooms: {preferences.preferred_rooms.join(', ')} <br/>
-                  Tags: {preferences.tags.join(', ')}
+                  Price: {preferences.min_price || 'Any'} - {preferences.max_price || 'Any'} <br/>
+                  Area: from {preferences.min_area || 'Any'} <br/>
+                  Rooms: {preferences.preferred_rooms.length > 0 ? preferences.preferred_rooms.join(', ') : 'Any'} <br/>
+                  Tags: {preferences.tags.length > 0 ? preferences.tags.join(', ') : 'Any'}
                 </div>
               </div>
             </SwiperSlide>
@@ -169,15 +187,16 @@ const Onboarding: React.FC = () => {
           <button 
             className="btn-secondary" 
             onClick={handlePrev} 
-            disabled={step === 0}
+            disabled={step === 0 || isLoading}
           >
             Back
           </button>
           <button 
             className="btn-primary" 
-            onClick={handleNext}
+            onClick={handleNext} 
+            disabled={isLoading}
           >
-            {step === steps.length - 1 ? 'Finish' : 'Next'}
+            {isLoading ? 'Saving...' : step === steps.length - 1 ? 'Finish' : 'Next'}
           </button>
         </div>
       </div>
@@ -186,3 +205,4 @@ const Onboarding: React.FC = () => {
 };
 
 export default Onboarding;
+
