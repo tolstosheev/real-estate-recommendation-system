@@ -4,5 +4,5 @@ import App from '../App';
 
 test('renders app component', () => {
   render(<App />);
-  expect(screen.getByText(/Home Page \(Coming Soon\)/i)).toBeInTheDocument();
+  expect(screen.getByText(/Find Your Dream Home/i)).toBeInTheDocument();
 });

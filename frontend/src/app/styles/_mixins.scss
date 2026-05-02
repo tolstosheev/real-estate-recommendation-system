@@ -1,21 +1,27 @@
-@function calc-rem($px) {
-  @return calc($px / 16px) * 1rem;
+@mixin flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-@mixin mobile {
-  @media (max-width: #{$bp-mobile}) {
-    @content;
-  }
-}
+@mixin grid-adaptive($desktop: 4, $laptop: 3, $tablet: 2, $mobile: 1, $gap: calc-rem(16)) {
+  display: grid;
+  gap: $gap;
+  grid-template-columns: repeat($desktop, 1fr);
 
-@mixin tablet {
-  @media (max-width: #{$bp-tablet}) {
-    @content;
-  }
-}
-
-@mixin laptop {
   @media (max-width: #{$bp-laptop}) {
-    @content;
+    grid-template-columns: repeat($laptop, 1fr);
   }
+
+  @media (max-width: #{$bp-tablet}) {
+    grid-template-columns: repeat($tablet, 1fr);
+  }
+
+  @media (max-width: #{$bp-mobile}) {
+    grid-template-columns: repeat($mobile, 1fr);
+  }
+}
+
+@mixin transition-standard {
+  transition: all 0.3s ease;
 }

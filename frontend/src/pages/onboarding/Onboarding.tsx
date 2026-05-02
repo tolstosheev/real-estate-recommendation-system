@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation } from 'swiper/modules';
 import { useNavigate } from 'react-router-dom';
@@ -11,6 +11,7 @@ import './Onboarding.scss';
 
 import 'swiper/css';
 import 'swiper/css/navigation';
+import type { Swiper as SwiperType } from 'swiper';
 
 const Onboarding: React.FC = () => {
   const [step, setStep] = useState(0);
@@ -24,6 +25,7 @@ const Onboarding: React.FC = () => {
     tags: [] as string[],
   });
 
+  const swiperRef = useRef<SwiperType | null>(null);
   const navigate = useNavigate();
 
   const steps = [
@@ -36,7 +38,7 @@ const Onboarding: React.FC = () => {
 
   const handleNext = async () => {
     if (step < steps.length - 1) {
-      setStep(step + 1);
+      swiperRef.current?.slideNext();
     } else {
       setIsLoading(true);
       setError('');
@@ -59,7 +61,7 @@ const Onboarding: React.FC = () => {
 
   const handlePrev = () => {
     if (step > 0) {
-      setStep(step - 1);
+      swiperRef.current?.slidePrev();
     }
   };
 
@@ -88,6 +90,7 @@ const Onboarding: React.FC = () => {
           {error && <div style={{ color: 'red', textAlign: 'center', marginBottom: '16px' }}>{error}</div>}
           <Swiper
             modules={[Navigation]}
+            onSwiper={(swiper) => (swiperRef.current = swiper)}
             onSlideChange={(swiper) => setStep(swiper.activeIndex)}
             allowTouchMove={false}
             className="onboarding-slider"
@@ -190,11 +193,9 @@ const Onboarding: React.FC = () => {
             {isLoading ? 'Saving...' : step === steps.length - 1 ? 'Finish' : 'Next'}
           </Button>
         </div>
-      </div>
+      </Card>
     </div>
   );
 };
 
 export default Onboarding;
-
-
