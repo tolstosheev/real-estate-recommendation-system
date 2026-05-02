@@ -1,0 +1,109 @@
+@use '@app/styles/index' as *;
+
+.property-card {
+  background-color: $color-white;
+  border-radius: calc-rem(12);
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+  border: 1px solid $color-gray-200;
+
+  &:hover {
+    transform: translateY(-calc-rem(4));
+    box-shadow: 0 calc-rem(12) calc-rem(24) rgba(0, 0, 0, 0.1);
+  }
+
+  &--horizontal {
+    display: flex;
+    flex-direction: row;
+    max-width: calc-rem(800);
+  }
+
+  &--vertical {
+    display: flex;
+    flex-direction: column;
+    max-width: calc-rem(300);
+  }
+}
+
+.property-card__image-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.property-card__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+
+.property-card:hover .property-card__image {
+  transform: scale(1.05);
+}
+
+.property-card__badge {
+  position: absolute;
+  top: calc-rem(12);
+  left: calc-rem(12);
+  background-color: $color-accent;
+  color: $color-white;
+  padding: calc-rem(4) calc-rem(8);
+  border-radius: calc-rem(4);
+  font-size: calc-rem(12);
+  font-weight: 700;
+  z-index: 1;
+}
+
+.property-card__content {
+  padding: calc-rem(16);
+  display: flex;
+  flex-direction: column;
+  gap: calc-rem(8);
+  flex: 1;
+}
+
+.property-card__price {
+  font-size: calc-rem(20);
+  font-weight: 800;
+  color: $color-primary;
+}
+
+.property-card__address {
+  font-size: calc-rem(14);
+  color: $color-gray-600;
+  margin-bottom: calc-rem(8);
+}
+
+.property-card__params {
+  display: flex;
+  gap: calc-rem(12);
+  font-size: calc-rem(13);
+  color: $color-gray-500;
+}
+
+.property-card__param-item {
+  display: flex;
+  align-items: center;
+  gap: calc-rem(4);
+}
+
+.property-card__footer {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: calc-rem(16);
+  border-top: 1px solid $color-gray-100;
+}
+
+.property-card__details-btn {
+  padding: calc-rem(8) calc-rem(16);
+  background-color: $color-primary;
+  color: $color-white;
+  border: none;
+  border-radius: calc-rem(6);
+  font-size: calc-rem(14);
+  font-weight: 600;
+  cursor: pointer;
+}

@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from '@pages/auth/login';
 import Register from '@pages/auth/register';
 import Onboarding from '@pages/onboarding';
+import Home from '@pages/home';
 
 const App: React.FC = () => {
   return (
@@ -11,7 +12,7 @@ const App: React.FC = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/onboarding" element={<Onboarding />} />
-        <Route path="/" element={<div>Home Page (Coming Soon)</div>} />
+        <Route path="/" element={<Home />} />
       </Routes>
     </Router>
   );

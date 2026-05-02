@@ -1,0 +1,71 @@
+.home-page {
+  min-height: 100vh;
+  background-color: $color-gray-100;
+}
+
+.hero {
+  background-color: $color-primary;
+  color: $color-white;
+  padding: calc-rem(80) calc-rem(20);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: calc-rem(80);
+  background: linear-gradient(to bottom, transparent, $color-gray-100);
+}
+
+.hero__content {
+  position: relative;
+  z-index: 1;
+  max-width: calc-rem(800);
+  margin: 0 auto;
+}
+
+.hero__title {
+  font-size: calc-rem(48);
+  font-weight: 800;
+  margin-bottom: calc-rem(24);
+  line-height: 1.2;
+}
+
+.hero__subtitle {
+  font-size: calc-rem(20);
+  opacity: 0.9;
+  margin-bottom: calc-rem(40);
+}
+
+.recommendations-section {
+  padding: calc-rem(60) calc-rem(20);
+  max-width: calc-rem(1200);
+  margin: 0 auto;
+}
+
+.recommendations-section__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: calc-rem(32);
+}
+
+.recommendations-section__title {
+  font-size: calc-rem(24);
+  font-weight: 700;
+  color: $color-primary;
+}
+
+.recommendations-slider {
+  padding: calc-rem(20) 0;
+}
+
+.recommendations-slide {
+  display: flex;
+  justify-content: center;
+}
