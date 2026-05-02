@@ -1,73 +1,62 @@
-import React, { useState, useRef } from 'react';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation } from 'swiper/modules';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { preferencesService } from '@shared/api/preferences.service';
 import Button from '@shared/ui/Button';
-import Input from '@shared/ui/Input';
-import Chip from '@shared/ui/Chip';
-import Card from '@shared/ui/Card';
 import './Onboarding.scss';
 
-import 'swiper/css';
-import 'swiper/css/navigation';
-import type { Swiper as SwiperType } from 'swiper';
 
 const Onboarding: React.FC = () => {
   const [step, setStep] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [preferences, setPreferences] = useState({
-    min_price: '',
-    max_price: '',
-    min_area: '',
-    preferred_rooms: [] as number[],
-    tags: [] as string[],
-  });
-
-  const swiperRef = useRef<SwiperType | null>(null);
   const navigate = useNavigate();
 
   const steps = [
-    { title: 'Budget', subtitle: 'Tell us about your price range' },
-    { title: 'Space', subtitle: 'How much area do you need?' },
-    { title: 'Rooms', subtitle: 'Choose the number of rooms' },
-    { title: 'Vibe', subtitle: 'What atmosphere are you looking for?' },
-    { title: 'Ready!', subtitle: 'Let AI find your perfect home' },
+    { 
+      title: 'Welcome to nestAI', 
+      subtitle: 'The future of real estate search is here.',
+      description: 'Forget about endless scrolling through irrelevant listings. nestAI understands what you actually want.'
+    },
+    { 
+      title: 'AI-Powered Discovery', 
+      subtitle: 'Beyond simple filters',
+      description: 'Our system analyzes your behavior and explicit preferences to predict your perfect home.'
+    },
+    { 
+      title: 'Spatial Intelligence', 
+      subtitle: 'Precision that matters',
+      description: 'Using advanced geographic data, we find properties in the exact atmosphere and location you desire.'
+    },
+    { 
+      title: 'Personalized Feed', 
+      subtitle: 'Evolves with you',
+      description: 'The more you interact, the smarter nestAI becomes, constantly refining your recommendations.'
+    },
+    { 
+      title: 'Ready to start?', 
+      subtitle: 'Find your dream home today',
+      description: 'Create an account to let our AI start working for you.'
+    },
   ];
 
-  const handleNext = async () => {
+  const handleNext = () => {
     if (step < steps.length - 1) {
-      swiperRef.current?.slideNext();
+      setStep(step + 1);
     } else {
-      setIsLoading(true);
-      setError('');
-      try {
-        await preferencesService.updatePreferences({
-          min_price: preferences.min_price ? Number(preferences.min_price) : undefined,
-          max_price: preferences.max_price ? Number(preferences.max_price) : undefined,
-          min_area: preferences.min_area ? Number(preferences.min_area) : undefined,
-          preferred_rooms: preferences.preferred_rooms,
-          tags: preferences.tags,
-        });
-        navigate('/');
-      } catch (err: any) {
-        setError(err.response?.data?.detail || 'Failed to save preferences');
-      } finally {
-        setIsLoading(false);
-      }
+      navigate('/register');
     }
   };
 
   const handlePrev = () => {
     if (step > 0) {
-      swiperRef.current?.slidePrev();
+      setStep(step - 1);
     }
+  };
+
+  const handleSkip = () => {
+    navigate('/login');
   };
 
   return (
     <div className="onboarding-page">
-      <Card className="onboarding-card">
+      <div className="onboarding-card">
         <div className="onboarding-header">
           <h1 className="onboarding-header__title">{steps[step].title}</h1>
           <p className="onboarding-header__subtitle">{steps[step].subtitle}</p>
@@ -87,113 +76,36 @@ const Onboarding: React.FC = () => {
         </div>
 
         <div className="onboarding-content">
-          {error && <div style={{ color: 'red', textAlign: 'center', marginBottom: '16px' }}>{error}</div>}
-          <Swiper
-            modules={[Navigation]}
-            onSwiper={(swiper) => (swiperRef.current = swiper)}
-            onSlideChange={(swiper) => setStep(swiper.activeIndex)}
-            allowTouchMove={false}
-            className="onboarding-slider"
-          >
-            <SwiperSlide>
-              <div className="onboarding-form">
-                <Input 
-                  label="Min Price" 
-                  type="number" 
-                  value={preferences.min_price}
-                  onChange={(e) => setPreferences({ ...preferences, min_price: e.target.value })}
-                />
-                <Input 
-                  label="Max Price" 
-                  type="number" 
-                  value={preferences.max_price}
-                  onChange={(e) => setPreferences({ ...preferences, max_price: e.target.value })}
-                />
-              </div>
-            </SwiperSlide>
-
-            <SwiperSlide>
-              <div className="onboarding-form">
-                <Input 
-                  label="Min Area (sqm)" 
-                  type="number" 
-                  value={preferences.min_area}
-                  onChange={(e) => setPreferences({ ...preferences, min_area: e.target.value })}
-                />
-              </div>
-            </SwiperSlide>
-
-            <SwiperSlide>
-              <div className="onboarding-form">
-                <div className="onboarding-form__chips">
-                  {[1, 2, 3, 4, 5].map(num => (
-                    <Chip 
-                      key={num} 
-                      label={num} 
-                      active={preferences.preferred_rooms.includes(num)}
-                      onClick={() => {
-                        const rooms = preferences.preferred_rooms.includes(num) 
-                          ? preferences.preferred_rooms.filter(r => r !== num)
-                          : [...preferences.preferred_rooms, num];
-                        setPreferences({ ...preferences, preferred_rooms: rooms });
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
-            </SwiperSlide>
-
-            <SwiperSlide>
-              <div className="onboarding-form">
-                <div className="onboarding-form__chips">
-                  {['Modern', 'Cozy', 'Center', 'Quiet', 'Luxury'].map(tag => (
-                    <Chip 
-                      key={tag} 
-                      label={tag} 
-                      active={preferences.tags.includes(tag)}
-                      onClick={() => {
-                        const tags = preferences.tags.includes(tag) 
-                          ? preferences.tags.filter(t => t !== tag)
-                          : [...preferences.tags, tag];
-                        setPreferences({ ...preferences, tags: tags });
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
-            </SwiperSlide>
-
-            <SwiperSlide>
-              <div className="onboarding-summary">
-                <p>We are ready to find your home!</p>
-                <div className="onboarding-summary__details">
-                  Price: {preferences.min_price || 'Any'} - {preferences.max_price || 'Any'} <br/>
-                  Area: from {preferences.min_area || 'Any'} <br/>
-                  Rooms: {preferences.preferred_rooms.length > 0 ? preferences.preferred_rooms.join(', ') : 'Any'} <br/>
-                  Tags: {preferences.tags.length > 0 ? preferences.tags.join(', ') : 'Any'}
-                </div>
-              </div>
-            </SwiperSlide>
-          </Swiper>
+          <div className="onboarding-info-text">
+            {steps[step].description}
+          </div>
         </div>
 
         <div className="onboarding-footer">
           <Button 
             variant="secondary" 
-            onClick={handlePrev} 
-            disabled={step === 0 || isLoading}
+            onClick={handleSkip}
           >
-            Back
+            Skip
           </Button>
-          <Button 
-            variant="primary" 
-            onClick={handleNext} 
-            disabled={isLoading}
-          >
-            {isLoading ? 'Saving...' : step === steps.length - 1 ? 'Finish' : 'Next'}
-          </Button>
+          <div className="onboarding-footer__actions">
+            <Button 
+              variant="secondary" 
+              onClick={handlePrev} 
+              disabled={step === 0}
+              style={{ marginRight: '12px' }}
+            >
+              Back
+            </Button>
+            <Button 
+              variant="primary" 
+              onClick={handleNext}
+            >
+              {step === steps.length - 1 ? 'Register' : 'Next'}
+            </Button>
+          </div>
         </div>
-      </Card>
+      </div>
     </div>
   );
 };
