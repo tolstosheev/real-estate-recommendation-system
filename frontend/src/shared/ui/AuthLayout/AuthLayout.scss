@@ -1,0 +1,41 @@
+@use '@app/styles/index' as *;
+
+.auth-layout {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: $color-gray-100;
+  padding: calc-rem(20);
+}
+
+.auth-card-inner {
+  padding: calc-rem(40);
+  width: 100%;
+  max-width: rem(400);
+}
+
+.auth-title {
+  font-size: calc-rem(24);
+  font-weight: 700;
+  color: $color-primary;
+  margin-bottom: calc-rem(24);
+  text-align: center;
+}
+
+.auth-footer {
+  margin-top: calc-rem(20);
+  text-align: center;
+  font-size: calc-rem(14);
+  color: $color-gray-500;
+}
+
+.auth-link {
+  color: $color-accent;
+  text-decoration: none;
+  font-weight: 600;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}

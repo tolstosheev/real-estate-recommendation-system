@@ -1,0 +1,39 @@
+@use '@app/styles/index' as *;
+
+.btn {
+  padding: calc-rem(12) calc-rem(24);
+  border-radius: calc-rem(8);
+  font-size: calc-rem(16);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.btn--primary {
+  background-color: $color-primary;
+  color: $color-white;
+
+  &:hover {
+    background-color: #142c4b;
+  }
+}
+
+.btn--secondary {
+  background-color: transparent;
+  color: $color-gray-600;
+  border: 1px solid $color-gray-300;
+
+  &:hover {
+    background-color: $color-gray-100;
+  }
+}
+
+.btn--disabled {
+  background-color: $color-gray-300;
+  color: $color-gray-500;
+  cursor: not-allowed;
+}

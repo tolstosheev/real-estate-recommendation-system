@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '@shared/api/auth.service';
+import AuthLayout from '@shared/ui/AuthLayout';
+import Input from '@shared/ui/Input';
+import Button from '@shared/ui/Button';
 import './Register.scss';
 
 const Register: React.FC = () => {
@@ -28,57 +31,45 @@ const Register: React.FC = () => {
   };
 
   return (
-    <div className="register-page">
-      <div className="register-card">
-        <h1 className="register-card__title">Create Account</h1>
-        <form className="register-form" onSubmit={handleSubmit}>
-          {error && <div style={{ color: 'red', fontSize: '14px', textAlign: 'center' }}>{error}</div>}
-          <div className="register-form__group">
-            <label className="register-form__label">Full Name</label>
-            <input 
-              type="text" 
-              name="full_name"
-              className="register-form__input" 
-              placeholder="John Doe" 
-              value={formData.full_name}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <div className="register-form__group">
-            <label className="register-form__label">Email</label>
-            <input 
-              type="email" 
-              name="email"
-              className="register-form__input" 
-              placeholder="example@mail.com" 
-              value={formData.email}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <div className="register-form__group">
-            <label className="register-form__label">Password</label>
-            <input 
-              type="password" 
-              name="password"
-              className="register-form__input" 
-              placeholder="********" 
-              value={formData.password}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <button type="submit" className="register-form__submit">
-            Create Account
-          </button>
-        </form>
-        <div className="register-card__footer">
-          Already have an account? <a href="/login" className="register-card__link">Sign In</a>
-        </div>
-      </div>
-    </div>
+    <AuthLayout 
+      title="Create Account" 
+      footer={<>Already have an account? <a href="/login" className="auth-link">Sign In</a></>}
+    >
+      <form className="register-form" onSubmit={handleSubmit}>
+        {error && <div style={{ color: 'red', fontSize: '14px', textAlign: 'center', marginBottom: '16px' }}>{error}</div>}
+        <Input 
+          label="Full Name" 
+          name="full_name"
+          placeholder="John Doe" 
+          value={formData.full_name}
+          onChange={handleChange}
+          required
+        />
+        <Input 
+          label="Email" 
+          name="email"
+          type="email" 
+          placeholder="example@mail.com" 
+          value={formData.email}
+          onChange={handleChange}
+          required
+        />
+        <Input 
+          label="Password" 
+          name="password"
+          type="password" 
+          placeholder="********" 
+          value={formData.password}
+          onChange={handleChange}
+          required
+        />
+        <Button type="submit" className="register-form__submit">
+          Create Account
+        </Button>
+      </form>
+    </AuthLayout>
   );
 };
 
 export default Register;
+

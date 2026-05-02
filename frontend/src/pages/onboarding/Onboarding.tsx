@@ -3,6 +3,10 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation } from 'swiper/modules';
 import { useNavigate } from 'react-router-dom';
 import { preferencesService } from '@shared/api/preferences.service';
+import Button from '@shared/ui/Button';
+import Input from '@shared/ui/Input';
+import Chip from '@shared/ui/Chip';
+import Card from '@shared/ui/Card';
 import './Onboarding.scss';
 
 import 'swiper/css';
@@ -61,7 +65,7 @@ const Onboarding: React.FC = () => {
 
   return (
     <div className="onboarding-page">
-      <div className="onboarding-card">
+      <Card className="onboarding-card">
         <div className="onboarding-header">
           <h1 className="onboarding-header__title">{steps[step].title}</h1>
           <p className="onboarding-header__subtitle">{steps[step].subtitle}</p>
@@ -90,38 +94,29 @@ const Onboarding: React.FC = () => {
           >
             <SwiperSlide>
               <div className="onboarding-form">
-                <div className="onboarding-form__group">
-                  <label className="onboarding-form__label">Min Price</label>
-                  <input 
-                    type="number" 
-                    className="onboarding-form__input" 
-                    value={preferences.min_price}
-                    onChange={(e) => setPreferences({ ...preferences, min_price: e.target.value })}
-                  />
-                </div>
-                <div className="onboarding-form__group">
-                  <label className="onboarding-form__label">Max Price</label>
-                  <input 
-                    type="number" 
-                    className="onboarding-form__input" 
-                    value={preferences.max_price}
-                    onChange={(e) => setPreferences({ ...preferences, max_price: e.target.value })}
-                  />
-                </div>
+                <Input 
+                  label="Min Price" 
+                  type="number" 
+                  value={preferences.min_price}
+                  onChange={(e) => setPreferences({ ...preferences, min_price: e.target.value })}
+                />
+                <Input 
+                  label="Max Price" 
+                  type="number" 
+                  value={preferences.max_price}
+                  onChange={(e) => setPreferences({ ...preferences, max_price: e.target.value })}
+                />
               </div>
             </SwiperSlide>
 
             <SwiperSlide>
               <div className="onboarding-form">
-                <div className="onboarding-form__group">
-                  <label className="onboarding-form__label">Min Area (sqm)</label>
-                  <input 
-                    type="number" 
-                    className="onboarding-form__input" 
-                    value={preferences.min_area}
-                    onChange={(e) => setPreferences({ ...preferences, min_area: e.target.value })}
-                  />
-                </div>
+                <Input 
+                  label="Min Area (sqm)" 
+                  type="number" 
+                  value={preferences.min_area}
+                  onChange={(e) => setPreferences({ ...preferences, min_area: e.target.value })}
+                />
               </div>
             </SwiperSlide>
 
@@ -129,18 +124,17 @@ const Onboarding: React.FC = () => {
               <div className="onboarding-form">
                 <div className="onboarding-form__chips">
                   {[1, 2, 3, 4, 5].map(num => (
-                    <div 
+                    <Chip 
                       key={num} 
-                      className={`onboarding-chip ${preferences.preferred_rooms.includes(num) ? 'onboarding-chip--active' : ''}`}
+                      label={num} 
+                      active={preferences.preferred_rooms.includes(num)}
                       onClick={() => {
                         const rooms = preferences.preferred_rooms.includes(num) 
                           ? preferences.preferred_rooms.filter(r => r !== num)
                           : [...preferences.preferred_rooms, num];
                         setPreferences({ ...preferences, preferred_rooms: rooms });
                       }}
-                    >
-                      {num}
-                    </div>
+                    />
                   ))}
                 </div>
               </div>
@@ -150,18 +144,17 @@ const Onboarding: React.FC = () => {
               <div className="onboarding-form">
                 <div className="onboarding-form__chips">
                   {['Modern', 'Cozy', 'Center', 'Quiet', 'Luxury'].map(tag => (
-                    <div 
+                    <Chip 
                       key={tag} 
-                      className={`onboarding-chip ${preferences.tags.includes(tag) ? 'onboarding-chip--active' : ''}`}
+                      label={tag} 
+                      active={preferences.tags.includes(tag)}
                       onClick={() => {
                         const tags = preferences.tags.includes(tag) 
                           ? preferences.tags.filter(t => t !== tag)
                           : [...preferences.tags, tag];
                         setPreferences({ ...preferences, tags: tags });
                       }}
-                    >
-                      {tag}
-                    </div>
+                    />
                   ))}
                 </div>
               </div>
@@ -182,20 +175,20 @@ const Onboarding: React.FC = () => {
         </div>
 
         <div className="onboarding-footer">
-          <button 
-            className="btn-secondary" 
+          <Button 
+            variant="secondary" 
             onClick={handlePrev} 
             disabled={step === 0 || isLoading}
           >
             Back
-          </button>
-          <button 
-            className="btn-primary" 
+          </Button>
+          <Button 
+            variant="primary" 
             onClick={handleNext} 
             disabled={isLoading}
           >
             {isLoading ? 'Saving...' : step === steps.length - 1 ? 'Finish' : 'Next'}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -203,4 +196,5 @@ const Onboarding: React.FC = () => {
 };
 
 export default Onboarding;
+
 

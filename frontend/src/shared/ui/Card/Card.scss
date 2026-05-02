@@ -1,0 +1,9 @@
+@use '@app/styles/index' as *;
+
+.card {
+  background-color: $color-white;
+  border-radius: calc-rem(16);
+  box-shadow: 0 calc-rem(8) calc-rem(30) rgba(0, 0, 0, 0.05);
+  width: 100%;
+  transition: all 0.3s;
+}

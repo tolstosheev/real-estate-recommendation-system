@@ -1,12 +1,15 @@
 @use '@app/styles/index' as *;
 
-.register-page {
+.register-form {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  background-color: $color-gray-100;
+  flex-direction: column;
+  gap: calc-rem(16);
 }
+
+.register-form__submit {
+  margin-top: calc-rem(8);
+}
+
 
 .register-card {
   background-color: $color-white;

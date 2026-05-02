@@ -1,0 +1,26 @@
+@use '@app/styles/index' as *;
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: calc-rem(8);
+}
+
+.input-label {
+  font-size: calc-rem(14);
+  color: $color-gray-600;
+}
+
+.input-field {
+  padding: calc-rem(12);
+  border: 1px solid $color-gray-300;
+  border-radius: calc-rem(8);
+  font-size: calc-rem(16);
+  transition: border-color 0.2s;
+  width: 100%;
+
+  &:focus {
+    outline: none;
+    border-color: $color-accent;
+  }
+}
