@@ -1,0 +1,26 @@
+@use '@app/styles/index' as *;
+
+.yandex-map {
+  width: 100%;
+  height: 100%;
+  border-radius: calc-rem(12);
+  overflow: hidden;
+}
+
+.map-marker-label {
+  background-color: $color-white;
+  color: $color-primary;
+  padding: calc-rem(4) calc-rem(8);
+  border-radius: calc-rem(4);
+  font-size: calc-rem(12);
+  font-weight: 700;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  white-space: nowrap;
+  border: 1px solid $color-gray-200;
+}
+
+.map-marker-label--ai {
+  background-color: $color-accent;
+  color: $color-white;
+  border-color: $color-accent;
+}

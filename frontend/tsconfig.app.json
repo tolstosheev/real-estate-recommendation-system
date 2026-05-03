@@ -28,7 +28,8 @@
       "@widgets/*": ["src/widgets/*"],
       "@features/*": ["src/features/*"],
       "@entities/*": ["src/entities/*"],
-      "@shared/*": ["src/shared/*"]
+      "@shared/*": ["src/shared/*"],
+      "ymaps3": ["./node_modules/@yandex/ymaps3-types"]
     }
   },
   "include": ["src"]

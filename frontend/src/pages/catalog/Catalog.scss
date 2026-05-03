@@ -1,0 +1,49 @@
+@use '@app/styles/index' as *;
+
+.catalog-page {
+  display: flex;
+  height: calc(100vh - rem(80));
+  overflow: hidden;
+}
+
+.catalog-sidebar {
+  width: calc-rem(400);
+  border-right: 1px solid $color-gray-200;
+  display: flex;
+  flex-direction: column;
+  background-color: $color-white;
+}
+
+.catalog-filters {
+  padding: calc-rem(20);
+  border-bottom: 1px solid $color-gray-100;
+}
+
+.catalog-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: calc-rem(20);
+  display: flex;
+  flex-direction: column;
+  gap: calc-rem(16);
+}
+
+.catalog-map-container {
+  flex: 1;
+  position: relative;
+}
+
+@media (max-width: #{$bp-tablet}) {
+  .catalog-page {
+    flex-direction: column;
+    height: auto;
+  }
+  .catalog-sidebar {
+    width: 100%;
+    height: auto;
+    max-height: calc(50vh);
+  }
+  .catalog-map-container {
+    height: calc(50vh);
+  }
+}

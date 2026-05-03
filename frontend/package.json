@@ -30,6 +30,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
+    "@yandex/ymaps3-types": "^1.0.19462911",
     "axios-mock-adapter": "^2.1.0",
     "eslint": "^10.2.1",
     "eslint-plugin-react-hooks": "^7.1.1",
