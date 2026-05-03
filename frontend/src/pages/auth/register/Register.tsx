@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '@shared/api/auth.service';
+import { useAppDispatch } from '@app/store/hooks';
+import { setCredentials } from '@entities/user/model/slice';
 import AuthLayout from '@shared/ui/AuthLayout';
 import Input from '@shared/ui/Input';
 import Button from '@shared/ui/Button';
@@ -14,13 +16,24 @@ const Register: React.FC = () => {
   });
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     try {
-      await authService.register(formData);
-      navigate('/login');
+      const user = await authService.register(formData);
+      const loginData = await authService.login({ 
+        email: formData.email, 
+        password: formData.password 
+      });
+      
+      dispatch(setCredentials({ 
+        user: user, 
+        token: loginData.access_token 
+      }));
+      
+      navigate('/');
     } catch (err: any) {
       setError(err.response?.data?.detail || 'An error occurred');
     }

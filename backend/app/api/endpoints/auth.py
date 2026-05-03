@@ -23,8 +23,11 @@ async def register(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.post("/token", response_model=Token, summary="User Authentication", description="Authenticates user and returns a JWT access token")
-async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)):
+@router.post("/login", response_model=Token, summary="User Authentication", description="Authenticates user and returns a JWT access token")
+async def login(login_data: UserCreate, db: AsyncSession = Depends(get_db)):
+    service = AuthService(db)
+    user = await service.authenticate_user(login_data.email, login_data.password)
+
     service = AuthService(db)
     user = await service.authenticate_user(form_data.username, form_data.password)
     if not user:
