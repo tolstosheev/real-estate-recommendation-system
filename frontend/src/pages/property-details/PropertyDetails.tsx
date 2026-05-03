@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import YandexMap from '@shared/ui/Map';
-import { YMapMarker } from '@shared/api/ymaps3';
-import { Property } from '@entities/property/model/types';
+import YMapMarker from '@shared/ui/Map/YMapMarker';
+import type { Property } from '@entities/property/model/types';
 import api from '@shared/api/api';
 import Button from '@shared/ui/Button';
 import './PropertyDetails.scss';

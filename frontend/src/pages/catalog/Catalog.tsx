@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import YandexMap from '@shared/ui/Map';
-import { YMapMarker } from '@shared/api/ymaps3';
-import PropertyCard from '@entities/property/ui';
+import YMapMarker from '@shared/ui/Map/YMapMarker';
 import { Property } from '@entities/property/model/types';
 import api from '@shared/api/api';
 import './Catalog.scss';

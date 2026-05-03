@@ -1,6 +1,6 @@
-import React from 'react';
-import { YMap, YMapDefaultSchemeLayer, YMapDefaultFeaturesLayer } from '@shared/api/ymaps3';
+import React, { useEffect, useState } from 'react';
 import './Map.scss';
+import { getYmapsComponents } from '@shared/api/ymaps3';
 
 interface MapProps {
   center?: [number, number];
@@ -10,10 +10,22 @@ interface MapProps {
 }
 
 const YandexMap: React.FC<MapProps> = ({ center = [55.7558, 37.6173], zoom = 11, onBoundsChange, children }) => {
+  const [components, setComponents] = useState<any>(null);
+
+  useEffect(() => {
+    getYmapsComponents().then(setComponents).catch(console.error);
+  }, []);
+
+  if (!components) {
+    return <div className="yandex-map" style={{ height: '100%', width: '100%', background: '#eee' }} />;
+  }
+
+  const { YMap, YMapDefaultSchemeLayer, YMapDefaultFeaturesLayer } = components;
+
   return (
     <YMap 
       location={{ center, zoom }} 
-      onBoundsChange={(bounds) => {
+      onBoundsChange={(bounds: any) => {
         if (onBoundsChange) {
           onBoundsChange([
             bounds.northEast.lat,
