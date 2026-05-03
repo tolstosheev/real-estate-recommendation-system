@@ -4,6 +4,8 @@ import Login from '@pages/auth/login';
 import Register from '@pages/auth/register';
 import Onboarding from '@pages/onboarding';
 import Home from '@pages/home';
+import Catalog from '@pages/catalog';
+import PropertyDetails from '@pages/property-details';
 
 const App: React.FC = () => {
   return (
@@ -12,6 +14,8 @@ const App: React.FC = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/onboarding" element={<Onboarding />} />
+        <Route path="/catalog" element={<Catalog />} />
+        <Route path="/property/:id" element={<PropertyDetails />} />
         <Route path="/" element={<Home />} />
       </Routes>
     </Router>

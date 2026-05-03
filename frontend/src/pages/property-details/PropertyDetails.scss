@@ -1,0 +1,133 @@
+@use '@app/styles/index' as *;
+
+.details-page {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: calc-rem(32);
+  padding: calc-rem(40);
+  max-width: calc-rem(1440);
+  margin: 0 auto;
+}
+
+.details-main {
+  display: flex;
+  flex-direction: column;
+  gap: calc-rem(32);
+}
+
+.details-gallery {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: calc-rem(16);
+  height: calc-rem(500);
+}
+
+.gallery-main {
+  width: 100%;
+  height: 100%;
+  border-radius: calc-rem(12);
+  object-fit: cover;
+}
+
+.gallery-side {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: repeat(2, 1fr);
+  gap: calc-rem(16);
+}
+
+.gallery-side img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: calc-rem(12);
+}
+
+.details-info {
+  background-color: $color-white;
+  padding: calc-rem(32);
+  border-radius: calc-rem(16);
+  box-shadow: 0 calc-rem(4) calc-rem(20) rgba(0, 0, 0, 0.05);
+}
+
+.details-info__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: calc-rem(24);
+}
+
+.details-info__title {
+  font-size: calc-rem(32);
+  font-weight: 800;
+  color: $color-primary;
+}
+
+.details-info__price {
+  font-size: calc-rem(24);
+  font-weight: 700;
+  color: $color-accent;
+}
+
+.details-info__specs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: calc-rem(16);
+  margin: calc-rem(24) 0;
+  padding: calc-rem(16);
+  background-color: $color-gray-100;
+  border-radius: calc-rem(12);
+}
+
+.details-info__spec-item {
+  display: flex;
+  flex-direction: column;
+  gap: calc-rem(4);
+}
+
+.details-info__spec-label {
+  font-size: calc-rem(12);
+  color: $color-gray-500;
+  text-transform: uppercase;
+}
+
+.details-info__spec-value {
+  font-size: calc-rem(16);
+  font-weight: 600;
+  color: $color-gray-800;
+}
+
+.details-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: calc-rem(24);
+}
+
+.details-map-widget {
+  height: calc-rem(300);
+  border-radius: calc-rem(16);
+  overflow: hidden;
+  box-shadow: 0 calc-rem(4) calc-rem(12) rgba(0, 0, 0, 0.1);
+}
+
+.details-contact-card {
+  background-color: $color-white;
+  padding: calc-rem(24);
+  border-radius: calc-rem(16);
+  border: 1px solid $color-gray-200;
+}
+
+.details-contact-card__title {
+  font-size: calc-rem(18);
+  font-weight: 700;
+  margin-bottom: calc-rem(16);
+}
+
+@media (max-width: #{$bp-laptop}) {
+  .details-page {
+    grid-template-columns: 1fr;
+  }
+  .details-sidebar {
+    order: -1;
+  }
+}
