@@ -35,16 +35,16 @@ const Catalog: React.FC = () => {
     <div className="catalog-page">
       <aside className="catalog-sidebar">
         <div className="catalog-filters">
-          <h3>Filters</h3>
-          <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-            <input type="number" placeholder="Min Price" />
-            <input type="number" placeholder="Max Price" />
+          <h3 className="catalog-filters__title">Filters</h3>
+          <div className="catalog-filters__inputs">
+            <input type="number" placeholder="Min Price" className="catalog-filters__input" />
+            <input type="number" placeholder="Max Price" className="catalog-filters__input" />
           </div>
         </div>
         <div className="catalog-list">
-          {isLoading && <div style={{ textAlign: 'center' }}>Loading...</div>}
+          {isLoading && <div className="catalog-list__loading">Loading...</div>}
           {!isLoading && properties.length === 0 && (
-            <div style={{ textAlign: 'center', color: '#888', marginTop: '20px' }}>
+            <div className="catalog-list__empty">
               No properties found in this area.
             </div>
           )}

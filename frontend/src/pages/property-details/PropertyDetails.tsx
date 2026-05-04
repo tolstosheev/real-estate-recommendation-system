@@ -26,8 +26,8 @@ const PropertyDetails: React.FC = () => {
     fetchProperty();
   }, [id]);
 
-  if (isLoading) return <div style={{ textAlign: 'center', padding: '40px' }}>Loading...</div>;
-  if (!property) return <div style={{ textAlign: 'center', padding: '40px' }}>Property not found.</div>;
+  if (isLoading) return <div className="page-loading">Loading...</div>;
+  if (!property) return <div className="page-empty">Property not found.</div>;
 
   return (
     <div className="details-page">
@@ -63,8 +63,8 @@ const PropertyDetails: React.FC = () => {
           </div>
 
           <div className="details-info__description">
-            <h3 style={{ marginBottom: '12px' }}>Description</h3>
-            <p style={{ color: '#666', lineHeight: '1.6' }}>{property.description}</p>
+            <h3 className="details-info__description-title">Description</h3>
+            <p className="details-info__description-text">{property.description}</p>
           </div>
         </div>
       </div>
@@ -82,10 +82,10 @@ const PropertyDetails: React.FC = () => {
         </div>
         <div className="details-contact-card">
           <h3 className="details-contact-card__title">Contact Agent</h3>
-          <p style={{ fontSize: '14px', color: '#888', marginBottom: '16px' }}>
+          <p className="details-contact-card__text">
             Interested in this property? Contact our agent for more details.
           </p>
-          <Button variant="primary" style={{ width: '100%' }}>
+          <Button variant="primary" className="details-contact-card__button">
             Send Message
           </Button>
         </div>

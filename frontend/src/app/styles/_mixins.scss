@@ -1,4 +1,9 @@
 @use 'variables' as *;
+@use 'sass:math';
+
+@function calc-rem($pixels) {
+  @return math.div($pixels, 16) * 1rem;
+}
 
 @mixin flex-center {
   display: flex;

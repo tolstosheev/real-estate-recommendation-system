@@ -5,18 +5,18 @@
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background-color: $color-gray-100;
+  background: linear-gradient(135deg, $color-gray-100 0%, $color-gray-200 100%);
   padding: calc-rem(20);
 }
 
 .auth-card-inner {
   padding: calc-rem(40);
   width: 100%;
-  max-width: calc-rem(400);
+  max-width: calc-rem(420);
 }
 
 .auth-title {
-  font-size: calc-rem(24);
+  font-size: calc-rem(28);
   font-weight: 700;
   color: $color-primary;
   margin-bottom: calc-rem(24);
@@ -37,5 +37,15 @@
 
   &:hover {
     text-decoration: underline;
+  }
+}
+
+@media (max-width: #{$bp-mobile}) {
+  .auth-card-inner {
+    padding: calc-rem(24);
+  }
+
+  .auth-title {
+    font-size: calc-rem(24);
   }
 }

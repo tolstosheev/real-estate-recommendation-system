@@ -46,7 +46,7 @@ const Home: React.FC = () => {
         </div>
 
         {isLoading ? (
-          <div style={{ textAlign: 'center', padding: '40px' }}>Loading recommendations...</div>
+          <div className="recommendations-loading">Loading recommendations...</div>
         ) : (
           <Swiper
             modules={[Pagination, Navigation]}
@@ -61,12 +61,14 @@ const Home: React.FC = () => {
             }}
             className="recommendations-slider"
           >
-            {recs.map((rec) => (
-              <SwiperSlide key={rec.property.id}>
-                <div className="recommendations-slide">
-                  <PropertyCard property={rec.property} variant="vertical" />
-                </div>
-              </SwiperSlide>
+            {recs && recs.map((rec) => (
+              rec && rec.property ? (
+                <SwiperSlide key={rec.property.id}>
+                  <div className="recommendations-slide">
+                    <PropertyCard property={rec.property} variant="vertical" />
+                  </div>
+                </SwiperSlide>
+              ) : null
             ))}
           </Swiper>
         )}

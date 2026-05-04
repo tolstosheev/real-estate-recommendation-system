@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '@shared/api/auth.service';
 import { useAppDispatch } from '@app/store/hooks';
 import { setCredentials } from '@entities/user/model/slice';
@@ -49,10 +49,10 @@ const Register: React.FC = () => {
   return (
     <AuthLayout 
       title="Create Account" 
-      footer={<>Already have an account? <a href="/login" className="auth-link">Sign In</a></>}
+      footer={<>Already have an account? <Link to="/login" className="auth-link">Sign In</Link></>}
     >
       <form className="register-form" onSubmit={handleSubmit}>
-        {error && <div style={{ color: 'red', fontSize: '14px', textAlign: 'center', marginBottom: '16px' }}>{error}</div>}
+        {error && <div className="register-form__error">{error}</div>}
         <Input 
           label="Full Name" 
           name="full_name"

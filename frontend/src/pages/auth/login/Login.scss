@@ -9,3 +9,14 @@
 .login-form__submit {
   margin-top: calc-rem(8);
 }
+
+.login-form__error {
+  color: #ef4444;
+  font-size: calc-rem(14);
+  text-align: center;
+  margin-bottom: calc-rem(16);
+  padding: calc-rem(8) calc-rem(12);
+  background-color: #fef2f2;
+  border-radius: calc-rem(8);
+  border: 1px solid #fecaca;
+}

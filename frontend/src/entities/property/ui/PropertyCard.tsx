@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import cn from 'classnames';
 import type { Property } from '@entities/property/model/types';
 import './PropertyCard.scss';
@@ -9,11 +10,17 @@ interface PropertyCardProps {
 }
 
 const PropertyCard: React.FC<PropertyCardProps> = ({ property, variant = 'vertical' }) => {
+  const navigate = useNavigate();
+
+  const handleClick = () => {
+    navigate(`/property/${property.id}`);
+  };
+
   return (
     <div className={cn('property-card', {
       'property-card--horizontal': variant === 'horizontal',
       'property-card--vertical': variant === 'vertical',
-    })}>
+    })} onClick={handleClick}>
       <div className="property-card__image-container">
         <div className="property-card__badge">AI Match {Math.round(property.ai_relevance * 100)}%</div>
         <img src={property.photos[0]} alt={property.title} className="property-card__image" />

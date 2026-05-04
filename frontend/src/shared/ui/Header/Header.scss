@@ -1,0 +1,122 @@
+@use '@app/styles/index' as *;
+
+.header {
+  background-color: $color-white;
+  box-shadow: 0 calc-rem(2) calc-rem(8) rgba(0, 0, 0, 0.06);
+  position: sticky;
+  top: 0;
+  z-index: $z-index-header;
+}
+
+.header__container {
+  max-width: calc-rem(1440);
+  margin: 0 auto;
+  padding: calc-rem(16) calc-rem(24);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header__logo {
+  font-size: calc-rem(24);
+  font-weight: 800;
+  color: $color-primary;
+  text-decoration: none;
+
+  span {
+    color: $color-accent;
+  }
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
+.header__nav {
+  display: flex;
+  gap: calc-rem(24);
+}
+
+.header__nav-link {
+  font-size: calc-rem(15);
+  font-weight: 500;
+  color: $color-gray-600;
+  text-decoration: none;
+  transition: color 0.2s;
+
+  &:hover {
+    color: $color-primary;
+  }
+}
+
+.header__actions {
+  display: flex;
+  align-items: center;
+  gap: calc-rem(16);
+}
+
+.header__user-name {
+  font-size: calc-rem(14);
+  color: $color-gray-700;
+  font-weight: 500;
+}
+
+.header__logout-btn {
+  padding: calc-rem(8) calc-rem(16);
+  background-color: transparent;
+  border: 1px solid $color-gray-300;
+  border-radius: calc-rem(8);
+  color: $color-gray-600;
+  font-size: calc-rem(14);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background-color: $color-gray-100;
+    border-color: $color-gray-400;
+  }
+}
+
+.header__cta-btn {
+  padding: calc-rem(10) calc-rem(20);
+  background-color: $color-primary;
+  color: $color-white;
+  border-radius: calc-rem(8);
+  text-decoration: none;
+  font-size: calc-rem(14);
+  font-weight: 600;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #122743;
+  }
+}
+
+@media (max-width: #{$bp-tablet}) {
+  .header__container {
+    padding: calc-rem(12) calc-rem(16);
+  }
+
+  .header__nav {
+    gap: calc-rem(16);
+  }
+
+  .header__user-name {
+    display: none;
+  }
+}
+
+@media (max-width: #{$bp-mobile}) {
+  .header__container {
+    padding: calc-rem(12);
+  }
+
+  .header__nav {
+    display: none;
+  }
+
+  .header__logo {
+    font-size: calc-rem(20);
+  }
+}

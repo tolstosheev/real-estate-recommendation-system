@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAppDispatch } from '@app/store/hooks';
 import { setCredentials } from '@entities/user/model/slice';
 import { authService } from '@shared/api/auth.service';
@@ -40,10 +40,10 @@ const Login: React.FC = () => {
   return (
     <AuthLayout 
       title="nestAI" 
-      footer={<>Don't have an account? <a href="/register" className="auth-link">Register</a></>}
+      footer={<>Don't have an account? <Link to="/register" className="auth-link">Register</Link></>}
     >
       <form className="login-form" onSubmit={handleSubmit}>
-        {error && <div style={{ color: 'red', fontSize: '14px', textAlign: 'center', marginBottom: '16px' }}>{error}</div>}
+        {error && <div className="login-form__error">{error}</div>}
         <Input 
           label="Email" 
           type="email" 
