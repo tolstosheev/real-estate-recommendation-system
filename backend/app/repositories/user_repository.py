@@ -2,6 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from app.models.models import User
 
+
 class UserRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
@@ -14,9 +15,20 @@ class UserRepository:
         return user_obj
 
     async def get_by_email(self, email: str) -> User | None:
-        result = await self.session.execute(select(User).filter(User.email == email))
+        result = await self.session.execute(select(User).where(User.email == email))
         return result.scalar_one_or_none()
 
     async def get_by_id(self, user_id: str) -> User | None:
-        result = await self.session.execute(select(User).filter(User.id == user_id))
+        result = await self.session.execute(select(User).where(User.id == user_id))
         return result.scalar_one_or_none()
+
+    async def update(self, user_id: str, user_data: dict) -> User | None:
+        user = await self.get_by_id(user_id)
+        if not user:
+            return None
+        for key, value in user_data.items():
+            if hasattr(user, key) and value is not None:
+                setattr(user, key, value)
+        await self.session.commit()
+        await self.session.refresh(user)
+        return user

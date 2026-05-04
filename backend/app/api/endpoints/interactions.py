@@ -10,10 +10,12 @@ from typing import List
 
 router = APIRouter()
 
-@router.post("/interact", response_model=InteractionOut, status_code=status.HTTP_201_CREATED, summary="Interact with Property", description="Like or dislike a property to train the recommendation engine")
+
+@router.post("/interact", response_model=InteractionOut, status_code=status.HTTP_201_CREATED,
+             summary="Interact with Property", description="Like or dislike a property to train the recommendation engine")
 async def interact_with_property(
-    interaction_in: InteractionCreate, 
-    current_user: User = Depends(get_current_user), 
+    interaction_in: InteractionCreate,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     service = InteractionService(db)
@@ -21,28 +23,29 @@ async def interact_with_property(
         result = await service.add_interaction(current_user.id, interaction_in.model_dump())
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
-        
+
     if result["status"] == "removed":
         raise HTTPException(status_code=204, detail="Interaction removed")
     if result["status"] == "exists":
         return result["interaction"]
     return result["interaction"]
 
-@router.get("/favorites", response_model=List[PropertyOut], summary="Get My Favorites", description="Returns a list of all properties the current user has liked")
+
+@router.get("/favorites", response_model=List[PropertyOut], summary="Get My Favorites",
+            description="Returns a list of all properties the current user has liked")
 async def get_my_favorites(
-    current_user: User = Depends(get_current_user), 
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     service = InteractionService(db)
     favorites = await service.get_favorites(current_user.id)
-    
+
     from app.services.property_service import PropertyService
     prop_service = PropertyService(db)
-    
+
     enriched_favorites = []
     for prop in favorites:
         result = await prop_service.get_property_details(str(prop.id))
         enriched_favorites.append(result)
-        
-    return enriched_favorites
 
+    return enriched_favorites

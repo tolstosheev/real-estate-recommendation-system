@@ -2,6 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.repositories.preferences_repository import UserPreferenceRepository
 from app.core.redis import RedisClient
 
+
 class UserPreferenceService:
     def __init__(self, session: AsyncSession):
         self.repository = UserPreferenceRepository(session)

@@ -1,7 +1,8 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import delete, join
+from sqlalchemy import delete
 from app.models.models import Interaction, Property
+
 
 class InteractionRepository:
     def __init__(self, session: AsyncSession):
@@ -9,8 +10,9 @@ class InteractionRepository:
 
     async def create_interaction(self, interaction_data: dict) -> Interaction:
         weights = {"view": 1, "like": 5, "dislike": -5}
-        interaction_data["weight"] = weights.get(interaction_data["interaction_type"], 1)
-        
+        interaction_data["weight"] = weights.get(
+            interaction_data["interaction_type"], 1)
+
         interaction_obj = Interaction(**interaction_data)
         self.session.add(interaction_obj)
         await self.session.commit()
@@ -19,7 +21,7 @@ class InteractionRepository:
 
     async def get_user_favorites(self, user_id: str):
         query = select(Property).join(Interaction, Property.id == Interaction.property_id).filter(
-            Interaction.user_id == user_id, 
+            Interaction.user_id == user_id,
             Interaction.interaction_type == "like"
         )
         result = await self.session.execute(query)
@@ -27,7 +29,7 @@ class InteractionRepository:
 
     async def find_interaction(self, user_id: str, property_id: str):
         query = select(Interaction).filter(
-            Interaction.user_id == user_id, 
+            Interaction.user_id == user_id,
             Interaction.property_id == property_id
         )
         result = await self.session.execute(query)
@@ -38,4 +40,3 @@ class InteractionRepository:
         result = await self.session.execute(query)
         await self.session.commit()
         return result.rowcount > 0
-

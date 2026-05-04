@@ -5,6 +5,7 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
+
 class RedisClient:
     _instance: Optional[redis.Redis] = None
 
@@ -19,7 +20,8 @@ class RedisClient:
 
             if cls._instance is None:
                 redis_url = os.getenv("REDIS_URL", "redis://redis:6379/0")
-                cls._instance = redis.from_url(redis_url, decode_responses=True)
+                cls._instance = redis.from_url(
+                    redis_url, decode_responses=True)
                 await cls._instance.ping()
             return cls._instance
         except Exception as e:
@@ -40,4 +42,3 @@ class RedisClient:
         if cls._instance:
             await cls._instance.close()
             cls._instance = None
-
