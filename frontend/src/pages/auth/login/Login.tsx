@@ -24,6 +24,7 @@ const Login: React.FC = () => {
     setIsLoading(true);
     try {
       const data = await authService.login({ email, password });
+      localStorage.setItem('accessToken', data.access_token);
       const currentUser = await authService.getCurrentUser();
       dispatch(setCredentials({ user: currentUser, token: data.access_token }));
       navigate('/');

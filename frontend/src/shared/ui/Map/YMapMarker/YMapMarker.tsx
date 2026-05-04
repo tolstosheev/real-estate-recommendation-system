@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { getYmapsComponents } from '@shared/api/ymaps3';
 
 interface MapMarkerProps {
@@ -7,17 +7,27 @@ interface MapMarkerProps {
 }
 
 const YMapMarker: React.FC<MapMarkerProps> = ({ coordinates, children }) => {
-  const [Marker, setMarker] = useState<React.ElementType | null>(null);
+  const [MarkerComponent, setMarkerComponent] = useState<React.ElementType | null>(null);
 
   useEffect(() => {
-    getYmapsComponents().then(components => {
-      setMarker(() => components.YMapMarker);
-    });
+    let cancelled = false;
+
+    getYmapsComponents()
+      .then((components) => {
+        if (!cancelled) {
+          setMarkerComponent(() => components.YMapMarker);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  if (!Marker) return null;
+  if (!MarkerComponent) return null;
 
-  return <Marker coordinates={coordinates}>{children}</Marker>;
+  return <MarkerComponent coordinates={coordinates}>{children}</MarkerComponent>;
 };
 
 export default YMapMarker;

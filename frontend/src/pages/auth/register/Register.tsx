@@ -30,6 +30,8 @@ const Register: React.FC = () => {
         email: formData.email, 
         password: formData.password 
       });
+
+      localStorage.setItem('accessToken', loginData.access_token);
       
       dispatch(setCredentials({ 
         user: user, 
