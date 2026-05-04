@@ -16,8 +16,8 @@ async def test_redis_connection():
 async def test_recommendations_caching(client: AsyncClient):
     payload = {"email": "cache@example.com", "password": "password123", "full_name": "Cache User"}
     await client.post("/auth/register", json=payload)
-    login_data = {"username": "cache@example.com", "password": "password123"}
-    token = (await client.post("/auth/token", data=login_data)).json()["access_token"]
+    login_data = {"email": "cache@example.com", "password": "password123"}
+    token = (await client.post("/auth/login", json=login_data)).json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
     p1 = {"title": "P1", "price": 100, "area": 50, "rooms": 1, "address": "A", "lat": 0, "lon": 0, "property_type": "House"}

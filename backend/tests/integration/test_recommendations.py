@@ -5,8 +5,8 @@ from httpx import AsyncClient
 async def test_recommendations_cold_start(client: AsyncClient):
     payload = {"email": "cold@example.com", "password": "password123", "full_name": "Cold User"}
     await client.post("/auth/register", json=payload)
-    login_data = {"username": "cold@example.com", "password": "password123"}
-    token_res = await client.post("/auth/token", data=login_data)
+    login_data = {"email": "cold@example.com", "password": "password123"}
+    token_res = await client.post("/auth/login", json=login_data)
     token = token_res.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -21,8 +21,8 @@ async def test_recommendations_cold_start(client: AsyncClient):
 async def test_recommendations_personalized(client: AsyncClient):
     payload = {"email": "rec@example.com", "password": "password123", "full_name": "Rec User"}
     await client.post("/auth/register", json=payload)
-    login_data = {"username": "rec@example.com", "password": "password123"}
-    token_res = await client.post("/auth/token", data=login_data)
+    login_data = {"email": "rec@example.com", "password": "password123"}
+    token_res = await client.post("/auth/login", json=login_data)
     token = token_res.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 

@@ -12,8 +12,8 @@ async def test_full_recommendation_cycle(client: AsyncClient):
     }
     await client.post("/auth/register", json=reg_payload)
     
-    login_payload = {"username": user_email, "password": "securepassword123"}
-    login_res = await client.post("/auth/token", data=login_payload)
+    login_payload = {"email": user_email, "password": "securepassword123"}
+    login_res = await client.post("/auth/login", json=login_payload)
     token = login_res.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 

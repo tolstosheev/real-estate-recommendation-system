@@ -1,13 +1,12 @@
 import asyncio
-from sqlalchemy import text
 from app.core.db import engine, Base
 from app.models import models
 
 async def init_db():
     async with engine.begin() as conn:
+        # Import models to ensure they are registered with Base
         await conn.run_sync(Base.metadata.create_all)
-        await conn.execute(text("CREATE INDEX IF NOT EXISTS idx_properties_location ON properties USING GIST (location);"))
-    print("Database initialized successfully")
+    print("Database tables created successfully.")
 
 if __name__ == "__main__":
     asyncio.run(init_db())

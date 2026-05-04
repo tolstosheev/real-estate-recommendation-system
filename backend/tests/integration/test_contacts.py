@@ -21,8 +21,8 @@ async def test_user_contact_info(client: AsyncClient):
     assert user_data["phone_number"] == phone
     assert user_data["telegram_handle"] == telegram
 
-    token_res = await client.post("/auth/token", data={
-        "username": email, 
+    token_res = await client.post("/auth/login", json={
+        "email": email, 
         "password": password
     })
     token = token_res.json()["access_token"]

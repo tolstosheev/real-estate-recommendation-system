@@ -56,10 +56,10 @@ async def test_login_success(client: AsyncClient):
     await client.post("/auth/register", json=payload)
     
     login_data = {
-        "username": "login@example.com",
+        "email": "login@example.com",
         "password": "loginpassword"
     }
-    response = await client.post("/auth/token", data=login_data)
+    response = await client.post("/auth/login", json=login_data)
     assert response.status_code == 200
     data = response.json()
     assert "access_token" in data
@@ -68,10 +68,10 @@ async def test_login_success(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_login_failure(client: AsyncClient):
     login_data = {
-        "username": "nonexistent@example.com",
+        "email": "nonexistent@example.com",
         "password": "wrongpassword"
     }
-    response = await client.post("/auth/token", data=login_data)
+    response = await client.post("/auth/login", json=login_data)
     assert response.status_code == 401
     assert response.json()["detail"] == "Incorrect email or password"
 
@@ -84,8 +84,8 @@ async def test_get_me_success(client: AsyncClient):
     }
     await client.post("/auth/register", json=payload)
     
-    login_data = {"username": "me@example.com", "password": "mepassword"}
-    token_res = await client.post("/auth/token", data=login_data)
+    login_data = {"email": "me@example.com", "password": "mepassword"}
+    token_res = await client.post("/auth/login", json=login_data)
     token = token_res.json()["access_token"]
     
     headers = {"Authorization": f"Bearer {token}"}

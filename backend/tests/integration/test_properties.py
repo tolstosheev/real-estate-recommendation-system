@@ -9,8 +9,8 @@ async def test_property_crud(client: AsyncClient):
         "full_name": "Owner"
     }
     await client.post("/auth/register", json=payload)
-    login_data = {"username": "owner@example.com", "password": "password123"}
-    token_res = await client.post("/auth/token", data=login_data)
+    login_data = {"email": "owner@example.com", "password": "password123"}
+    token_res = await client.post("/auth/login", json=login_data)
     token = token_res.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -46,10 +46,10 @@ async def test_property_unauthorized_access(client: AsyncClient):
     await client.post("/auth/register", json=u1_payload)
     await client.post("/auth/register", json=u2_payload)
     
-    l1_data = {"username": "u1@example.com", "password": "password123"}
-    l2_data = {"username": "u2@example.com", "password": "password123"}
-    t1 = (await client.post("/auth/token", data=l1_data)).json()["access_token"]
-    t2 = (await client.post("/auth/token", data=l2_data)).json()["access_token"]
+    l1_data = {"email": "u1@example.com", "password": "password123"}
+    l2_data = {"email": "u2@example.com", "password": "password123"}
+    t1 = (await client.post("/auth/login", json=l1_data)).json()["access_token"]
+    t2 = (await client.post("/auth/login", json=l2_data)).json()["access_token"]
     
     prop_data = {
         "title": "Private House", "price": 100, "address": "A", "lat": 0, "lon": 0, "property_type": "House"
@@ -67,8 +67,8 @@ async def test_property_unauthorized_access(client: AsyncClient):
 async def test_property_not_found(client: AsyncClient):
     payload = {"email": "lost@example.com", "password": "password123", "full_name": "Lost"}
     await client.post("/auth/register", json=payload)
-    login_data = {"username": "lost@example.com", "password": "password123"}
-    token = (await client.post("/auth/token", data=login_data)).json()["access_token"]
+    login_data = {"email": "lost@example.com", "password": "password123"}
+    token = (await client.post("/auth/login", json=login_data)).json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
     res = await client.get(f"/api/properties/00000000-0000-0000-0000-000000000000")
@@ -84,8 +84,8 @@ async def test_property_not_found(client: AsyncClient):
 async def test_geo_search(client: AsyncClient):
     payload = {"email": "geo@example.com", "password": "password123", "full_name": "Geo"}
     await client.post("/auth/register", json=payload)
-    login_data = {"username": "geo@example.com", "password": "password123"}
-    token = (await client.post("/auth/token", data=login_data)).json()["access_token"]
+    login_data = {"email": "geo@example.com", "password": "password123"}
+    token = (await client.post("/auth/login", json=login_data)).json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
     p1 = {"title": "Near", "price": 100, "address": "A", "lat": 40.0, "lon": 40.0, "property_type": "House"}
@@ -102,8 +102,8 @@ async def test_geo_search(client: AsyncClient):
 async def test_property_filters(client: AsyncClient):
     payload = {"email": "filt@example.com", "password": "password123", "full_name": "Filt"}
     await client.post("/auth/register", json=payload)
-    login_data = {"username": "filt@example.com", "password": "password123"}
-    token = (await client.post("/auth/token", data=login_data)).json()["access_token"]
+    login_data = {"email": "filt@example.com", "password": "password123"}
+    token = (await client.post("/auth/login", json=login_data)).json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
     p1 = {"title": "Cheap", "price": 50000, "address": "A", "lat": 0, "lon": 0, "rooms": 1, "property_type": "Studio"}
@@ -123,8 +123,8 @@ async def test_property_filters(client: AsyncClient):
 async def test_invalid_coordinates(client: AsyncClient):
     payload = {"email": "val@example.com", "password": "password123", "full_name": "Val"}
     await client.post("/auth/register", json=payload)
-    login_data = {"username": "val@example.com", "password": "password123"}
-    token = (await client.post("/auth/token", data=login_data)).json()["access_token"]
+    login_data = {"email": "val@example.com", "password": "password123"}
+    token = (await client.post("/auth/login", json=login_data)).json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
     prop_data = {
@@ -143,8 +143,8 @@ async def test_property_owner_contacts(client: AsyncClient):
         "telegram_handle": "@contact_me"
     }
     await client.post("/auth/register", json=payload)
-    login_data = {"username": "contact@example.com", "password": "password123"}
-    token_res = await client.post("/auth/token", data=login_data)
+    login_data = {"email": "contact@example.com", "password": "password123"}
+    token_res = await client.post("/auth/login", json=login_data)
     token = token_res.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 

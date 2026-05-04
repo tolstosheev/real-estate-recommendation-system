@@ -6,8 +6,8 @@ from decimal import Decimal
 async def test_user_preferences(client: AsyncClient):
     payload = {"email": "pref@example.com", "password": "password123", "full_name": "Pref User"}
     await client.post("/auth/register", json=payload)
-    login_data = {"username": "pref@example.com", "password": "password123"}
-    token_res = await client.post("/auth/token", data=login_data)
+    login_data = {"email": "pref@example.com", "password": "password123"}
+    token_res = await client.post("/auth/login", json=login_data)
     token = token_res.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -31,8 +31,8 @@ async def test_user_preferences(client: AsyncClient):
 async def test_property_interactions(client: AsyncClient):
     payload = {"email": "int@example.com", "password": "password123", "full_name": "Int User"}
     await client.post("/auth/register", json=payload)
-    login_data = {"username": "int@example.com", "password": "password123"}
-    token_res = await client.post("/auth/token", data=login_data)
+    login_data = {"email": "int@example.com", "password": "password123"}
+    token_res = await client.post("/auth/login", json=login_data)
     token = token_res.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -60,8 +60,8 @@ async def test_property_interactions(client: AsyncClient):
 async def test_interaction_nonexistent_property(client: AsyncClient):
     payload = {"email": "err@example.com", "password": "password123", "full_name": "Err"}
     await client.post("/auth/register", json=payload)
-    login_data = {"username": "err@example.com", "password": "password123"}
-    token = (await client.post("/auth/token", data=login_data)).json()["access_token"]
+    login_data = {"email": "err@example.com", "password": "password123"}
+    token = (await client.post("/auth/login", json=login_data)).json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
     like_data = {

@@ -14,8 +14,8 @@ async def test_user_journey_recommendation_shift(client: AsyncClient):
     })
     assert reg_res.status_code == 201
     
-    token_res = await client.post("/auth/token", data={
-        "username": email, 
+    token_res = await client.post("/auth/login", json={
+        "email": email, 
         "password": password
     })
     assert token_res.status_code == 200
