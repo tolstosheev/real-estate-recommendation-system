@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import YandexMap from '@shared/ui/Map';
 import YMapMarker from '@shared/ui/Map/YMapMarker';
 import PropertyCard from '@entities/property/ui/PropertyCard';
@@ -9,56 +9,62 @@ import './Catalog.scss';
 const Catalog: React.FC = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasData, setHasData] = useState(false);
+  const [currentBounds, setCurrentBounds] = useState<[number, number, number, number] | null>(null);
   const [filters, setFilters] = useState({
     minPrice: '',
     maxPrice: '',
     rooms: '',
     propertyType: '',
   });
+  const boundsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const fetchProperties = async (bounds: [number, number, number, number]) => {
+  const fetchProperties = useCallback(async (bounds: [number, number, number, number], activeFilters: typeof filters) => {
     setIsLoading(true);
     try {
       const [north, east, south, west] = bounds;
-      const response = await api.get(`/api/properties/map`, {
-        params: {
-          min_lat: south,
-          max_lat: north,
-          min_lon: west,
-          max_lon: east,
-        }
-      });
+      const params: Record<string, string | number> = {
+        min_lat: south,
+        max_lat: north,
+        min_lon: west,
+        max_lon: east,
+        limit: 200,
+      };
+
+      if (activeFilters.minPrice) params.min_price = Number(activeFilters.minPrice);
+      if (activeFilters.maxPrice) params.max_price = Number(activeFilters.maxPrice);
+      if (activeFilters.rooms) params.rooms = Number(activeFilters.rooms);
+      if (activeFilters.propertyType) params.property_type = activeFilters.propertyType;
+
+      const response = await api.get(`/api/properties/map`, { params });
       setProperties(response.data);
+      setHasData(true);
     } catch (err) {
       console.error(err);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   const handleBoundsChange = (bounds: [number, number, number, number]) => {
-    fetchProperties(bounds);
+    setCurrentBounds(bounds);
+    if (boundsTimeoutRef.current) {
+      clearTimeout(boundsTimeoutRef.current);
+    }
+    boundsTimeoutRef.current = setTimeout(() => {
+      fetchProperties(bounds, filters);
+    }, 500) as unknown as ReturnType<typeof setTimeout>;
   };
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
 
-  const applyFilters = async () => {
-    setIsLoading(true);
-    try {
-      const params: Record<string, string | number> = { limit: 100 };
-      if (filters.minPrice) params.min_price = Number(filters.minPrice);
-      if (filters.maxPrice) params.max_price = Number(filters.maxPrice);
-      if (filters.rooms) params.rooms = Number(filters.rooms);
-      if (filters.propertyType) params.property_type = filters.propertyType;
-
-      const response = await api.get('/api/properties/', { params });
-      setProperties(response.data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsLoading(false);
+  const applyFilters = () => {
+    if (currentBounds) {
+      fetchProperties(currentBounds, filters);
+    } else {
+      fetchProperties([56.5, 38.5, 55.0, 36.5], filters);
     }
   };
 
@@ -106,9 +112,14 @@ const Catalog: React.FC = () => {
         </div>
         <div className="catalog-list">
           {isLoading && <div className="catalog-list__loading">Loading...</div>}
-          {!isLoading && properties.length === 0 && (
+          {!isLoading && hasData && properties.length === 0 && (
             <div className="catalog-list__empty">
               No properties found in this area.
+            </div>
+          )}
+          {!isLoading && !hasData && (
+            <div className="catalog-list__empty">
+              Move the map to load properties
             </div>
           )}
           {properties.map(prop => (
@@ -119,8 +130,8 @@ const Catalog: React.FC = () => {
       <main className="catalog-map-container">
         <YandexMap onBoundsChange={handleBoundsChange}>
           {properties.map(prop => (
-            <YMapMarker 
-              key={prop.id} 
+            <YMapMarker
+              key={prop.id}
               coordinates={[prop.lat, prop.lon]}
             >
               <div className="map-marker-label">

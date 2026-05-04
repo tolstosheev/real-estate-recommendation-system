@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import './Map.scss';
 import { getYmapsComponents } from '@shared/api/ymaps3';
 
@@ -15,14 +15,10 @@ interface MapProps {
 }
 
 const YandexMap: React.FC<MapProps> = ({ center = [55.7558, 37.6173], zoom = 11, onBoundsChange, children }) => {
-  const [components, setComponents] = useState<Record<string, React.ElementType> | null>(null);
+  const [components, setComponents] = useState<ReturnType<typeof getYmapsComponents> extends Promise<infer T> ? T : never | null>(null);
   const [hasError, setHasError] = useState(false);
-  const initRef = useRef(false);
 
   useEffect(() => {
-    if (initRef.current) return;
-    initRef.current = true;
-
     getYmapsComponents()
       .then(setComponents)
       .catch((err) => {
@@ -53,11 +49,11 @@ const YandexMap: React.FC<MapProps> = ({ center = [55.7558, 37.6173], zoom = 11,
     );
   }
 
-  const { YMap, YMapDefaultSchemeLayer, YMapDefaultFeaturesLayer } = components;
+  const { YMap, YMapDefaultSchemeLayer, YMapDefaultFeaturesLayer, reactify } = components;
 
   return (
-    <YMap 
-      location={{ center, zoom }} 
+    <YMap
+      location={reactify.useDefault({ center, zoom })}
       onBoundsChange={(bounds: YMapBounds) => {
         if (onBoundsChange) {
           onBoundsChange([

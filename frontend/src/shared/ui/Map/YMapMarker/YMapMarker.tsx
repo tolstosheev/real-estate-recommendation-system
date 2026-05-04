@@ -3,31 +3,35 @@ import { getYmapsComponents } from '@shared/api/ymaps3';
 
 interface MapMarkerProps {
   coordinates: [number, number];
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 const YMapMarker: React.FC<MapMarkerProps> = ({ coordinates, children }) => {
-  const [MarkerComponent, setMarkerComponent] = useState<React.ElementType | null>(null);
+  const [YMapMarkerComponent, setYMapMarkerComponent] = useState<React.ElementType | null>(null);
+  const [reactify, setReactify] = useState<{ useDefault: (value: unknown, deps?: unknown[]) => unknown } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
     getYmapsComponents()
-      .then((components) => {
+      .then(({ YMapMarker, reactify: rf }) => {
         if (!cancelled) {
-          setMarkerComponent(() => components.YMapMarker);
+          setYMapMarkerComponent(() => YMapMarker);
+          setReactify(() => rf);
         }
       })
       .catch(() => {});
 
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
-  if (!MarkerComponent) return null;
+  if (!YMapMarkerComponent || !reactify) return null;
 
-  return <MarkerComponent coordinates={coordinates}>{children}</MarkerComponent>;
+  return (
+    <YMapMarkerComponent coordinates={reactify.useDefault(coordinates)}>
+      {children}
+    </YMapMarkerComponent>
+  );
 };
 
 export default YMapMarker;

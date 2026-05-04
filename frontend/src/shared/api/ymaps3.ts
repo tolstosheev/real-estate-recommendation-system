@@ -1,20 +1,15 @@
 import React from 'react';
-import ReactDOM from 'react-dom/client';
+import ReactDOM from 'react-dom';
 
-export interface YMaps3Global {
-  import: (moduleName: string) => Promise<unknown>;
-  ready: Promise<void>;
+interface YMapsComponents {
+  YMap: React.ElementType;
+  YMapDefaultSchemeLayer: React.ElementType;
+  YMapDefaultFeaturesLayer: React.ElementType;
+  YMapMarker: React.ElementType;
+  reactify: { useDefault: (value: unknown, deps?: unknown[]) => unknown };
 }
 
-interface YMaps3Reactify {
-  reactify: {
-    bindTo: (react: unknown, reactDom: unknown) => {
-      module: (ymaps3: YMaps3Global) => Record<string, React.ElementType>;
-    };
-  };
-}
-
-let ymapsPromise: Promise<Record<string, React.ElementType>> | null = null;
+let ymapsPromise: Promise<YMapsComponents> | null = null;
 
 function loadYandexMapsScript(): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -38,28 +33,28 @@ function loadYandexMapsScript(): Promise<void> {
   });
 }
 
-async function initYmaps(): Promise<Record<string, React.ElementType>> {
-  const ymaps3 = window.ymaps3;
-  if (!ymaps3) {
+async function initYmaps(): Promise<YMapsComponents> {
+  if (!window.ymaps3) {
     await loadYandexMapsScript();
-    await new Promise((resolve) => setTimeout(resolve, 500));
   }
 
-  const ymaps3Final = window.ymaps3;
-  if (!ymaps3Final) {
-    throw new Error('Yandex Maps API script not loaded. Please check your API key.');
-  }
-  
-  const [ymaps3React] = await Promise.all([
-    ymaps3Final.import('@yandex/ymaps3-reactify'), 
-    ymaps3Final.ready
-  ]);
-  
-  const reactify = (ymaps3React as YMaps3Reactify).reactify.bindTo(React, ReactDOM);
-  return reactify.module(ymaps3Final);
+  const ymaps3 = window.ymaps3;
+  await ymaps3.ready;
+
+  const ymaps3Reactify = await ymaps3.import('@yandex/ymaps3-reactify');
+  const reactify = ymaps3Reactify.reactify.bindTo(React, ReactDOM);
+  const components = reactify.module(ymaps3);
+
+  return {
+    YMap: components.YMap,
+    YMapDefaultSchemeLayer: components.YMapDefaultSchemeLayer,
+    YMapDefaultFeaturesLayer: components.YMapDefaultFeaturesLayer,
+    YMapMarker: components.YMapMarker,
+    reactify,
+  };
 }
 
-export const getYmapsComponents = async (): Promise<Record<string, React.ElementType>> => {
+export const getYmapsComponents = async (): Promise<YMapsComponents> => {
   if (!ymapsPromise) {
     ymapsPromise = initYmaps();
   }

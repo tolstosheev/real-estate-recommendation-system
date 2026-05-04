@@ -13,6 +13,7 @@ const PropertyDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [property, setProperty] = useState<Property | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [imgErrors, setImgErrors] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     const fetchProperty = async () => {
@@ -31,18 +32,29 @@ const PropertyDetails: React.FC = () => {
   if (isLoading) return <div className="page-loading">Loading...</div>;
   if (!property) return <div className="page-empty">Property not found.</div>;
 
-  const images = property.images && property.images.length > 0 ? property.images : [PLACEHOLDER_IMG];
-  const mainImage = images[0];
-  const sideImages = images.slice(1, 3);
+  const validImages = (property.images || []).filter(url => url && url.length > 0);
+  const displayImages = validImages.length > 0 ? validImages : [PLACEHOLDER_IMG];
+  const mainImage = !imgErrors[0] ? displayImages[0] : PLACEHOLDER_IMG;
+  const sideImages = displayImages.slice(1, 3);
 
   return (
     <div className="details-page">
       <div className="details-main">
         <div className="details-gallery">
-          <img src={mainImage} className="gallery-main" alt={property.title} />
+          <img
+            src={mainImage}
+            className="gallery-main"
+            alt={property.title}
+            onError={() => setImgErrors(prev => ({ ...prev, 0: true }))}
+          />
           <div className="gallery-side">
             {sideImages.map((photo, i) => (
-              <img key={i} src={photo} alt={property.title} />
+              <img
+                key={i}
+                src={!imgErrors[i + 1] ? photo : PLACEHOLDER_IMG}
+                alt={property.title}
+                onError={() => setImgErrors(prev => ({ ...prev, [i + 1]: true }))}
+              />
             ))}
           </div>
         </div>
