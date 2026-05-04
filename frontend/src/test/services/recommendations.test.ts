@@ -48,4 +48,24 @@ describe('recommendationsService', () => {
 
     await expect(recommendationsService.getRecommendations()).rejects.toThrow();
   });
+
+  it('should return empty array when no recommendations available', async () => {
+    mock.onGet('/api/recommendations').reply(200, []);
+
+    const result = await recommendationsService.getRecommendations();
+    expect(result).toHaveLength(0);
+  });
+
+  it('should handle network failure gracefully', async () => {
+    mock.onGet('/api/recommendations').networkError();
+
+    await expect(recommendationsService.getRecommendations()).rejects.toThrow();
+  });
+
+  it('should handle malformed response data', async () => {
+    mock.onGet('/api/recommendations').reply(200, { invalid: 'data' });
+
+    const result = await recommendationsService.getRecommendations();
+    expect(Array.isArray(result)).toBe(false);
+  });
 });
