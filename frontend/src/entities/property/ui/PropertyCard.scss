@@ -4,13 +4,13 @@
   background-color: $color-white;
   border-radius: calc-rem(12);
   overflow: hidden;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   cursor: pointer;
   border: 1px solid $color-gray-200;
 
   &:hover {
     transform: translateY(calc-rem(-4));
-    box-shadow: 0 calc-rem(12) calc-rem(24) rgba(0, 0, 0, 0.1);
+    box-shadow: 0 calc-rem(12) calc-rem(24) rgba(26, 54, 93, 0.12);
   }
 
   &--horizontal {
@@ -42,13 +42,18 @@
 .property-card__image-container {
   position: relative;
   overflow: hidden;
+  background-color: $color-gray-100;
 }
 
 .property-card__image {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s;
+  transition: transform 0.3s ease;
+
+  &:not([src^="data:"]) {
+    min-height: calc-rem(180);
+  }
 }
 
 .property-card:hover .property-card__image {
@@ -66,6 +71,7 @@
   font-size: calc-rem(12);
   font-weight: 700;
   z-index: 1;
+  letter-spacing: 0.02em;
 }
 
 .property-card__content {
@@ -80,6 +86,7 @@
   font-size: calc-rem(20);
   font-weight: 800;
   color: $color-primary;
+  line-height: 1.2;
 }
 
 .property-card__address {
@@ -89,6 +96,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.4;
 }
 
 .property-card__params {
@@ -103,6 +111,15 @@
   display: flex;
   align-items: center;
   gap: calc-rem(4);
+
+  &::before {
+    content: '';
+    display: inline-block;
+    width: calc-rem(4);
+    height: calc-rem(4);
+    border-radius: 50%;
+    background-color: $color-gray-400;
+  }
 }
 
 .property-card__footer {
@@ -123,10 +140,10 @@
   font-size: calc-rem(14);
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background-color 0.2s ease;
 
   &:hover {
-    background-color: #122743;
+    background-color: $color-primary-dark;
   }
 }
 
