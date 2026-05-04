@@ -25,7 +25,7 @@ api.interceptors.response.use(
       const isAuthEndpoint = error.config?.url?.includes('/auth/');
       if (!isAuthEndpoint) {
         localStorage.removeItem('accessToken');
-        window.location.href = '/login';
+        window.location.href = '/onboarding';
       }
     }
     return Promise.reject(error);

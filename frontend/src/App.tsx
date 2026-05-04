@@ -31,13 +31,25 @@ const GuestRoute: React.FC = () => {
   return <Outlet />;
 };
 
+const OnboardingRoute: React.FC = () => {
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
+
+  if (isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <Outlet />;
+};
+
 const App: React.FC = () => {
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/onboarding" element={<Onboarding />} />
+        <Route element={<OnboardingRoute />}>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/onboarding" element={<Onboarding />} />
+        </Route>
         <Route element={<GuestRoute />}>
           <Route element={<Layout />}>
             <Route path="/" element={<Home />} />
