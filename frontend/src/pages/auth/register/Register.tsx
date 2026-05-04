@@ -6,6 +6,7 @@ import { setCredentials } from '@entities/user/model/slice';
 import AuthLayout from '@shared/ui/AuthLayout';
 import Input from '@shared/ui/Input';
 import Button from '@shared/ui/Button';
+import type { AxiosError } from 'axios';
 import './Register.scss';
 
 const Register: React.FC = () => {
@@ -34,8 +35,10 @@ const Register: React.FC = () => {
       }));
       
       navigate('/');
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'An error occurred');
+    } catch (err) {
+      const error = err as AxiosError<{ detail: string | string[] }>;
+      const detail = error.response?.data?.detail;
+      setError(Array.isArray(detail) ? detail[0] : detail || 'An error occurred');
     }
   };
 

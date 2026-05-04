@@ -9,7 +9,7 @@ describe('auth slice', () => {
   };
 
   it('should handle setCredentials', () => {
-    const payload = { user: { id: 1, name: 'Test User' }, token: 'test-token' };
+    const payload = { user: { id: '1', email: 'test@test.com', full_name: 'Test User' }, token: 'test-token' };
     const state = authReducer(initialState, setCredentials(payload));
     
     expect(state.user).toEqual(payload.user);
@@ -19,7 +19,7 @@ describe('auth slice', () => {
 
   it('should handle logout', () => {
     const stateWithUser = {
-      user: { id: 1, name: 'Test User' },
+      user: { id: '1', email: 'test@test.com', full_name: 'Test User' },
       token: 'test-token',
       isAuthenticated: true,
     };

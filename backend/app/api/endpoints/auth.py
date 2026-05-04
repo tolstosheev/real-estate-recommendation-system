@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.db import get_db
 from app.services.auth_service import AuthService
 from app.schemas.auth import UserCreate, Token, UserOut
+from app.schemas.auth_login import UserLogin
 
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
@@ -24,12 +25,9 @@ async def register(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/login", response_model=Token, summary="User Authentication", description="Authenticates user and returns a JWT access token")
-async def login(login_data: UserCreate, db: AsyncSession = Depends(get_db)):
+async def login(login_data: UserLogin, db: AsyncSession = Depends(get_db)):
     service = AuthService(db)
     user = await service.authenticate_user(login_data.email, login_data.password)
-
-    service = AuthService(db)
-    user = await service.authenticate_user(form_data.username, form_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -39,6 +37,7 @@ async def login(login_data: UserCreate, db: AsyncSession = Depends(get_db)):
     
     access_token = service.create_access_token(data={"id": user["id"]})
     return {"access_token": access_token, "token_type": "bearer"}
+
 
 @router.get("/me", response_model=UserOut, summary="Get Current User", description="Returns profile information of the currently authenticated user")
 async def get_me(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):

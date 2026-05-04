@@ -7,7 +7,7 @@ interface MapMarkerProps {
 }
 
 const YMapMarker: React.FC<MapMarkerProps> = ({ coordinates, children }) => {
-  const [Marker, setMarker] = useState<any>(null);
+  const [Marker, setMarker] = useState<React.ElementType | null>(null);
 
   useEffect(() => {
     getYmapsComponents().then(components => {

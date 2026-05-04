@@ -1,6 +1,7 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import api from '../shared/api/api';
 import MockAdapter from 'axios-mock-adapter';
+import type { AxiosError } from 'axios';
 
 const mock = new MockAdapter(api);
 
@@ -21,15 +22,16 @@ describe('API Client', () => {
   it('should handle 401 response by clearing token', async () => {
     localStorage.setItem('accessToken', 'invalid-token');
     
-    delete (window as any).location;
-    window.location = { href: '' } as any;
+    const locationMock = { href: '' };
+    vi.stubGlobal('location', locationMock);
 
     mock.onGet('/api/protected').reply(401);
 
     try {
       await api.get('/api/protected');
-    } catch (error: any) {
-      expect(error.response?.status).toBe(401);
+    } catch (error: unknown) {
+      const axiosError = error as AxiosError;
+      expect(axiosError.response?.status).toBe(401);
     }
 
     expect(localStorage.getItem('accessToken')).toBeNull();

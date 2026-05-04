@@ -6,6 +6,7 @@ import { authService } from '@shared/api/auth.service';
 import AuthLayout from '@shared/ui/AuthLayout';
 import Input from '@shared/ui/Input';
 import Button from '@shared/ui/Button';
+import type { AxiosError } from 'axios';
 import './Login.scss';
 
 const Login: React.FC = () => {
@@ -23,8 +24,16 @@ const Login: React.FC = () => {
       const data = await authService.login({ email, password });
       dispatch(setCredentials({ user: data.user, token: data.access_token }));
       navigate('/');
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'An error occurred');
+    } catch (err) {
+      const error = err as AxiosError<{ detail: string | string[] }>;
+      const message = error.response?.data?.detail;
+      if (typeof message === 'string') {
+        setError(message);
+      } else if (Array.isArray(message)) {
+        setError(message[0] || 'An error occurred');
+      } else {
+        setError('An error occurred');
+      }
     }
   };
 
