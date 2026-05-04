@@ -1,12 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAppSelector } from '@app/store/hooks';
 import Button from '@shared/ui/Button';
 import './Onboarding.scss';
 
 
 const Onboarding: React.FC = () => {
-  const [step, setStep] = useState(0);
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
   const navigate = useNavigate();
+  const [step, setStep] = useState(0);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
+
+  if (isAuthenticated) {
+    return null;
+  }
 
   const steps = [
     { 
@@ -93,7 +105,7 @@ const Onboarding: React.FC = () => {
               variant="secondary" 
               onClick={handlePrev} 
               disabled={step === 0}
-              style={{ marginRight: '12px' }}
+              className="onboarding-footer__btn-back"
             >
               Back
             </Button>

@@ -1,5 +1,6 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Outlet, Navigate } from 'react-router-dom';
+import { useAppSelector } from '@app/store/hooks';
 import Login from '@pages/auth/login';
 import Register from '@pages/auth/register';
 import Onboarding from '@pages/onboarding';
@@ -19,6 +20,16 @@ const Layout: React.FC = () => {
   );
 };
 
+const GuestRoute: React.FC = () => {
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
+
+  if (!isAuthenticated) {
+    return <Navigate to="/onboarding" replace />;
+  }
+
+  return <Outlet />;
+};
+
 const App: React.FC = () => {
   return (
     <Router>
@@ -26,11 +37,14 @@ const App: React.FC = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/onboarding" element={<Onboarding />} />
-        <Route element={<Layout />}>
-          <Route path="/" element={<Home />} />
-          <Route path="/catalog" element={<Catalog />} />
-          <Route path="/property/:id" element={<PropertyDetails />} />
+        <Route element={<GuestRoute />}>
+          <Route element={<Layout />}>
+            <Route path="/" element={<Home />} />
+            <Route path="/catalog" element={<Catalog />} />
+            <Route path="/property/:id" element={<PropertyDetails />} />
+          </Route>
         </Route>
+        <Route path="*" element={<Navigate to="/onboarding" replace />} />
       </Routes>
     </Router>
   );

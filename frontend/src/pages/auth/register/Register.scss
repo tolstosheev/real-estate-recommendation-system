@@ -3,6 +3,7 @@
 .register-form {
   display: flex;
   flex-direction: column;
+  justify-items: center;
   gap: calc-rem(16);
 }
 

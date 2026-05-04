@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAppDispatch } from '@app/store/hooks';
-import { setCredentials } from '@entities/user/model/slice';
-import { authService } from '@shared/api/auth.service';
+import React, {useState} from 'react';
+import {Link, useNavigate} from 'react-router-dom';
+import {useAppDispatch} from '@app/store/hooks';
+import {setCredentials} from '@entities/user/model/slice';
+import {authService} from '@shared/api/auth.service';
 import AuthLayout from '@shared/ui/AuthLayout';
 import Input from '@shared/ui/Input';
 import Button from '@shared/ui/Button';
-import type { AxiosError } from 'axios';
+import type {AxiosError} from 'axios';
 import './Login.scss';
 
 const Login: React.FC = () => {

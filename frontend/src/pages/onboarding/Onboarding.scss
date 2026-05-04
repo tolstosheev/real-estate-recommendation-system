@@ -120,6 +120,10 @@
   gap: calc-rem(12);
 }
 
+.onboarding-footer__btn-back {
+  margin-right: calc-rem(12);
+}
+
 @media (max-width: #{$bp-tablet}) {
   .onboarding-card {
     padding: calc-rem(24);
