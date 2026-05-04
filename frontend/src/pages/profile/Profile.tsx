@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '@app/store/hooks';
 import { logout, setCredentials } from '@entities/user/model/slice';
@@ -25,9 +25,9 @@ const Profile: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'profile' | 'preferences'>('profile');
 
   const [profileDraft, setProfileDraft] = useState({
-    full_name: user?.full_name || '',
-    phone_number: user?.phone_number || '',
-    telegram_handle: user?.telegram_handle || '',
+    full_name: '',
+    phone_number: '',
+    telegram_handle: '',
   });
   const [profileError, setProfileError] = useState('');
   const [profileSuccess, setProfileSuccess] = useState('');
@@ -46,6 +46,8 @@ const Profile: React.FC = () => {
   const [prefSuccess, setPrefSuccess] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
+  const userLoadedRef = useRef(false);
+
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/login');
@@ -53,13 +55,17 @@ const Profile: React.FC = () => {
   }, [isAuthenticated, navigate]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || userLoadedRef.current) return;
 
-    setProfileDraft({
+    userLoadedRef.current = true;
+
+    const newDraft = {
       full_name: user.full_name || '',
       phone_number: user.phone_number || '',
       telegram_handle: user.telegram_handle || '',
-    });
+    };
+
+    setProfileDraft(newDraft);
 
     preferencesService.getPreferences()
       .then((data) => {
@@ -77,15 +83,35 @@ const Profile: React.FC = () => {
     setProfileError('');
     setProfileSuccess('');
     setIsSaving(true);
+
+    if (!profileDraft.full_name.trim()) {
+      setProfileError('Full name is required');
+      setIsSaving(false);
+      return;
+    }
+
+    if (profileDraft.phone_number && !/^[+0-9\s\-()]{7,}$/.test(profileDraft.phone_number)) {
+      setProfileError('Please enter a valid phone number (e.g. +79991234567)');
+      setIsSaving(false);
+      return;
+    }
+
+    if (profileDraft.telegram_handle && !/^@[a-zA-Z0-9_]{4,31}$/.test(profileDraft.telegram_handle)) {
+      setProfileError('Telegram handle must start with @ and be 4-31 characters (e.g. @username)');
+      setIsSaving(false);
+      return;
+    }
+
     try {
       const updatedUser = await authService.updateProfile({
-        full_name: profileDraft.full_name,
-        phone_number: profileDraft.phone_number,
-        telegram_handle: profileDraft.telegram_handle,
+        full_name: profileDraft.full_name.trim(),
+        phone_number: profileDraft.phone_number || undefined,
+        telegram_handle: profileDraft.telegram_handle || undefined,
       });
       dispatch(setCredentials({ user: updatedUser, token: localStorage.getItem('accessToken') || '' }));
       setProfileSuccess('Profile updated successfully');
-    } catch {
+    } catch (error) {
+      console.error('Profile update error:', error);
       setProfileError('Failed to update profile');
     } finally {
       setIsSaving(false);
@@ -128,7 +154,7 @@ const Profile: React.FC = () => {
 
   const handleLogout = () => {
     dispatch(logout());
-    navigate('/login');
+    navigate('/onboarding');
   };
 
   if (!isAuthenticated || !user) return null;

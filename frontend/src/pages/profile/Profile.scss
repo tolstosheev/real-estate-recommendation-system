@@ -68,6 +68,14 @@
   padding: calc-rem(32);
   border-radius: calc-rem(16);
   box-shadow: 0 calc-rem(4) calc-rem(20) rgba(0, 0, 0, 0.05);
+  
+  .input-group {
+    margin-bottom: calc-rem(20);
+    
+    &:last-of-type {
+      margin-bottom: 0;
+    }
+  }
 }
 
 .profile-section__title {

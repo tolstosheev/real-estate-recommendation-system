@@ -35,6 +35,6 @@ describe('API Client', () => {
     }
 
     expect(localStorage.getItem('accessToken')).toBeNull();
-    expect(window.location.href).toBe('/login');
+    expect(window.location.href).toBe('/onboarding');
   });
 });

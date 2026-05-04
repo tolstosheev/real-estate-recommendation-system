@@ -40,7 +40,7 @@ const Catalog: React.FC = () => {
       setProperties(response.data);
       setHasData(true);
     } catch (err) {
-      console.error(err);
+      console.error('Failed to fetch properties:', err);
     } finally {
       setIsLoading(false);
     }

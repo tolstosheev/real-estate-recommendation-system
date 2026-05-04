@@ -59,27 +59,42 @@ const Home: React.FC = () => {
             <p>No recommendations yet. Interact with properties to train the AI!</p>
           </div>
         ) : (
-          <Swiper
-            modules={[Pagination, Navigation]}
-            spaceBetween={24}
-            slidesPerView={1}
-            navigation
-            pagination={{ clickable: true }}
-            breakpoints={{
-              640: { slidesPerView: 2 },
-              1024: { slidesPerView: 3 },
-              1440: { slidesPerView: 4 },
-            }}
-            className="recommendations-slider"
-          >
-            {recs.map((prop) => (
-              <SwiperSlide key={prop.id}>
-                <div className="recommendations-slide">
-                  <PropertyCard property={prop} variant="vertical" />
-                </div>
-              </SwiperSlide>
-            ))}
-          </Swiper>
+          <div className="recommendations-slider-wrapper">
+            <div className="recommendations-nav recommendations-nav--prev">
+              <div className="swiper-button-prev"></div>
+            </div>
+            <div className="recommendations-nav recommendations-nav--next">
+              <div className="swiper-button-next"></div>
+            </div>
+            <Swiper
+              modules={[Pagination, Navigation]}
+              spaceBetween={24}
+              slidesPerView={1}
+              navigation={{
+                prevEl: '.recommendations-nav--prev .swiper-button-prev',
+                nextEl: '.recommendations-nav--next .swiper-button-next',
+              }}
+              pagination={{
+                clickable: true,
+                el: '.recommendations-pagination-container',
+              }}
+              breakpoints={{
+                640: { slidesPerView: 2 },
+                1024: { slidesPerView: 3 },
+                1440: { slidesPerView: 4 },
+              }}
+              className="recommendations-slider"
+            >
+              {recs.map((prop) => (
+                <SwiperSlide key={prop.id}>
+                  <div className="recommendations-slide">
+                    <PropertyCard property={prop} variant="vertical" />
+                  </div>
+                </SwiperSlide>
+              ))}
+            </Swiper>
+            <div className="recommendations-pagination-container"></div>
+          </div>
         )}
       </section>
     </div>

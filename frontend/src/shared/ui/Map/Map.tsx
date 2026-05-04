@@ -14,8 +14,10 @@ interface MapProps {
   children?: React.ReactNode;
 }
 
+type YMapsComponents = Awaited<ReturnType<typeof getYmapsComponents>>;
+
 const YandexMap: React.FC<MapProps> = ({ center = [55.7558, 37.6173], zoom = 11, onBoundsChange, children }) => {
-  const [components, setComponents] = useState<ReturnType<typeof getYmapsComponents> extends Promise<infer T> ? T : never | null>(null);
+  const [components, setComponents] = useState<YMapsComponents | null>(null);
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {

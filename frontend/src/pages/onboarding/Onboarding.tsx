@@ -93,10 +93,6 @@ const Onboarding: React.FC = () => {
     }
   }, [isAuthenticated, navigate]);
 
-  if (isAuthenticated) {
-    return null;
-  }
-
   const handleNext = () => {
     if (step < steps.length - 1) {
       setDirection('next');

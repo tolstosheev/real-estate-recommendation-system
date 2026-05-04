@@ -4,6 +4,7 @@ import type { User } from '@entities/user/model/types';
 interface AuthResponse {
   access_token: string;
   token_type: string;
+  user: User;
 }
 
 interface LoginCredentials {

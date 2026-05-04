@@ -75,13 +75,87 @@
   color: $color-primary;
 }
 
+.recommendations-slider-wrapper {
+  position: relative;
+  padding: 0 calc-rem(60);
+}
+
+.recommendations-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  width: calc-rem(48);
+  height: calc-rem(48);
+  
+  &--prev {
+    left: 0;
+  }
+  
+  &--next {
+    right: 0;
+  }
+  
+  .swiper-button-prev,
+  .swiper-button-next {
+    position: static;
+    width: calc-rem(48);
+    height: calc-rem(48);
+    background-color: $color-white;
+    border-radius: 50%;
+    box-shadow: 0 calc-rem(4) calc-rem(12) rgba(0, 0, 0, 0.15);
+    color: $color-primary;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    
+    &:hover {
+      background-color: $color-primary;
+      color: $color-white;
+      transform: scale(1.1);
+    }
+    
+    &::after {
+      font-size: calc-rem(18);
+      font-weight: 700;
+    }
+  }
+}
+
 .recommendations-slider {
-  padding: calc-rem(20) 0;
+  padding: calc-rem(20) 0 calc-rem(40);
 }
 
 .recommendations-slide {
   display: flex;
   justify-content: center;
+}
+
+.recommendations-pagination-container {
+  margin-top: calc-rem(32);
+  text-align: center;
+  padding-bottom: calc-rem(20);
+  
+  .swiper-pagination-bullet {
+    width: calc-rem(12);
+    height: calc-rem(12);
+    background-color: $color-gray-300;
+    opacity: 1;
+    margin: 0 calc-rem(6);
+    transition: all 0.3s ease;
+    
+    &:hover {
+      background-color: $color-primary-dark;
+    }
+    
+    &-active {
+      background-color: $color-primary;
+      width: calc-rem(32);
+      border-radius: calc-rem(6);
+    }
+  }
 }
 
 .recommendations-loading {
@@ -124,6 +198,25 @@
   .recommendations-section__title {
     font-size: calc-rem(24);
   }
+  
+  .recommendations-slider-wrapper {
+    padding: 0 calc-rem(40);
+  }
+  
+  .recommendations-nav {
+    width: calc-rem(36);
+    height: calc-rem(36);
+    
+    .swiper-button-prev,
+    .swiper-button-next {
+      width: calc-rem(36);
+      height: calc-rem(36);
+      
+      &::after {
+        font-size: calc-rem(14);
+      }
+    }
+  }
 }
 
 @media (max-width: #{$bp-mobile}) {
@@ -143,9 +236,17 @@
     padding: calc-rem(32) calc-rem(12);
   }
 
+  .recommendations-section__title {
+    font-size: calc-rem(20);
+  }
+  
   .recommendations-section__header {
     flex-direction: column;
     align-items: flex-start;
     gap: calc-rem(12);
+  }
+  
+  .recommendations-slider-wrapper {
+    padding: 0 calc-rem(30);
   }
 }
