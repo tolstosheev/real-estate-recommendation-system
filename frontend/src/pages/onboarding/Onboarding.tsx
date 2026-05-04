@@ -11,8 +11,8 @@ const steps = [
     description: 'Forget about endless scrolling through irrelevant listings. nestAI understands what you actually want.',
     icon: (
       <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="100" cy="100" r="80" fill="#F59E0B" opacity="0.1" />
-        <path d="M100 40L55 75V155H85V110H115V155H145V75L100 40Z" fill="#1A365D" />
+        <circle cx="100" cy="100" r="80" fill="#FFFFFF" opacity="0.08" />
+        <path d="M100 40L55 75V155H85V110H115V155H145V75L100 40Z" fill="#FFFFFF" opacity="0.9" />
         <circle cx="100" cy="85" r="12" fill="#F59E0B" />
       </svg>
     ),
@@ -23,12 +23,12 @@ const steps = [
     description: 'Our system analyzes your behavior and explicit preferences to predict your perfect home.',
     icon: (
       <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="100" cy="100" r="80" fill="#1A365D" opacity="0.1" />
-        <path d="M70 110L85 95L100 105L130 70" stroke="#1A365D" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx="100" cy="100" r="80" fill="#FFFFFF" opacity="0.08" />
+        <path d="M70 110L85 95L100 105L130 70" stroke="#FFFFFF" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" opacity="0.9" />
         <circle cx="70" cy="110" r="8" fill="#F59E0B" />
-        <circle cx="85" cy="95" r="8" fill="#1A365D" />
-        <circle cx="100" cy="105" r="8" fill="#1A365D" />
-        <circle cx="130" cy="70" r="8" fill="#1A365D" />
+        <circle cx="85" cy="95" r="8" fill="#FFFFFF" />
+        <circle cx="100" cy="105" r="8" fill="#FFFFFF" />
+        <circle cx="130" cy="70" r="8" fill="#FFFFFF" />
         <path d="M120 60L130 70L140 60" stroke="#F59E0B" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     ),
@@ -39,14 +39,14 @@ const steps = [
     description: 'Using advanced geographic data, we find properties in the exact atmosphere and location you desire.',
     icon: (
       <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="100" cy="100" r="80" fill="#F59E0B" opacity="0.1" />
-        <circle cx="100" cy="80" r="30" stroke="#1A365D" strokeWidth="4" fill="none" />
+        <circle cx="100" cy="100" r="80" fill="#FFFFFF" opacity="0.08" />
+        <circle cx="100" cy="80" r="30" stroke="#FFFFFF" strokeWidth="4" fill="none" opacity="0.9" />
         <circle cx="100" cy="80" r="10" fill="#F59E0B" />
-        <path d="M100 110V150" stroke="#1A365D" strokeWidth="4" strokeLinecap="round" />
-        <path d="M85 125L100 110L115 125" stroke="#1A365D" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-        <circle cx="100" cy="45" r="4" fill="#1A365D" />
-        <circle cx="145" cy="80" r="4" fill="#1A365D" />
-        <circle cx="55" cy="80" r="4" fill="#1A365D" />
+        <path d="M100 110V150" stroke="#FFFFFF" strokeWidth="4" strokeLinecap="round" opacity="0.9" />
+        <path d="M85 125L100 110L115 125" stroke="#FFFFFF" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" opacity="0.9" />
+        <circle cx="100" cy="45" r="4" fill="#FFFFFF" />
+        <circle cx="145" cy="80" r="4" fill="#FFFFFF" />
+        <circle cx="55" cy="80" r="4" fill="#FFFFFF" />
       </svg>
     ),
   },
@@ -56,13 +56,13 @@ const steps = [
     description: 'The more you interact, the smarter nestAI becomes, constantly refining your recommendations.',
     icon: (
       <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="100" cy="100" r="80" fill="#1A365D" opacity="0.1" />
-        <rect x="50" y="50" width="45" height="50" rx="6" stroke="#1A365D" strokeWidth="3" fill="none" />
-        <rect x="75" y="75" width="45" height="50" rx="6" stroke="#1A365D" strokeWidth="3" fill="none" />
+        <circle cx="100" cy="100" r="80" fill="#FFFFFF" opacity="0.08" />
+        <rect x="50" y="50" width="45" height="50" rx="6" stroke="#FFFFFF" strokeWidth="3" fill="none" opacity="0.9" />
+        <rect x="75" y="75" width="45" height="50" rx="6" stroke="#FFFFFF" strokeWidth="3" fill="none" opacity="0.9" />
         <rect x="100" y="100" width="45" height="50" rx="6" fill="#F59E0B" />
         <circle cx="72.5" cy="65" r="4" fill="#F59E0B" />
         <circle cx="97.5" cy="90" r="4" fill="#F59E0B" />
-        <circle cx="122.5" cy="115" r="4" fill="#fff" />
+        <circle cx="122.5" cy="115" r="4" fill="#FFFFFF" />
       </svg>
     ),
   },
@@ -72,10 +72,10 @@ const steps = [
     description: 'Create an account to let our AI start working for you.',
     icon: (
       <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="100" cy="100" r="80" fill="#F59E0B" opacity="0.15" />
-        <path d="M100 60C78 60 60 78 60 100C60 122 78 140 100 140C122 140 140 122 140 100" stroke="#1A365D" strokeWidth="6" strokeLinecap="round" />
-        <path d="M100 75V100L115 115" stroke="#1A365D" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
-        <circle cx="100" cy="100" r="4" fill="#F59E0B" />
+        <circle cx="100" cy="100" r="80" fill="#FFFFFF" opacity="0.08" />
+        <path d="M100 60C78 60 60 78 60 100C60 122 78 140 100 140C122 140 140 122 140 100" stroke="#FFFFFF" strokeWidth="6" strokeLinecap="round" opacity="0.9" />
+        <path d="M100 75V100L115 115" stroke="#F59E0B" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx="100" cy="100" r="4" fill="#FFFFFF" />
       </svg>
     ),
   },
