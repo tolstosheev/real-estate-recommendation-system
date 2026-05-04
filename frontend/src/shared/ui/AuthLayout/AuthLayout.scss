@@ -9,10 +9,14 @@
   padding: calc-rem(20);
 }
 
+.auth-layout .card {
+  width: 100%;
+  max-width: calc-rem(420);
+}
+
 .auth-card-inner {
   padding: calc-rem(40);
   width: 100%;
-  max-width: calc-rem(420);
 }
 
 .auth-title {
