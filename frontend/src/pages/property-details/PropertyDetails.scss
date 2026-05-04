@@ -69,6 +69,17 @@
   color: $color-accent;
 }
 
+.details-info__type-badge {
+  display: inline-block;
+  padding: calc-rem(4) calc-rem(12);
+  background-color: $color-accent;
+  color: $color-white;
+  border-radius: calc-rem(4);
+  font-size: calc-rem(13);
+  font-weight: 600;
+  margin-bottom: calc-rem(16);
+}
+
 .details-info__specs {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -139,10 +150,24 @@
   margin-bottom: calc-rem(16);
 }
 
-.details-contact-card__text {
+.details-contact-card__agent {
+  margin-bottom: calc-rem(16);
+}
+
+.details-contact-card__agent-name {
+  font-size: calc-rem(15);
+  font-weight: 600;
+  color: $color-gray-800;
+  margin-bottom: calc-rem(4);
+}
+
+.details-contact-card__agent-info {
   font-size: calc-rem(14);
   color: $color-gray-500;
-  margin-bottom: calc-rem(16);
+}
+
+.details-contact-card__button {
+  width: 100%;
 }
 
 .page-loading,

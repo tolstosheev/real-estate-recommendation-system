@@ -1,13 +1,13 @@
-import api from './api';
-import type { UserPreferenceCreate } from '@entities/user/model/types';
+import api from '@shared/api/api';
+import type { UserPreferenceCreate, UserPreferenceOut } from '@entities/user/model/types';
 
 export const preferencesService = {
-  async updatePreferences(prefs: UserPreferenceCreate) {
-    const response = await api.put('/user/preferences', prefs);
+  async getPreferences(): Promise<UserPreferenceOut> {
+    const response = await api.get('/user/preferences');
     return response.data;
   },
-  async getPreferences() {
-    const response = await api.get('/user/preferences');
+  async updatePreferences(data: UserPreferenceCreate): Promise<UserPreferenceOut> {
+    const response = await api.put('/user/preferences', data);
     return response.data;
   },
 };

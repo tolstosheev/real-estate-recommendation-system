@@ -59,6 +59,12 @@
   font-size: calc-rem(14);
   color: $color-gray-700;
   font-weight: 500;
+  text-decoration: none;
+  transition: color 0.2s;
+
+  &:hover {
+    color: $color-primary;
+  }
 }
 
 .header__logout-btn {

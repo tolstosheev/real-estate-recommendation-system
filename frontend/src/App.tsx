@@ -7,6 +7,7 @@ import Onboarding from '@pages/onboarding';
 import Home from '@pages/home';
 import Catalog from '@pages/catalog';
 import PropertyDetails from '@pages/property-details';
+import Profile from '@pages/profile';
 import Header from '@shared/ui/Header';
 
 const Layout: React.FC = () => {
@@ -42,6 +43,7 @@ const App: React.FC = () => {
             <Route path="/" element={<Home />} />
             <Route path="/catalog" element={<Catalog />} />
             <Route path="/property/:id" element={<PropertyDetails />} />
+            <Route path="/profile" element={<Profile />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/onboarding" replace />} />

@@ -3,7 +3,7 @@ import type { User } from '@entities/user/model/types';
 
 interface AuthResponse {
   access_token: string;
-  user: User;
+  token_type: string;
 }
 
 interface LoginCredentials {
@@ -15,6 +15,8 @@ interface RegisterData {
   full_name: string;
   email: string;
   password: string;
+  phone_number?: string;
+  telegram_handle?: string;
 }
 
 export const authService = {
@@ -24,6 +26,10 @@ export const authService = {
   },
   async register(userData: RegisterData): Promise<User> {
     const response = await api.post('/auth/register', userData);
+    return response.data;
+  },
+  async getCurrentUser(): Promise<User> {
+    const response = await api.get('/auth/me');
     return response.data;
   },
 };

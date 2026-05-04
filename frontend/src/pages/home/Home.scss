@@ -91,6 +91,19 @@
   font-size: calc-rem(16);
 }
 
+.recommendations-empty {
+  text-align: center;
+  padding: calc-rem(60) calc-rem(20);
+  color: $color-gray-500;
+  font-size: calc-rem(16);
+
+  p {
+    max-width: calc-rem(400);
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+}
+
 @media (max-width: #{$bp-tablet}) {
   .hero {
     padding: calc-rem(80) calc-rem(16);

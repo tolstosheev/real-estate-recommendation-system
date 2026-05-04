@@ -13,14 +13,17 @@ import 'swiper/css/navigation';
 const Home: React.FC = () => {
   const [recs, setRecs] = useState<PropertyRecommendation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     const fetchRecs = async () => {
       try {
         const data = await recommendationsService.getRecommendations();
         setRecs(data);
+        setHasError(false);
       } catch (e) {
         console.error('Failed to fetch recommendations', e);
+        setHasError(true);
       } finally {
         setIsLoading(false);
       }
@@ -47,6 +50,14 @@ const Home: React.FC = () => {
 
         {isLoading ? (
           <div className="recommendations-loading">Loading recommendations...</div>
+        ) : hasError ? (
+          <div className="recommendations-empty">
+            <p>Sign in to get personalized recommendations</p>
+          </div>
+        ) : recs.length === 0 ? (
+          <div className="recommendations-empty">
+            <p>No recommendations yet. Interact with properties to train the AI!</p>
+          </div>
         ) : (
           <Swiper
             modules={[Pagination, Navigation]}
@@ -61,14 +72,12 @@ const Home: React.FC = () => {
             }}
             className="recommendations-slider"
           >
-            {recs && recs.map((rec) => (
-              rec && rec.property ? (
-                <SwiperSlide key={rec.property.id}>
-                  <div className="recommendations-slide">
-                    <PropertyCard property={rec.property} variant="vertical" />
-                  </div>
-                </SwiperSlide>
-              ) : null
+            {recs.map((prop) => (
+              <SwiperSlide key={prop.id}>
+                <div className="recommendations-slide">
+                  <PropertyCard property={prop} variant="vertical" />
+                </div>
+              </SwiperSlide>
             ))}
           </Swiper>
         )}

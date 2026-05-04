@@ -7,6 +7,8 @@ import api from '@shared/api/api';
 import Button from '@shared/ui/Button';
 import './PropertyDetails.scss';
 
+const PLACEHOLDER_IMG = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300" fill="%23E5E7EB"%3E%3Crect width="400" height="300"/%3E%3Ctext x="50%25" y="50%25" fill="%239CA3AF" text-anchor="middle" dy=".3em" font-size="16"%3ENo Photo%3C/text%3E%3C/svg%3E';
+
 const PropertyDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [property, setProperty] = useState<Property | null>(null);
@@ -29,13 +31,17 @@ const PropertyDetails: React.FC = () => {
   if (isLoading) return <div className="page-loading">Loading...</div>;
   if (!property) return <div className="page-empty">Property not found.</div>;
 
+  const images = property.images && property.images.length > 0 ? property.images : [PLACEHOLDER_IMG];
+  const mainImage = images[0];
+  const sideImages = images.slice(1, 3);
+
   return (
     <div className="details-page">
       <div className="details-main">
         <div className="details-gallery">
-          <img src={property.photos[0]} className="gallery-main" alt={property.title} />
+          <img src={mainImage} className="gallery-main" alt={property.title} />
           <div className="gallery-side">
-            {property.photos.slice(1, 3).map((photo, i) => (
+            {sideImages.map((photo, i) => (
               <img key={i} src={photo} alt={property.title} />
             ))}
           </div>
@@ -44,47 +50,65 @@ const PropertyDetails: React.FC = () => {
         <div className="details-info">
           <div className="details-info__header">
             <h1 className="details-info__title">{property.title}</h1>
-            <div className="details-info__price">{property.price.toLocaleString()} ₽</div>
+            <div className="details-info__price">{Number(property.price).toLocaleString()} ₽</div>
           </div>
+
+          {property.property_type && (
+            <div className="details-info__type-badge">{property.property_type}</div>
+          )}
 
           <div className="details-info__specs">
-            <div className="details-info__spec-item">
-              <span className="details-info__spec-label">Area</span>
-              <span className="details-info__spec-value">{property.area} m²</span>
-            </div>
-            <div className="details-info__spec-item">
-              <span className="details-info__spec-label">Rooms</span>
-              <span className="details-info__spec-value">{property.rooms}</span>
-            </div>
-            <div className="details-info__spec-item">
-              <span className="details-info__spec-label">Floor</span>
-              <span className="details-info__spec-value">{property.floor}/{property.total_floors}</span>
-            </div>
+            {property.area && (
+              <div className="details-info__spec-item">
+                <span className="details-info__spec-label">Area</span>
+                <span className="details-info__spec-value">{property.area} m²</span>
+              </div>
+            )}
+            {property.rooms && (
+              <div className="details-info__spec-item">
+                <span className="details-info__spec-label">Rooms</span>
+                <span className="details-info__spec-value">{property.rooms}</span>
+              </div>
+            )}
+            {property.floor && property.total_floors && (
+              <div className="details-info__spec-item">
+                <span className="details-info__spec-label">Floor</span>
+                <span className="details-info__spec-value">{property.floor}/{property.total_floors}</span>
+              </div>
+            )}
           </div>
 
-          <div className="details-info__description">
-            <h3 className="details-info__description-title">Description</h3>
-            <p className="details-info__description-text">{property.description}</p>
-          </div>
+          {property.description && (
+            <div className="details-info__description">
+              <h3 className="details-info__description-title">Description</h3>
+              <p className="details-info__description-text">{property.description}</p>
+            </div>
+          )}
         </div>
       </div>
 
       <aside className="details-sidebar">
         <div className="details-map-widget">
           <YandexMap 
-            center={property.coordinates} 
+            center={[property.lat, property.lon]} 
             zoom={15}
           >
-            <YMapMarker coordinates={property.coordinates}>
+            <YMapMarker coordinates={[property.lat, property.lon]}>
               <div className="map-marker-label">Property Location</div>
             </YMapMarker>
           </YandexMap>
         </div>
         <div className="details-contact-card">
           <h3 className="details-contact-card__title">Contact Agent</h3>
-          <p className="details-contact-card__text">
-            Interested in this property? Contact our agent for more details.
-          </p>
+          <div className="details-contact-card__agent">
+            <p className="details-contact-card__agent-name">{property.owner.full_name}</p>
+            {property.owner.phone_number && (
+              <p className="details-contact-card__agent-info">{property.owner.phone_number}</p>
+            )}
+            {property.owner.telegram_handle && (
+              <p className="details-contact-card__agent-info">{property.owner.telegram_handle}</p>
+            )}
+          </div>
           <Button variant="primary" className="details-contact-card__button">
             Send Message
           </Button>

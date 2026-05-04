@@ -31,6 +31,30 @@
   gap: calc-rem(10);
 }
 
+.catalog-filters__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: calc-rem(10);
+  margin-bottom: calc-rem(12);
+}
+
+.catalog-filters__apply-btn {
+  width: 100%;
+  padding: calc-rem(10) calc-rem(16);
+  background-color: $color-primary;
+  color: $color-white;
+  border: none;
+  border-radius: calc-rem(8);
+  font-size: calc-rem(14);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #142c4b;
+  }
+}
+
 .catalog-filters__input {
   flex: 1;
   padding: calc-rem(10) calc-rem(12);

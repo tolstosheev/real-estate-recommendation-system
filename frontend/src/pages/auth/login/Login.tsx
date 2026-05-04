@@ -24,7 +24,8 @@ const Login: React.FC = () => {
     setIsLoading(true);
     try {
       const data = await authService.login({ email, password });
-      dispatch(setCredentials({ user: data.user, token: data.access_token }));
+      const currentUser = await authService.getCurrentUser();
+      dispatch(setCredentials({ user: currentUser, token: data.access_token }));
       navigate('/');
     } catch (err) {
       const error = err as AxiosError<{ detail: string | string[] }>;

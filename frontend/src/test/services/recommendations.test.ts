@@ -14,23 +14,24 @@ describe('recommendationsService', () => {
   it('should fetch recommendations successfully', async () => {
     const mockRecs: PropertyRecommendation[] = [
       {
-        property: {
-          id: '1',
-          title: 'Modern Apartment',
-          description: 'Beautiful flat',
-          price: 200000,
-          area: 60,
-          rooms: 2,
-          floor: 5,
-          total_floors: 10,
-          address: 'Main St 1',
-          coordinates: [0, 0],
-          photos: ['photo1.jpg'],
-          ai_relevance: 0.95,
-          created_at: '2026-01-01',
+        id: '1',
+        title: 'Modern Apartment',
+        description: 'Beautiful flat',
+        price: 200000,
+        area: 60,
+        rooms: 2,
+        floor: 5,
+        total_floors: 10,
+        property_type: 'Apartment',
+        address: 'Main St 1',
+        lat: 55.7558,
+        lon: 37.6173,
+        images: ['photo1.jpg'],
+        owner: {
+          full_name: 'John Doe',
+          phone_number: '+79991234567',
+          telegram_handle: '@johndoe',
         },
-        reason: 'Matches your preference for modern style',
-        score: 0.95,
       },
     ];
 
@@ -38,8 +39,8 @@ describe('recommendationsService', () => {
 
     const result = await recommendationsService.getRecommendations();
     expect(result).toHaveLength(1);
-    expect(result[0].property.id).toBe('1');
-    expect(result[0].score).toBe(0.95);
+    expect(result[0].id).toBe('1');
+    expect(result[0].title).toBe('Modern Apartment');
   });
 
   it('should handle errors when fetching recommendations', async () => {

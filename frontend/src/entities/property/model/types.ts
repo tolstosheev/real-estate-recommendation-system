@@ -1,21 +1,24 @@
 export interface Property {
   id: string;
   title: string;
-  description: string;
+  description: string | null;
   price: number;
-  area: number;
-  rooms: number;
-  floor: number;
-  total_floors: number;
+  area: number | null;
+  rooms: number | null;
+  floor: number | null;
+  total_floors: number | null;
+  property_type: string | null;
   address: string;
-  coordinates: [number, number];
-  photos: string[];
-  ai_relevance: number;
-  created_at: string;
+  lat: number;
+  lon: number;
+  images: string[];
+  owner: PropertyOwner;
 }
 
-export interface PropertyRecommendation {
-  property: Property;
-  reason: string;
-  score: number;
+export interface PropertyOwner {
+  full_name: string;
+  phone_number: string | null;
+  telegram_handle: string | null;
 }
+
+export type PropertyRecommendation = Property;

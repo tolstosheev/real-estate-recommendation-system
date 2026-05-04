@@ -24,12 +24,13 @@ const Header: React.FC = () => {
         <nav className="header__nav">
           <Link to="/" className="header__nav-link">Home</Link>
           <Link to="/catalog" className="header__nav-link">Catalog</Link>
+          {isAuthenticated && <Link to="/profile" className="header__nav-link">Profile</Link>}
         </nav>
 
         <div className="header__actions">
           {isAuthenticated ? (
             <>
-              <span className="header__user-name">{user?.full_name}</span>
+              <Link to="/profile" className="header__user-name">{user?.full_name}</Link>
               <button className="header__logout-btn" onClick={handleLogout}>
                 Logout
               </button>
