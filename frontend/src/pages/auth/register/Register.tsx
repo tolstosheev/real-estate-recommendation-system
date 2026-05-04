@@ -16,12 +16,14 @@ const Register: React.FC = () => {
     password: '',
   });
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIsLoading(true);
     try {
       const user = await authService.register(formData);
       const loginData = await authService.login({ 
@@ -39,6 +41,8 @@ const Register: React.FC = () => {
       const error = err as AxiosError<{ detail: string | string[] }>;
       const detail = error.response?.data?.detail;
       setError(Array.isArray(detail) ? detail[0] : detail || 'An error occurred');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -79,8 +83,8 @@ const Register: React.FC = () => {
           onChange={handleChange}
           required
         />
-        <Button type="submit" className="register-form__submit">
-          Create Account
+        <Button type="submit" className="register-form__submit" disabled={isLoading}>
+          {isLoading ? 'Creating account...' : 'Create Account'}
         </Button>
       </form>
     </AuthLayout>

@@ -13,6 +13,7 @@ const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -20,6 +21,7 @@ const Login: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIsLoading(true);
     try {
       const data = await authService.login({ email, password });
       dispatch(setCredentials({ user: data.user, token: data.access_token }));
@@ -34,6 +36,8 @@ const Login: React.FC = () => {
       } else {
         setError('An error occurred');
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -60,8 +64,8 @@ const Login: React.FC = () => {
           onChange={(e) => setPassword(e.target.value)}
           required
         />
-        <Button type="submit" className="login-form__submit">
-          Sign In
+        <Button type="submit" className="login-form__submit" disabled={isLoading}>
+          {isLoading ? 'Signing in...' : 'Sign In'}
         </Button>
       </form>
     </AuthLayout>
