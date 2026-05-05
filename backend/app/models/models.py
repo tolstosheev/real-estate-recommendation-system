@@ -40,6 +40,8 @@ class Property(Base):
     address = Column(String)
     location = Column(Geometry('POINT', 4326))
     images = Column(ARRAY(String))
+    views_count = Column(Integer, default=0)
+    likes_count = Column(Integer, default=0)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 

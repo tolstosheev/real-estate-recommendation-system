@@ -20,18 +20,8 @@ class PropertyBase(BaseModel):
             "example": "Apartment"})
     address: str = Field(..., json_schema_extra={
                          "example": "123 Main St, New York, NY"})
-    lat: Optional[float] = Field(
-        None,
-        ge=-90,
-        le=90,
-        json_schema_extra={
-            "example": 40.7128})
-    lon: Optional[float] = Field(
-        None,
-        ge=-180,
-        le=180,
-        json_schema_extra={
-            "example": -74.0060})
+    lat: float = Field(0.0)
+    lon: float = Field(0.0)
     images: Optional[List[str]] = Field(
         None,
         json_schema_extra={
@@ -73,17 +63,20 @@ class OwnerOut(BaseModel):
 class PropertyOut(BaseModel):
     id: UUID
     title: str
-    description: Optional[str]
+    description: Optional[str] = None
     price: float
-    rooms: Optional[int]
-    area: Optional[float]
-    floor: Optional[int]
-    total_floors: Optional[int]
-    property_type: Optional[str]
+    rooms: Optional[int] = None
+    area: Optional[float] = None
+    floor: Optional[int] = None
+    total_floors: Optional[int] = None
+    property_type: Optional[str] = None
     address: str
-    lat: float
-    lon: float
-    images: Optional[List[str]]
-    owner: OwnerOut
+    lat: Optional[float] = 0.0
+    lon: Optional[float] = 0.0
+    images: Optional[List[str]] = None
+    owner: Optional[OwnerOut] = None
+    views_count: int = 0
+    likes_count: int = 0
+    is_liked_by_me: bool = False
 
     model_config = ConfigDict(from_attributes=True)
