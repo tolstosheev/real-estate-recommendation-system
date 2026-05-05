@@ -20,9 +20,13 @@ class InteractionRepository:
         return interaction_obj
 
     async def get_user_favorites(self, user_id: str):
-        query = select(Property).join(Interaction, Property.id == Interaction.property_id).filter(
-            Interaction.user_id == user_id,
-            Interaction.interaction_type == "like"
+        query = (
+            select(Property)
+            .join(Interaction, Property.id == Interaction.property_id)
+            .filter(
+                Interaction.user_id == user_id,
+                Interaction.interaction_type == "like"
+            )
         )
         result = await self.session.execute(query)
         return result.scalars().all()

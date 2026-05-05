@@ -32,8 +32,15 @@ class PropertyBase(BaseModel):
         le=180,
         json_schema_extra={
             "example": -74.0060})
-    images: Optional[List[str]] = Field(None, json_schema_extra={"example": [
-                                        "https://example.com/img1.jpg", "https://example.com/img2.jpg"]})
+    images: Optional[List[str]] = Field(
+        None,
+        json_schema_extra={
+            "example": [
+                "https://example.com/img1.jpg",
+                "https://example.com/img2.jpg",
+            ]
+        }
+    )
 
 
 class PropertyCreate(PropertyBase):

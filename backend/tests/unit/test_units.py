@@ -26,7 +26,7 @@ def test_compute_user_profile_vector():
     implicit = [110, 60, 3]
     
     res = utils.compute_user_profile_vector(explicit, implicit)
-    expected = (np.array(explicit) * 0.5) + (np.array(implicit) * 0.5)
+    expected = (np.array(explicit) * 0.1) + (np.array(implicit) * 0.9)
     assert np.allclose(res, expected)
     
     res_exp = utils.compute_user_profile_vector(explicit, None)

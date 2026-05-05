@@ -35,10 +35,12 @@ class PropertyRepository:
         await self.session.refresh(property_obj)
         return property_obj
 
-    async def get_all(self, limit: int = 100, offset: int = 0,
-                      min_price: float = None, max_price: float = None,
-                      rooms: int = None, property_type: str = None,
-                      lat: float = None, lon: float = None, radius_km: float = None):
+    async def get_all(
+        self, limit: int = 100, offset: int = 0,
+        min_price: float = None, max_price: float = None,
+        rooms: int = None, property_type: str = None,
+        lat: float = None, lon: float = None, radius_km: float = None
+    ):
 
         query = select(
             Property,
@@ -91,8 +93,11 @@ class PropertyRepository:
             update_data["location"] = func.ST_GeomFromText(
                 f"POINT({lon} {lat})", 4326)
 
-        query = update(Property).where(Property.id == property_id).values(
-            **update_data).execution_options(synchronize_session="fetch")
+        query = update(Property).where(
+            Property.id == property_id
+        ).values(
+            **update_data
+        ).execution_options(synchronize_session="fetch")
         await self.session.execute(query)
         await self.session.commit()
 

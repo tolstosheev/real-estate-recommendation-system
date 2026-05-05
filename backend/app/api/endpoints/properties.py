@@ -10,8 +10,11 @@ from typing import List, Optional
 router = APIRouter()
 
 
-@router.get("/map", response_model=List[PropertyOut], summary="Get Properties in BBox",
-            description="Returns properties within the specified bounding box for map display with optional filters")
+@router.get(
+    "/map",
+    response_model=List[PropertyOut],
+    summary="Get Properties in BBox",
+    description="Returns properties in bounding box with filters")
 async def get_properties_map(
     min_lat: float = Query(...),
     max_lat: float = Query(...),
@@ -24,9 +27,10 @@ async def get_properties_map(
     db: AsyncSession = Depends(get_db)
 ):
     service = PropertyService(db)
-    properties = await service.get_properties_in_bbox(min_lat, max_lat, min_lon, max_lon)
+    properties = await service.get_properties_in_bbox(
+        min_lat, max_lat, min_lon, max_lon
+    )
 
-    # Apply filters
     if min_price is not None:
         properties = [p for p in properties if p.price >= min_price]
     if max_price is not None:
@@ -34,14 +38,16 @@ async def get_properties_map(
     if rooms is not None:
         properties = [p for p in properties if p.rooms == rooms]
     if property_type is not None:
-        properties = [
-            p for p in properties if p.property_type == property_type]
+        properties = [p for p in properties if p.property_type == property_type]
 
     return properties
 
 
-@router.get("/", response_model=List[PropertyOut], summary="List Properties",
-            description="Returns a list of properties with optional filters (price, rooms, type) and spatial search (radius)")
+@router.get(
+    "/",
+    response_model=List[PropertyOut],
+    summary="List Properties",
+    description="List properties with filters and spatial search")
 async def get_properties(
     limit: int = 100,
     offset: int = 0,
@@ -55,11 +61,15 @@ async def get_properties(
     db: AsyncSession = Depends(get_db)
 ):
     service = PropertyService(db)
-    return await service.list_properties(limit, offset, min_price, max_price, rooms, property_type, lat, lon, radius_km)
+    return await service.list_properties(
+        limit, offset, min_price, max_price, rooms,
+        property_type, lat, lon, radius_km
+    )
 
 
-@router.get("/{property_id}", response_model=PropertyOut, summary="Get Property Details",
-            description="Returns detailed information about a specific property by its ID")
+@router.get("/{property_id}", response_model=PropertyOut,
+             summary="Get Property Details",
+             description="Get property by ID")
 async def get_property(property_id: str, db: AsyncSession = Depends(get_db)):
     service = PropertyService(db)
     property_obj = await service.get_property_details(property_id)
@@ -68,8 +78,10 @@ async def get_property(property_id: str, db: AsyncSession = Depends(get_db)):
     return property_obj
 
 
-@router.post("/", response_model=PropertyOut, status_code=status.HTTP_201_CREATED,
-             summary="Create Property", description="Allows the authenticated user to post a new property listing")
+@router.post("/", response_model=PropertyOut,
+             status_code=status.HTTP_201_CREATED,
+             summary="Create Property",
+             description="Create new property listing")
 async def create_property(
     property_in: PropertyCreate,
     current_user: User = Depends(get_current_user),
@@ -81,8 +93,9 @@ async def create_property(
     return await service.create_property(data)
 
 
-@router.put("/{property_id}", response_model=PropertyOut, summary="Update Property",
-            description="Allows the owner of the property to update its details")
+@router.put("/{property_id}", response_model=PropertyOut,
+            summary="Update Property",
+            description="Update property details")
 async def update_property(
     property_id: str,
     property_in: PropertyUpdate,
@@ -93,18 +106,21 @@ async def update_property(
     result = await service.repository.get_by_id(property_id)
     if not result:
         raise HTTPException(status_code=404, detail="Property not found")
-    
+
     property_obj = result[0]
     if property_obj.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to edit this property")
-    
-    return await service.update_property(property_id, property_in.model_dump(exclude_unset=True))
+
+    return await service.update_property(
+        property_id, property_in.model_dump(exclude_unset=True)
+    )
 
 
-@router.delete("/{property_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete Property",
-               description="Allows the owner to remove their property listing from the system")
+@router.delete("/{property_id}", status_code=status.HTTP_204_NO_CONTENT,
+               summary="Delete Property",
+               description="Delete property listing")
 async def delete_property(
     property_id: str,
     current_user: User = Depends(get_current_user),
@@ -114,13 +130,13 @@ async def delete_property(
     result = await service.repository.get_by_id(property_id)
     if not result:
         raise HTTPException(status_code=404, detail="Property not found")
-    
+
     property_obj = result[0]
     if property_obj.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to delete this property")
-    
+
     if not await service.delete_property(property_id):
         raise HTTPException(status_code=404, detail="Property not found")
     return None
