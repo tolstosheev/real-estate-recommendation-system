@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.endpoints import (
     properties, auth, user, interactions, recommendations
 )
+from app.core.db import Base, engine
 import logging
 
 logging.basicConfig(
@@ -13,6 +14,13 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="nestAI API")
+
+@app.on_event("startup")
+async def startup():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    print("Tables created")
+
 
 
 @app.exception_handler(Exception)

@@ -112,7 +112,9 @@ class PropertyService:
                 "lat": float(property_obj.lat) if property_obj.lat else 0.0,
                 "lon": float(property_obj.lon) if property_obj.lon else 0.0,
                 "images": list(property_obj.images) if property_obj.images else None,
-                "owner": owner_data
+                "owner": owner_data,
+                "views_count": property_obj.views_count,
+                "likes_count": property_obj.likes_count
             }, cls=DecimalEncoder))
 
         return property_obj
