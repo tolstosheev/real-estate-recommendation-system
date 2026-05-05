@@ -17,6 +17,24 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5173,
+    proxy: {
+      '/auth': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+      '/user': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+      '/interactions': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+    },
   },
   test: {
     globals: true,
