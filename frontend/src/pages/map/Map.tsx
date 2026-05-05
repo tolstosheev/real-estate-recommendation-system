@@ -20,7 +20,7 @@ const MapPage: React.FC = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasData, setHasData] = useState(false);
-  const [currentBounds, setCurrentBounds] = useState<[number, number, number, number] | null>(null);
+  const [currentBounds, setCurrentBounds] = useState<{ northEast: { lat: number; lon: number }; southWest: { lat: number; lon: number } } | null>(null);
   const [filters, setFilters] = useState({
     minPrice: '',
     maxPrice: '',
@@ -34,10 +34,13 @@ const MapPage: React.FC = () => {
     setVisibleCount(prev => Math.min(prev + MAP_PAGE_SIZE, properties.length));
   };
 
-  const fetchProperties = useCallback(async (bounds: [number, number, number, number], activeFilters: typeof filters, reset = false) => {
+  const fetchProperties = useCallback(async (bounds: { northEast: { lat: number; lon: number }; southWest: { lat: number; lon: number } }, activeFilters: typeof filters, reset = false) => {
     setIsLoading(true);
     try {
-      const [north, east, south, west] = bounds;
+      const north = bounds.northEast.lat;
+      const east = bounds.northEast.lon;
+      const south = bounds.southWest.lat;
+      const west = bounds.southWest.lon;
       const params: Record<string, string | number> = {
         min_lat: south,
         max_lat: north,
@@ -67,7 +70,7 @@ const MapPage: React.FC = () => {
     }
   }, [properties.length]);
 
-  const handleBoundsChange = (bounds: [number, number, number, number]) => {
+  const handleBoundsChange = (bounds: { northEast: { lat: number; lon: number }; southWest: { lat: number; lon: number } }) => {
     setCurrentBounds(bounds);
     if (boundsTimeoutRef.current) {
       clearTimeout(boundsTimeoutRef.current);
@@ -86,7 +89,10 @@ const MapPage: React.FC = () => {
     if (currentBounds) {
       fetchProperties(currentBounds, filters, true);
     } else {
-      fetchProperties([56.5, 38.5, 55.0, 36.5], filters, true);
+      fetchProperties({ 
+        northEast: { lat: 56.5, lon: 38.5 },
+        southWest: { lat: 55.0, lon: 36.5 }
+      }, filters, true);
     }
   };
 
@@ -157,11 +163,11 @@ const MapPage: React.FC = () => {
        <main className="map-map-container">
         <YandexMap onBoundsChange={handleBoundsChange}>
           {properties.slice(0, visibleCount).map(prop => (
-            <YMapMarker
-              key={prop.id}
-              coordinates={[prop.lat, prop.lon]}
-              onClick={() => handleMarkerClick(prop.id)}
-            >
+              <YMapMarker
+                key={prop.id}
+                coordinates={[prop.lat, prop.lon]}
+                onClick={() => handleMarkerClick(prop.id)}
+              >
               <div className="map-marker-label">
                 <div className="map-marker-label__title">{prop.title}</div>
                 <div className="map-marker-label__price">{Number(prop.price).toLocaleString()} ₽</div>
