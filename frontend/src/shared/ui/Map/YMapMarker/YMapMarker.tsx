@@ -4,9 +4,10 @@ import { getYmapsComponents } from '@shared/api/ymaps3';
 interface MapMarkerProps {
   coordinates: [number, number];
   children?: React.ReactNode;
+  onClick?: () => void;
 }
 
-const YMapMarker: React.FC<MapMarkerProps> = ({ coordinates, children }) => {
+const YMapMarker: React.FC<MapMarkerProps> = ({ coordinates, children, onClick }) => {
   const [YMapMarkerComponent, setYMapMarkerComponent] = useState<React.ElementType | null>(null);
   const [reactify, setReactify] = useState<{ useDefault: (value: unknown, deps?: unknown[]) => unknown } | null>(null);
 
@@ -28,7 +29,10 @@ const YMapMarker: React.FC<MapMarkerProps> = ({ coordinates, children }) => {
   if (!YMapMarkerComponent || !reactify) return null;
 
   return (
-    <YMapMarkerComponent coordinates={reactify.useDefault(coordinates)}>
+    <YMapMarkerComponent 
+      coordinates={reactify.useDefault(coordinates)}
+      onClick={onClick}
+    >
       {children}
     </YMapMarkerComponent>
   );

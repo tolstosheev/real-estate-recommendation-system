@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import YandexMap from '@shared/ui/Map';
 import YMapMarker from '@shared/ui/Map/YMapMarker';
 import PropertyCard from '@entities/property/ui/PropertyCard';
@@ -6,7 +7,16 @@ import type { Property } from '@entities/property/model/types';
 import api from '@shared/api/api';
 import './Catalog.scss';
 
+const CATALOG_PAGE_SIZE = 10;
+
 const Catalog: React.FC = () => {
+  const navigate = useNavigate();
+  
+  const handleMarkerClick = (propertyId: string) => {
+    console.log('Marker clicked, navigating to:', propertyId);
+    navigate(`/property/${propertyId}`);
+  };
+  
   const [properties, setProperties] = useState<Property[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasData, setHasData] = useState(false);
@@ -17,9 +27,14 @@ const Catalog: React.FC = () => {
     rooms: '',
     propertyType: '',
   });
+  const [visibleCount, setVisibleCount] = useState(CATALOG_PAGE_SIZE);
   const boundsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const fetchProperties = useCallback(async (bounds: [number, number, number, number], activeFilters: typeof filters) => {
+  const loadMore = () => {
+    setVisibleCount(prev => Math.min(prev + CATALOG_PAGE_SIZE, properties.length));
+  };
+
+  const fetchProperties = useCallback(async (bounds: [number, number, number, number], activeFilters: typeof filters, reset = false) => {
     setIsLoading(true);
     try {
       const [north, east, south, west] = bounds;
@@ -28,7 +43,7 @@ const Catalog: React.FC = () => {
         max_lat: north,
         min_lon: west,
         max_lon: east,
-        limit: 200,
+        limit: reset ? CATALOG_PAGE_SIZE : properties.length + CATALOG_PAGE_SIZE,
       };
 
       if (activeFilters.minPrice) params.min_price = Number(activeFilters.minPrice);
@@ -37,14 +52,20 @@ const Catalog: React.FC = () => {
       if (activeFilters.propertyType) params.property_type = activeFilters.propertyType;
 
       const response = await api.get(`/api/properties/map`, { params });
-      setProperties(response.data);
+      
+      if (reset) {
+        setProperties(response.data);
+        setVisibleCount(CATALOG_PAGE_SIZE);
+      } else {
+        setProperties(prev => [...prev, ...response.data]);
+      }
       setHasData(true);
     } catch (err) {
       console.error('Failed to fetch properties:', err);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [properties.length]);
 
   const handleBoundsChange = (bounds: [number, number, number, number]) => {
     setCurrentBounds(bounds);
@@ -52,7 +73,7 @@ const Catalog: React.FC = () => {
       clearTimeout(boundsTimeoutRef.current);
     }
     boundsTimeoutRef.current = setTimeout(() => {
-      fetchProperties(bounds, filters);
+      fetchProperties(bounds, filters, true);
     }, 500) as unknown as ReturnType<typeof setTimeout>;
   };
 
@@ -61,10 +82,11 @@ const Catalog: React.FC = () => {
   };
 
   const applyFilters = () => {
+    setVisibleCount(CATALOG_PAGE_SIZE);
     if (currentBounds) {
-      fetchProperties(currentBounds, filters);
+      fetchProperties(currentBounds, filters, true);
     } else {
-      fetchProperties([56.5, 38.5, 55.0, 36.5], filters);
+      fetchProperties([56.5, 38.5, 55.0, 36.5], filters, true);
     }
   };
 
@@ -122,20 +144,27 @@ const Catalog: React.FC = () => {
               Move the map to load properties
             </div>
           )}
-          {properties.map(prop => (
+          {properties.slice(0, visibleCount).map(prop => (
             <PropertyCard key={prop.id} property={prop} variant="horizontal" />
           ))}
+          {visibleCount < properties.length && (
+            <button className="catalog-list__load-more" onClick={loadMore}>
+              Load More ({properties.length - visibleCount} remaining)
+            </button>
+          )}
         </div>
       </aside>
-      <main className="catalog-map-container">
+       <main className="catalog-map-container">
         <YandexMap onBoundsChange={handleBoundsChange}>
-          {properties.map(prop => (
+          {properties.slice(0, visibleCount).map(prop => (
             <YMapMarker
               key={prop.id}
               coordinates={[prop.lat, prop.lon]}
+              onClick={() => handleMarkerClick(prop.id)}
             >
               <div className="map-marker-label">
-                {Number(prop.price).toLocaleString()} ₽
+                <div className="map-marker-label__title">{prop.title}</div>
+                <div className="map-marker-label__price">{Number(prop.price).toLocaleString()} ₽</div>
               </div>
             </YMapMarker>
           ))}

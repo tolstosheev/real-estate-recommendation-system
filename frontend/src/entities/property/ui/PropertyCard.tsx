@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import cn from 'classnames';
 import type { Property } from '@entities/property/model/types';
+import api from '@shared/api/api';
 import './PropertyCard.scss';
 
 interface PropertyCardProps {
@@ -9,7 +10,15 @@ interface PropertyCardProps {
   variant?: 'horizontal' | 'vertical';
 }
 
-const PLACEHOLDER_IMG = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300" fill="%23E5E7EB"%3E%3Crect width="400" height="300"/%3E%3Ctext x="50%25" y="50%25" fill="%239CA3AF" text-anchor="middle" dy=".3em" font-size="14"%3ENo Photo%3C/text%3E%3C/svg%3E';
+const getFullImageUrl = (url: string): string => {
+  if (!url) return url;
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+  const separator = url.startsWith('/') ? '' : '/';
+  return `${baseUrl}${separator}${url}`;
+};
 
 const PropertyCard: React.FC<PropertyCardProps> = ({ property, variant = 'vertical' }) => {
   const navigate = useNavigate();
@@ -19,56 +28,101 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, variant = 'vertic
     navigate(`/property/${property.id}`);
   };
 
-  const validImages = property.images?.filter(url => url && url.length > 0) || [];
-  const imageSrc = !imgError && validImages.length > 0 ? validImages[0] : PLACEHOLDER_IMG;
+  const handleImgError = () => {
+    if (!imgError) {
+      setImgError(true);
+    }
+  };
+
+  const validImages = (property.images || []).filter(url => url && url.trim().length > 0);
+  const imageSrc = validImages.length > 0 && !imgError ? getFullImageUrl(validImages[0].trim()) : null;
 
   return (
-    <div className={cn('property-card', {
-      'property-card--horizontal': variant === 'horizontal',
-      'property-card--vertical': variant === 'vertical',
-    })} onClick={handleClick}>
-      <div className="property-card__image-container">
-        <img
-          src={imageSrc}
-          alt={property.title}
-          className="property-card__image"
-          onError={() => setImgError(true)}
-        />
+    <div
+      className={cn('property-card', {
+        'property-card--horizontal': variant === 'horizontal',
+        'property-card--vertical': variant === 'vertical',
+      })}
+      onClick={handleClick}
+    >
+      <div className="property-card__image-wrapper">
+        {imageSrc ? (
+          <img
+            src={imageSrc}
+            alt={property.title}
+            className="property-card__image"
+            onError={handleImgError}
+            loading="lazy"
+          />
+        ) : (
+          <div className="property-card__placeholder">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <path d="M21 15l-5-5L5 21"/>
+            </svg>
+            <span>No Photo</span>
+          </div>
+        )}
+
+        {property.property_type && (
+          <span className="property-card__badge">
+            {property.property_type}
+          </span>
+        )}
       </div>
-      
-      <div className="property-card__content">
-        <div className="property-card__price">{Number(property.price).toLocaleString()} ₽</div>
-        <div className="property-card__address">{property.address}</div>
-        
-        <div className="property-card__params">
-          {property.rooms && (
-            <div className="property-card__param-item">
-              <span>{property.rooms} rooms</span>
-            </div>
-          )}
+
+      <div className="property-card__body">
+        <h3 className="property-card__title">{property.title}</h3>
+        <p className="property-card__address">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+          {property.address}
+        </p>
+
+        <div className="property-card__features">
           {property.area && (
-            <div className="property-card__param-item">
+            <div className="property-card__feature">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <path d="M3 9h18M9 21V9"/>
+              </svg>
               <span>{property.area} m²</span>
             </div>
           )}
+          {property.rooms && (
+            <div className="property-card__feature">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+              <span>{property.rooms} rm</span>
+            </div>
+          )}
           {property.floor && property.total_floors && (
-            <div className="property-card__param-item">
-              <span>{property.floor}/{property.total_floors} fl.</span>
+            <div className="property-card__feature">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="4" y="2" width="16" height="20" rx="2"/>
+                <line x1="4" y1="10" x2="20" y2="10"/>
+              </svg>
+              <span>{property.floor}/{property.total_floors} fl</span>
             </div>
           )}
         </div>
 
-        <div className="property-card__footer">
+        {variant === 'vertical' && (
           <button
-            className="property-card__details-btn"
+            className="property-card__cta"
             onClick={(e) => {
               e.stopPropagation();
               handleClick();
             }}
           >
-            Details
+            View Details
           </button>
-        </div>
+        )}
       </div>
     </div>
   );
