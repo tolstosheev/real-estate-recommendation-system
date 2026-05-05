@@ -21,6 +21,7 @@ class GeocodingService:
             "apikey": self.api_key,
             "geocode": address,
             "format": "json",
+            "lang": "ru_RU",
             "results": 1
         }
         
