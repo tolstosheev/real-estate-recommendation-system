@@ -12,6 +12,33 @@ from geoalchemy2.elements import WKTElement
 from geoalchemy2.functions import ST_GeomFromText
 import time
 import httpx
+import random
+
+# Реальные координаты для популярных улиц Москвы и Тулы
+STREET_COORDS = {
+    """Geocode using OpenStreetMap Nominatim (free, no key needed)"""
+    base_url = "https://nominatim.openstreetmap.org/search"
+    params = {
+        "q": address,
+        "format": "json",
+        "limit": 1,
+        "addressdetails": 1
+    }
+    headers = {
+        "User-Agent": "RealEstateRecommendationSystem/1.0"
+    }
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(base_url, params=params, headers=headers, timeout=10.0)
+            response.raise_for_status()
+            data = response.json()
+            if data and len(data) > 0:
+                lat = float(data[0]["lat"])
+                lon = float(data[0]["lon"])
+                return lat, lon
+    except Exception as e:
+        print(f"Nominatim error for {address}: {e}")
+    return None
 
 # Реалистичные адреса для Москвы и Тульской области (без координат!)
 MOSCOW_ADDRESSES = [
@@ -106,38 +133,81 @@ def get_property_images(prop_type, seed):
         f"{base_url}?text={prop_type}+3",
     ]
 
-# Границы городов (min_lat, max_lat, min_lon, max_lon)
-CITY_BOUNDS = {
-    "Москва": (55.55, 55.95, 37.35, 37.85),
-    "Тула": (54.15, 54.25, 37.55, 37.70),
-    "Новомосковск": (54.00, 54.10, 38.20, 38.35),
-    "Донской": (53.95, 54.00, 38.30, 38.36),
-    "Алексин": (54.45, 54.55, 37.00, 37.12),
-    "Щёкино": (53.58, 53.66, 37.45, 37.56),
-    "Ефремов": (53.10, 53.20, 38.05, 38.15),
+# Реальные координаты для популярных улиц Москвы и Тулы
+STREET_COORDS = {
+    # Москва
+    "ул. Тверская": (55.7611, 37.6111),
+    "ул. Новый Арбат": (55.7500, 37.5900),
+    "ул. Садовая-Кудринская": (55.7700, 37.5800),
+    "Патриаршие пруды": (55.7600, 37.6000),
+    "ул. Покровка": (55.7600, 37.6500),
+    "Ленинградский проспект": (55.7900, 37.5400),
+    "ул. 1-я Ямская": (55.7800, 37.5800),
+    "Дмитровское шоссе": (55.8200, 37.5900),
+    "проспект Мира": (55.7900, 37.6300),
+    "Ярославское шоссе": (55.8400, 37.6600),
+    "ул. Сокольнический вал": (55.7800, 37.6900),
+    "Измайловский проспект": (55.7900, 37.7800),
+    "Волгоградский проспект": (55.7300, 37.7300),
+    "ул. Люблинская": (55.6900, 37.7300),
+    "Варшавское шоссе": (55.6800, 37.6100),
+    "Каширское шоссе": (55.6600, 37.6300),
+    "Ленинский проспект": (55.7000, 37.5800),
+    "ул. Профсоюзная": (55.6900, 37.5600),
+    "Кутузовский проспект": (55.7400, 37.5200),
+    "ул. Арбат": (55.7500, 37.6000),
+    "ул. Народного Ополчения": (55.7700, 37.4700),
+    "Хорошёвское шоссе": (55.7800, 37.5000),
+    "Коммунарка": (55.5800, 37.4800),
+    "Троицк": (55.4900, 37.1800),
+    # Тула
+    "пр. Ленина": (54.2000, 37.6200),
+    "ул. Пролетарская": (54.2100, 37.6000),
+    "ул. Октябрьская": (54.1900, 37.6400),
+    "ул. Красноармейский проспект": (54.2200, 37.6100),
+    "ул. Советская": (54.2000, 37.6300),
+    "пос. Плановский": (54.1800, 37.5800),
+    # Тульская область
+    "ул. Комсомольская": (54.0500, 38.2700),  # Новомосковск
+    "Донской, ул. Ленина": (53.9800, 38.3300),
+    "Алексин, ул. Советская": (54.5000, 37.0700),
+    "Щёкино, ул. Ленина": (53.6200, 37.5100),
+    "Ефремов, ул. Ленина": (53.1500, 38.1000),
 }
 
 async def get_coordinates(geocoder, city, street, house):
-    """Получить координаты через геокодер или сгенерировать случайные в пределах города"""
-    address = f"Россия, {city}, {street}, {house}"
-    try:
-        if geocoder and geocoder.api_key:
-            coords = await geocoder.get_coords_from_address(address)
-            if coords:
-                print(f"Геокодирование успешно: {address} -> {coords}")
-                return coords
-    except Exception as e:
-        print(f"Ошибка геокодирования для {address}: {e}")
+    """Получить координаты из словаря или использовать центр города"""
+    # Формируем ключ для поиска в словаре
+    key = f"{street}"
+    if city != "Москва":
+        key = f"{city}, {street}"
     
-    # Если геокодер не сработал, генерируем случайные координаты в пределах города
-    if city in CITY_BOUNDS:
-        min_lat, max_lat, min_lon, max_lon = CITY_BOUNDS[city]
-        lat = random.uniform(min_lat, max_lat)
-        lon = random.uniform(min_lon, max_lon)
+    if key in STREET_COORDS:
+        # Добавляем небольшой разброс (до 500м) чтобы объекты не накладывались друг на друга
+        base_lat, base_lon = STREET_COORDS[key]
+        lat = base_lat + random.uniform(-0.002, 0.002)
+        lon = base_lon + random.uniform(-0.002, 0.002)
+        return (lat, lon)
+    
+    # Если улицы нет в словаре, используем центр города
+    city_centers = {
+        "Москва": (55.7558, 37.6173),
+        "Тула": (54.1961, 37.6182),
+        "Новомосковск": (54.0500, 38.2700),
+        "Донской": (53.9800, 38.3300),
+        "Алексин": (54.5000, 37.0700),
+        "Щёкино": (53.6200, 37.5100),
+        "Ефремов": (53.1500, 38.1000),
+    }
+    
+    if city in city_centers:
+        base_lat, base_lon = city_centers[city]
+        lat = base_lat + random.uniform(-0.01, 0.01)
+        lon = base_lon + random.uniform(-0.01, 0.01)
         return (lat, lon)
     
     # Крайний случай - Москва центр
-    return (55.75, 37.61)
+    return (55.7558, 37.6173)
 
 async def populate():
     async with AsyncSession(engine) as session:

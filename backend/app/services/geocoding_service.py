@@ -9,43 +9,43 @@ logger = logging.getLogger(__name__)
 class GeocodingService:
     def __init__(self):
         self.api_key = settings.YANDEX_API_KEY
-        self.base_url = "https://geocode-maps.yandex.ru/1.x"
-
+        self.base_url = "https://geocode-maps.yandex.ru/v1"
+    
     async def get_coords_from_address(
             self, address: str) -> Optional[Tuple[float, float]]:
         if not self.api_key:
             logger.error("Yandex API Key is not configured.")
             return None
-
+        
         params = {
             "apikey": self.api_key,
             "geocode": address,
-            "format": "json"
+            "format": "json",
+            "results": 1
         }
-
+        
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.get(self.base_url, params=params, timeout=5.0)
                 response.raise_for_status()
                 data = response.json()
-
-                geo_objects = data.get(
-                    "response",
-                    {}).get(
-                    "GeoObject",
-                    {}).get(
-                    "featureCollection",
-                    {}).get(
-                    "features",
-                    [])
-                if geo_objects:
-                    geometry = geo_objects[0].get(
-                        "geometry", {}).get(
-                        "coordinates", [])
-                    if len(geometry) >= 2:
-                        lon, lat = geometry[0], geometry[1]
-                        return lat, lon
+                
+                # Правильный путь к координатам согласно API v1
+                response_data = data.get("response", {})
+                collection = response_data.get("GeoObjectCollection", {})
+                members = collection.get("featureMember", [])
+                
+                if members:
+                    geo_object = members[0].get("GeoObject", {})
+                    point = geo_object.get("Point", {})
+                    pos = point.get("pos", "")
+                    if pos:
+                        # В ответе координаты идут как "долгота широта"
+                        coords = pos.split()
+                        if len(coords) >= 2:
+                            lon, lat = float(coords[0]), float(coords[1])
+                            return lat, lon
         except Exception as e:
             logger.error(f"Geocoding error for address {address}: {e}")
-
+        
         return None
