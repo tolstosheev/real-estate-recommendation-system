@@ -3,11 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import cn from 'classnames';
 import type { Property } from '@entities/property/model/types';
 import api from '@shared/api/api';
+import { useAppSelector } from '@app/store/hooks';
 import './PropertyCard.scss';
 
 interface PropertyCardProps {
   property: Property;
   variant?: 'horizontal' | 'vertical';
+  showActions?: boolean;
+  onLikeToggle?: (propertyId: string, isLiked: boolean) => void;
 }
 
 const getFullImageUrl = (url: string): string => {
@@ -20,9 +23,33 @@ const getFullImageUrl = (url: string): string => {
   return `${baseUrl}${separator}${url}`;
 };
 
-const PropertyCard: React.FC<PropertyCardProps> = ({ property, variant = 'vertical' }) => {
+const PropertyCard: React.FC<PropertyCardProps> = ({ property, variant = 'vertical', showActions = false, onLikeToggle }) => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
   const [imgError, setImgError] = useState(false);
+
+  const handleLike = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!isAuthenticated) return;
+
+    const previousLikedState = property.is_liked_by_me ?? false;
+    const newLikedState = !previousLikedState;
+
+    try {
+      await api.post('/api/interactions/', {
+        property_id: property.id,
+        interaction_type: 'like'
+      });
+      if (onLikeToggle) {
+        onLikeToggle(property.id, newLikedState);
+      }
+    } catch (err) {
+      console.error('Failed to like property:', err);
+      if (onLikeToggle) {
+        onLikeToggle(property.id, previousLikedState);
+      }
+    }
+  };
 
   const handleClick = () => {
     navigate(`/property/${property.id}`);
@@ -69,6 +96,25 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, variant = 'vertic
           <span className="property-card__badge">
             {property.property_type}
           </span>
+        )}
+
+        {showActions && property.is_ai_recommendation && (
+          <span className="property-card__ai-badge property-card__ai-badge--center">AI</span>
+        )}
+
+        {!showActions && property.is_ai_recommendation && (
+          <span className="property-card__ai-badge property-card__ai-badge--right">AI</span>
+        )}
+
+        {showActions && isAuthenticated && (
+           <button
+             className={cn('property-card__like-btn', { 'property-card__like-btn--active': property.is_liked_by_me ?? false })}
+             onClick={handleLike}
+           >
+             <svg width="20" height="20" viewBox="0 0 24 24" fill={property.is_liked_by_me ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+             </svg>
+           </button>
         )}
       </div>
 

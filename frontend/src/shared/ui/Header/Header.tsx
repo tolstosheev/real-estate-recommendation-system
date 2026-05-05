@@ -39,6 +39,7 @@ const Header: React.FC = () => {
 
         <nav className={`header__nav ${isMenuOpen ? 'header__nav--open' : ''}`}>
           <Link to="/" className="header__nav-link" onClick={closeMenu}>Home</Link>
+          <Link to="/map" className="header__nav-link" onClick={closeMenu}>Map</Link>
           <Link to="/catalog" className="header__nav-link" onClick={closeMenu}>Catalog</Link>
           {isAuthenticated && <Link to="/profile" className="header__nav-link" onClick={closeMenu}>Profile</Link>}
         </nav>

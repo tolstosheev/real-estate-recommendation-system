@@ -19,10 +19,13 @@ const mockProperty: Property = {
   lon: 37.6173,
   images: ['https://example.com/image1.jpg', 'https://example.com/image2.jpg'],
   owner: {
+    id: 'owner-1',
     full_name: 'Test Owner',
     phone_number: '+1234567890',
     telegram_handle: '@testowner',
   },
+  views_count: 0,
+  likes_count: 0,
 };
 
 const renderWithRouter = (ui: React.ReactElement) => {
@@ -105,10 +108,13 @@ describe('PropertyCard', () => {
       lon: 37.6173,
       images: ['https://example.com/photo.jpg'],
       owner: {
+        id: 'owner-unknown',
         full_name: 'Unknown',
         phone_number: null,
         telegram_handle: null,
       },
+      views_count: 0,
+      likes_count: 0,
     };
 
     renderWithRouter(<PropertyCard property={minimalProperty} />);

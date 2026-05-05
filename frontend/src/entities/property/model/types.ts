@@ -13,9 +13,14 @@ export interface Property {
   lon: number;
   images: string[];
   owner: PropertyOwner;
+  views_count: number;
+  likes_count: number;
+  is_liked_by_me?: boolean;
+  is_ai_recommendation?: boolean;
 }
 
 export interface PropertyOwner {
+  id: string;
   full_name: string;
   phone_number: string | null;
   telegram_handle: string | null;

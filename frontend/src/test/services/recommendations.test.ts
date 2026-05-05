@@ -28,10 +28,13 @@ describe('recommendationsService', () => {
         lon: 37.6173,
         images: ['photo1.jpg'],
         owner: {
+          id: 'owner-1',
           full_name: 'John Doe',
           phone_number: '+79991234567',
           telegram_handle: '@johndoe',
         },
+        views_count: 0,
+        likes_count: 0,
       },
     ];
 

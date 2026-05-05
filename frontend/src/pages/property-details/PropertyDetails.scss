@@ -383,6 +383,32 @@
   }
 }
 
+.content-stats {
+  display: flex;
+  gap: calc-rem(20);
+  margin-top: calc-rem(12);
+  padding-top: calc-rem(12);
+  border-top: 1px solid $color-gray-100;
+}
+
+.content-stat {
+  display: flex;
+  align-items: center;
+  gap: calc-rem(6);
+  color: $color-gray-500;
+  font-size: calc-rem(14);
+
+  svg {
+    flex-shrink: 0;
+    color: $color-gray-400;
+  }
+
+  @media (max-width: #{$bp-mobile}) {
+    font-size: calc-rem(13);
+    gap: calc-rem(4);
+  }
+}
+
 .content-specs {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(var(--spec-min-width), 1fr));

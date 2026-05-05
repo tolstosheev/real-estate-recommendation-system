@@ -5,6 +5,7 @@ import Login from '@pages/auth/login';
 import Register from '@pages/auth/register';
 import Onboarding from '@pages/onboarding';
 import Home from '@pages/home';
+import MapPage from '@pages/map';
 import Catalog from '@pages/catalog';
 import PropertyDetails from '@pages/property-details';
 import Profile from '@pages/profile';
@@ -53,6 +54,7 @@ const App: React.FC = () => {
         <Route element={<GuestRoute />}>
           <Route element={<Layout />}>
             <Route path="/" element={<Home />} />
+            <Route path="/map" element={<MapPage />} />
             <Route path="/catalog" element={<Catalog />} />
             <Route path="/property/:id" element={<PropertyDetails />} />
             <Route path="/profile" element={<Profile />} />

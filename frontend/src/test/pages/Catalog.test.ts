@@ -21,10 +21,13 @@ const mockProperties: Property[] = [
     lon: 37.61,
     images: ['img1.jpg'],
     owner: {
+      id: 'owner-1',
       full_name: 'Owner 1',
       phone_number: null,
       telegram_handle: null,
     },
+    views_count: 0,
+    likes_count: 0,
   },
   {
     id: '2',
@@ -41,10 +44,13 @@ const mockProperties: Property[] = [
     lon: 37.62,
     images: ['img2.jpg'],
     owner: {
+      id: 'owner-2',
       full_name: 'Owner 2',
       phone_number: '+1234567890',
       telegram_handle: '@owner2',
     },
+    views_count: 0,
+    likes_count: 0,
   },
   {
     id: '3',
@@ -61,10 +67,13 @@ const mockProperties: Property[] = [
     lon: 37.63,
     images: [],
     owner: {
+      id: 'owner-3',
       full_name: 'Owner 3',
       phone_number: null,
       telegram_handle: null,
     },
+    views_count: 0,
+    likes_count: 0,
   },
 ];
 

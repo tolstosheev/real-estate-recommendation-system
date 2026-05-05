@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { useAppSelector } from '@app/store/hooks';
 import YandexMap from '@shared/ui/Map';
 import YMapMarker from '@shared/ui/Map/YMapMarker';
 import type { Property } from '@entities/property/model/types';
@@ -9,6 +10,7 @@ import './PropertyDetails.scss';
 
 const PropertyDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
   const [property, setProperty] = useState<Property | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [imgErrors, setImgErrors] = useState<Record<number, boolean>>({});
@@ -19,6 +21,18 @@ const PropertyDetails: React.FC = () => {
       try {
         const response = await api.get(`/api/properties/${id}`);
         setProperty(response.data);
+
+        if (isAuthenticated) {
+          try {
+            await api.post('/api/interactions/', {
+              property_id: id,
+              interaction_type: 'view'
+            });
+            setProperty(prev => prev ? { ...prev, views_count: (prev.views_count || 0) + 1 } : null);
+          } catch (err) {
+            console.error('Failed to record view:', err);
+          }
+        }
       } catch (err) {
         console.error(err);
       } finally {
@@ -26,7 +40,7 @@ const PropertyDetails: React.FC = () => {
       }
     };
     fetchProperty();
-  }, [id]);
+  }, [id, isAuthenticated]);
 
   if (isLoading) return <div className="page-loading"><div className="loader"></div></div>;
   if (!property) return <div className="page-empty">Property not found.</div>;
@@ -91,6 +105,21 @@ const PropertyDetails: React.FC = () => {
                 <circle cx="12" cy="10" r="3"/>
               </svg>
               {property.address}
+            </div>
+            <div className="content-stats">
+              <span className="content-stat">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+                {property.views_count || 0} views
+              </span>
+              <span className="content-stat">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                </svg>
+                {property.likes_count || 0} likes
+              </span>
             </div>
           </div>
 
