@@ -43,15 +43,15 @@ async def test_property_interactions(client: AsyncClient):
     prop_id = prop_res.json()["id"]
 
     like_data = {"property_id": prop_id, "interaction_type": "like"}
-    res = await client.post("/api/interactions/interact", json=like_data, headers=headers)
+    res = await client.post("/api/interactions/", json=like_data, headers=headers)
     assert res.status_code == 201
     
     favs = await client.get("/api/interactions/favorites", headers=headers)
     assert len(favs.json()) == 1
     assert favs.json()[0]["id"] == prop_id
 
-    res = await client.post("/api/interactions/interact", json=like_data, headers=headers)
-    assert res.status_code == 204
+    res = await client.post("/api/interactions/", json=like_data, headers=headers)
+    assert res.status_code == 201
     
     favs = await client.get("/api/interactions/favorites", headers=headers)
     assert len(favs.json()) == 0
@@ -68,5 +68,5 @@ async def test_interaction_nonexistent_property(client: AsyncClient):
         "property_id": "00000000-0000-0000-0000-000000000000", 
         "interaction_type": "like"
     }
-    res = await client.post("/api/interactions/interact", json=like_data, headers=headers)
-    assert res.status_code in [400, 404, 500]
+    res = await client.post("/api/interactions/", json=like_data, headers=headers)
+    assert res.status_code == 404
