@@ -12,6 +12,15 @@ export const propertyService = {
     return response.data;
   },
 
+  async createProperty(data: Partial<Property>): Promise<Property> {
+    const response = await api.post('/api/properties/', data);
+    return response.data;
+  },
+
+  async deleteProperty(id: string): Promise<void> {
+    await api.delete(`/api/properties/${id}`);
+  },
+
   async getPropertiesInBox(bounds: [number, number, number, number], filters: Record<string, unknown> = {}): Promise<Property[]> {
     const [north, east, south, west] = bounds;
     const params = {

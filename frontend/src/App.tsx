@@ -9,6 +9,7 @@ import MapPage from '@pages/map';
 import Catalog from '@pages/catalog';
 import PropertyDetails from '@pages/property-details';
 import Profile from '@pages/profile';
+import { AddPropertyPage } from '@pages/add-property/AddPropertyPage';
 import Header from '@shared/ui/Header';
 
 const Layout: React.FC = () => {
@@ -58,6 +59,7 @@ const App: React.FC = () => {
             <Route path="/catalog" element={<Catalog />} />
             <Route path="/property/:id" element={<PropertyDetails />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/add-property" element={<AddPropertyPage />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/onboarding" replace />} />

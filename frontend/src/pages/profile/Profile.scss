@@ -231,3 +231,55 @@
     flex-direction: column;
   }
 }
+
+.profile-section__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: calc-rem(24);
+}
+
+.my-properties-list {
+  display: flex;
+  flex-direction: column;
+  gap: calc-rem(16);
+}
+
+.my-property-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: calc-rem(16);
+  background-color: $color-gray-100;
+  border-radius: calc-rem(12);
+  transition: box-shadow 0.2s;
+
+  &:hover {
+    box-shadow: 0 calc-rem(4) calc-rem(12) rgba(0, 0, 0, 0.08);
+  }
+}
+
+.my-property-card__info {
+  h3 {
+    font-size: calc-rem(16);
+    font-weight: 600;
+    color: $color-gray-800;
+    margin-bottom: calc-rem(4);
+  }
+
+  p {
+    font-size: calc-rem(14);
+    color: $color-gray-500;
+    margin-bottom: calc-rem(2);
+  }
+}
+
+.my-property-card__address {
+  font-size: calc-rem(12) !important;
+  color: $color-gray-400 !important;
+}
+
+.my-property-card__actions {
+  display: flex;
+  gap: calc-rem(8);
+}
