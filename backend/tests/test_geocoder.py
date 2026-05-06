@@ -1,0 +1,106 @@
+import pytest
+from app.services.geocoding_service import GeocodingService
+from unittest.mock import AsyncMock, patch, Mock
+import httpx
+
+
+@pytest.fixture
+def geocoder():
+    return GeocodingService()
+
+
+@pytest.mark.asyncio
+async def test_get_coords_success(geocoder):
+    mock_response = {
+        "response": {
+            "GeoObjectCollection": {
+                "featureMember": [
+                    {
+                        "GeoObject": {
+                            "Point": {
+                                "pos": "37.6173 55.7558"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    }
+
+    with patch("httpx.AsyncClient") as mock_client:
+        mock_response_obj = Mock()
+        mock_response_obj.raise_for_status = Mock(return_value=None)
+        mock_response_obj.json = Mock(return_value=mock_response)
+        
+        mock_instance = AsyncMock()
+        mock_instance.get.return_value = mock_response_obj
+        mock_client.return_value.__aenter__.return_value = mock_instance
+
+        result = await geocoder.get_coords_from_address("Moscow, Tverskaya St")
+        assert result == (55.7558, 37.6173)
+
+
+@pytest.mark.asyncio
+async def test_get_coords_no_results(geocoder):
+    mock_response = {
+        "response": {
+            "GeoObjectCollection": {
+                "featureMember": []
+            }
+        }
+    }
+
+    with patch("httpx.AsyncClient") as mock_client:
+        mock_response_obj = Mock()
+        mock_response_obj.raise_for_status = Mock(return_value=None)
+        mock_response_obj.json = Mock(return_value=mock_response)
+        
+        mock_instance = AsyncMock()
+        mock_instance.get.return_value = mock_response_obj
+        mock_client.return_value.__aenter__.return_value = mock_instance
+
+        result = await geocoder.get_coords_from_address("Non-existent Address")
+        assert result is None
+
+
+@pytest.mark.asyncio
+async def test_reverse_geocode_success(geocoder):
+    mock_response = {
+        "response": {
+            "GeoObjectCollection": {
+                "featureMember": [
+                    {
+                        "GeoObject": {
+                            "metaDataProperty": {
+                                "GeocoderMetaData": {
+                                    "text": "Moscow, Tverskaya St, 1"
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    }
+
+    with patch("httpx.AsyncClient") as mock_client:
+        mock_response_obj = Mock()
+        mock_response_obj.raise_for_status = Mock(return_value=None)
+        mock_response_obj.json = Mock(return_value=mock_response)
+        
+        mock_instance = AsyncMock()
+        mock_instance.get.return_value = mock_response_obj
+        mock_client.return_value.__aenter__.return_value = mock_instance
+
+        result = await geocoder.get_address_from_coords(55.7558, 37.6173)
+        assert result == "Moscow, Tverskaya St, 1"
+
+
+@pytest.mark.asyncio
+async def test_no_api_key():
+    with patch("app.services.geocoding_service.settings") as mock_settings:
+        mock_settings.YANDEX_API_KEY = None
+        geocoder = GeocodingService()
+        assert geocoder.api_key is None
+        result = await geocoder.get_coords_from_address("Moscow")
+        assert result is None

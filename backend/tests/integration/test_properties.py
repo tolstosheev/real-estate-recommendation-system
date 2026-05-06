@@ -1,13 +1,10 @@
 import pytest
 from httpx import AsyncClient
 
+
 @pytest.mark.asyncio
 async def test_property_crud(client: AsyncClient):
-    payload = {
-        "email": "owner@example.com",
-        "password": "password123",
-        "full_name": "Owner"
-    }
+    payload = {"email": "owner@example.com", "password": "password123", "full_name": "Owner"}
     await client.post("/auth/register", json=payload)
     login_data = {"email": "owner@example.com", "password": "password123"}
     token_res = await client.post("/auth/login", json=login_data)
@@ -23,9 +20,22 @@ async def test_property_crud(client: AsyncClient):
         "address": "Street 1",
         "lat": 40.7128,
         "lon": -74.0060,
-        "property_type": "Apartment"
+        "property_type": "Apartment",
+        "property_purpose": "sale",
+        "category": "2-к квартира",
+        "district": "Центр",
+        "metro": "Пушкинская",
+        "sq_living": 40.5,
+        "sq_kitchen": 12.0,
+        "build_year": 2015,
+        "material": "кирпич",
+        "repair_type": "евро",
+        "room_type": "изолированные",
+        "is_new": "новостройка",
+        "balcony": "есть",
+        "parking": "есть",
     }
-    
+
     res = await client.post("/api/properties/", json=prop_data, headers=headers)
     assert res.status_code == 201
     prop_id = res.json()["id"]
@@ -39,29 +49,31 @@ async def test_property_crud(client: AsyncClient):
     res = await client.delete(f"/api/properties/{prop_id}", headers=headers)
     assert res.status_code == 204
 
+
 @pytest.mark.asyncio
 async def test_property_unauthorized_access(client: AsyncClient):
     u1_payload = {"email": "u1@example.com", "password": "password123", "full_name": "User 1"}
     u2_payload = {"email": "u2@example.com", "password": "password123", "full_name": "User 2"}
     await client.post("/auth/register", json=u1_payload)
     await client.post("/auth/register", json=u2_payload)
-    
+
     l1_data = {"email": "u1@example.com", "password": "password123"}
     l2_data = {"email": "u2@example.com", "password": "password123"}
     t1 = (await client.post("/auth/login", json=l1_data)).json()["access_token"]
     t2 = (await client.post("/auth/login", json=l2_data)).json()["access_token"]
-    
-    prop_data = {
-        "title": "Private House", "price": 100, "address": "A", "lat": 0, "lon": 0, "property_type": "House"
-    }
+
+    prop_data = {"title": "Private House", "price": 100, "address": "A", "lat": 0, "lon": 0, "property_type": "House"}
     res = await client.post("/api/properties/", json=prop_data, headers={"Authorization": f"Bearer {t1}"})
     prop_id = res.json()["id"]
 
-    res = await client.put(f"/api/properties/{prop_id}", json={"title": "Hacked"}, headers={"Authorization": f"Bearer {t2}"})
+    res = await client.put(
+        f"/api/properties/{prop_id}", json={"title": "Hacked"}, headers={"Authorization": f"Bearer {t2}"}
+    )
     assert res.status_code == 403
-    
+
     res = await client.delete(f"/api/properties/{prop_id}", headers={"Authorization": f"Bearer {t2}"})
     assert res.status_code == 403
+
 
 @pytest.mark.asyncio
 async def test_property_not_found(client: AsyncClient):
@@ -74,11 +86,14 @@ async def test_property_not_found(client: AsyncClient):
     res = await client.get(f"/api/properties/00000000-0000-0000-0000-000000000000")
     assert res.status_code == 404
 
-    res = await client.put(f"/api/properties/00000000-0000-0000-0000-000000000000", json={"title": "X"}, headers=headers)
+    res = await client.put(
+        f"/api/properties/00000000-0000-0000-0000-000000000000", json={"title": "X"}, headers=headers
+    )
     assert res.status_code == 404
 
     res = await client.delete(f"/api/properties/00000000-0000-0000-0000-000000000000", headers=headers)
     assert res.status_code == 404
+
 
 @pytest.mark.asyncio
 async def test_geo_search(client: AsyncClient):
@@ -98,6 +113,7 @@ async def test_geo_search(client: AsyncClient):
     assert len(data) == 1
     assert data[0]["title"] == "Near"
 
+
 @pytest.mark.asyncio
 async def test_property_filters(client: AsyncClient):
     payload = {"email": "filt@example.com", "password": "password123", "full_name": "Filt"}
@@ -107,7 +123,15 @@ async def test_property_filters(client: AsyncClient):
     headers = {"Authorization": f"Bearer {token}"}
 
     p1 = {"title": "Cheap", "price": 50000, "address": "A", "lat": 0, "lon": 0, "rooms": 1, "property_type": "Studio"}
-    p2 = {"title": "Expensive", "price": 500000, "address": "B", "lat": 0, "lon": 0, "rooms": 4, "property_type": "Villa"}
+    p2 = {
+        "title": "Expensive",
+        "price": 500000,
+        "address": "B",
+        "lat": 0,
+        "lon": 0,
+        "rooms": 4,
+        "property_type": "Villa",
+    }
     await client.post("/api/properties/", json=p1, headers=headers)
     await client.post("/api/properties/", json=p2, headers=headers)
 
@@ -119,6 +143,7 @@ async def test_property_filters(client: AsyncClient):
     assert len(res.json()) == 1
     assert res.json()[0]["title"] == "Expensive"
 
+
 @pytest.mark.asyncio
 async def test_invalid_coordinates(client: AsyncClient):
     payload = {"email": "val@example.com", "password": "password123", "full_name": "Val"}
@@ -127,11 +152,14 @@ async def test_invalid_coordinates(client: AsyncClient):
     token = (await client.post("/auth/login", json=login_data)).json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
-    prop_data = {
-        "title": "Invalid", "price": 100, "address": "A", "lat": 100, "lon": 200, "property_type": "House"
-    }
+    prop_data = {"title": "Invalid", "price": 100, "address": "A", "lat": 100, "lon": 200, "property_type": "House"}
     res = await client.post("/api/properties/", json=prop_data, headers=headers)
     assert res.status_code == 422
+
+    prop_data2 = {"title": "Invalid2", "price": 100, "address": "B", "lat": -100, "lon": -200, "property_type": "House"}
+    res2 = await client.post("/api/properties/", json=prop_data2, headers=headers)
+    assert res2.status_code == 422
+
 
 @pytest.mark.asyncio
 async def test_property_owner_contacts(client: AsyncClient):
@@ -140,7 +168,7 @@ async def test_property_owner_contacts(client: AsyncClient):
         "password": "password123",
         "full_name": "Contact User",
         "phone_number": "+79001112233",
-        "telegram_handle": "@contact_me"
+        "telegram_handle": "@contact_me",
     }
     await client.post("/auth/register", json=payload)
     login_data = {"email": "contact@example.com", "password": "password123"}
@@ -148,9 +176,7 @@ async def test_property_owner_contacts(client: AsyncClient):
     token = token_res.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
-    prop_data = {
-        "title": "Contact House", "price": 100, "address": "A", "lat": 0, "lon": 0, "property_type": "House"
-    }
+    prop_data = {"title": "Contact House", "price": 100, "address": "A", "lat": 0, "lon": 0, "property_type": "House"}
     res = await client.post("/api/properties/", json=prop_data, headers=headers)
     prop_id = res.json()["id"]
 
@@ -159,3 +185,114 @@ async def test_property_owner_contacts(client: AsyncClient):
     assert data["owner"]["full_name"] == "Contact User"
     assert data["owner"]["phone_number"] == "+79001112233"
     assert data["owner"]["telegram_handle"] == "@contact_me"
+
+
+@pytest.mark.asyncio
+async def test_property_new_fields(client: AsyncClient):
+    payload = {"email": "fields@example.com", "password": "password123", "full_name": "Fields"}
+    await client.post("/auth/register", json=payload)
+    login_data = {"email": "fields@example.com", "password": "password123"}
+    token = (await client.post("/auth/login", json=login_data)).json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    prop_data = {
+        "title": "New Fields House",
+        "price": 100,
+        "address": "A",
+        "lat": 0,
+        "lon": 0,
+        "property_type": "House",
+        "property_purpose": "rent",
+        "category": "Дом",
+        "district": "Ленинский",
+        "metro": "Пушкинская",
+        "sq_living": 80.0,
+        "sq_kitchen": 15.0,
+        "build_year": 2018,
+        "material": "монолит",
+        "repair_type": "дизайнерский",
+        "room_type": "изолированные",
+        "is_new": "новостройка",
+        "balcony": "есть",
+        "parking": "есть",
+    }
+    res = await client.post("/api/properties/", json=prop_data, headers=headers)
+    assert res.status_code == 201
+    data = res.json()
+    assert data["property_purpose"] == "rent"
+    assert data["district"] == "Ленинский"
+    assert data["material"] == "монолит"
+    assert data["repair_type"] == "дизайнерский"
+    assert data["balcony"] == "есть"
+
+
+@pytest.mark.asyncio
+async def test_property_filter_by_purpose(client: AsyncClient):
+    payload = {"email": "filter2@example.com", "password": "password123", "full_name": "Filter2"}
+    await client.post("/auth/register", json=payload)
+    login_data = {"email": "filter2@example.com", "password": "password123"}
+    token = (await client.post("/auth/login", json=login_data)).json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    sale = {
+        "title": "For Sale",
+        "price": 100,
+        "address": "A",
+        "lat": 0,
+        "lon": 0,
+        "property_type": "Apartment",
+        "property_purpose": "sale",
+    }
+    rent = {
+        "title": "For Rent",
+        "price": 200,
+        "address": "B",
+        "lat": 0,
+        "lon": 0,
+        "property_type": "Apartment",
+        "property_purpose": "rent",
+    }
+    await client.post("/api/properties/", json=sale, headers=headers)
+    await client.post("/api/properties/", json=rent, headers=headers)
+
+    res = await client.get("/api/properties/", params={"property_purpose": "sale"})
+    data = res.json()
+    assert len(data) == 1
+    assert data[0]["title"] == "For Sale"
+
+
+@pytest.mark.asyncio
+async def test_property_filter_by_material(client: AsyncClient):
+    payload = {"email": "mat@example.com", "password": "password123", "full_name": "Mat"}
+    await client.post("/auth/register", json=payload)
+    login_data = {"email": "mat@example.com", "password": "password123"}
+    token = (await client.post("/auth/login", json=login_data)).json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    p1 = {
+        "title": "Brick",
+        "price": 100,
+        "address": "A",
+        "lat": 0,
+        "lon": 0,
+        "property_type": "House",
+        "material": "кирпич",
+    }
+    p2 = {
+        "title": "Panel",
+        "price": 200,
+        "address": "B",
+        "lat": 0,
+        "lon": 0,
+        "property_type": "House",
+        "material": "панель",
+    }
+    await client.post("/api/properties/", json=p1, headers=headers)
+    await client.post("/api/properties/", json=p2, headers=headers)
+
+    res = await client.get("/api/properties/")
+    data = res.json()
+    assert len(data) == 2
+    materials = [p["material"] for p in data]
+    assert "кирпич" in materials
+    assert "панель" in materials

@@ -2,6 +2,7 @@ import pytest
 from httpx import AsyncClient
 from decimal import Decimal
 
+
 @pytest.mark.asyncio
 async def test_user_preferences(client: AsyncClient):
     payload = {"email": "pref@example.com", "password": "password123", "full_name": "Pref User"}
@@ -16,16 +17,17 @@ async def test_user_preferences(client: AsyncClient):
         "max_price": 500000,
         "min_area": 50.0,
         "preferred_rooms": [2, 3],
-        "tags": ["center", "modern"]
+        "tags": ["center", "modern"],
     }
-    
+
     res = await client.put("/user/preferences", json=pref_data, headers=headers)
     assert res.status_code == 200
     assert float(res.json()["min_price"]) == 100000.0
-    
+
     res = await client.get("/user/preferences", headers=headers)
     assert res.status_code == 200
     assert float(res.json()["max_price"]) == 500000.0
+
 
 @pytest.mark.asyncio
 async def test_property_interactions(client: AsyncClient):
@@ -37,7 +39,12 @@ async def test_property_interactions(client: AsyncClient):
     headers = {"Authorization": f"Bearer {token}"}
 
     prop_data = {
-        "title": "Interaction House", "price": 100, "address": "A", "lat": 0, "lon": 0, "property_type": "House"
+        "title": "Interaction House",
+        "price": 100,
+        "address": "A",
+        "lat": 0,
+        "lon": 0,
+        "property_type": "House",
     }
     prop_res = await client.post("/api/properties/", json=prop_data, headers=headers)
     prop_id = prop_res.json()["id"]
@@ -45,16 +52,17 @@ async def test_property_interactions(client: AsyncClient):
     like_data = {"property_id": prop_id, "interaction_type": "like"}
     res = await client.post("/api/interactions/", json=like_data, headers=headers)
     assert res.status_code == 201
-    
+
     favs = await client.get("/api/interactions/favorites", headers=headers)
     assert len(favs.json()) == 1
     assert favs.json()[0]["id"] == prop_id
 
     res = await client.post("/api/interactions/", json=like_data, headers=headers)
-    assert res.status_code == 201
-    
+    assert res.status_code == 200
+
     favs = await client.get("/api/interactions/favorites", headers=headers)
     assert len(favs.json()) == 0
+
 
 @pytest.mark.asyncio
 async def test_interaction_nonexistent_property(client: AsyncClient):
@@ -64,9 +72,6 @@ async def test_interaction_nonexistent_property(client: AsyncClient):
     token = (await client.post("/auth/login", json=login_data)).json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
-    like_data = {
-        "property_id": "00000000-0000-0000-0000-000000000000", 
-        "interaction_type": "like"
-    }
+    like_data = {"property_id": "00000000-0000-0000-0000-000000000000", "interaction_type": "like"}
     res = await client.post("/api/interactions/", json=like_data, headers=headers)
     assert res.status_code == 404
