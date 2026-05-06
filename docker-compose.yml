@@ -29,6 +29,7 @@ services:
     environment:
       - DATABASE_URL=postgresql://user:password@db:5432/nestai_db
       - REDIS_URL=redis://redis:6379/0
+      - YANDEX_API_KEY=${YANDEX_API_KEY}
     depends_on:
       - db
       - redis
@@ -45,6 +46,8 @@ services:
       - "5173:5173"
     environment:
       - VITE_API_URL=http://localhost:8000
+      - VITE_YANDEX_MAPS_API_KEY=${VITE_YANDEX_MAPS_API_KEY}
+      - VITE_YANDEX_GEOCODER_API_KEY=${VITE_YANDEX_GEOCODER_API_KEY}
     depends_on:
       - backend
 
