@@ -3,26 +3,34 @@ import { useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '@app/store/hooks';
 import { logout, setCredentials } from '@entities/user/model/slice';
 import type { UserPreferenceCreate } from '@entities/user/model/types';
+import type { Property } from '@entities/property/model/types';
 import { preferencesService } from '@shared/api/preferences.service';
 import { authService } from '@shared/api/auth.service';
+import { propertyService } from '@shared/api/properties.service';
 import Button from '@shared/ui/Button';
 import Input from '@shared/ui/Input';
-import Chip from '@shared/ui/Chip';
 import './Profile.scss';
 
-const TAG_OPTIONS = [
-  'center', 'suburbs', 'quiet', 'modern', 'historic',
-  'parks', 'transport', 'schools', 'shops', 'waterfront',
-  'new-building', 'renovation', 'luxury', 'budget',
+const DISTRICT_OPTIONS = [
+  'CAO', 'SAO', 'SVAO', 'VAO', 'YVAO', 'YUAO', 'YZAO', 'ZAO', 'SZAO', 'NAO',
 ];
 
-const PRIORITY_KEYS = ['price', 'area', 'rooms', 'location'];
+const METRO_OPTIONS = [
+  'Tverskaya', 'Pushkinskaya', 'Chekhovskaya', 'Kurskaya', 'Belorusskaya',
+  'Prospekt Mira', 'Novoslobodskaya', 'Kievskaya', 'Smolenskaya',
+];
+
+const MATERIAL_OPTIONS = ['Brick', 'Panel', 'Monolith', 'Brick-Monolith', 'Wood', 'Block'];
+
+const REPAIR_TYPE_OPTIONS = ['Cosmetic', 'Euro', 'Design', 'Rough'];
 
 const Profile: React.FC = () => {
   const { user, isAuthenticated } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'profile' | 'preferences'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'preferences' | 'my-properties'>('profile');
+  const [myProperties, setMyProperties] = useState<Property[]>([]);
+  const [loadingProps, setLoadingProps] = useState(false);
 
   const [profileDraft, setProfileDraft] = useState({
     full_name: '',
@@ -32,16 +40,15 @@ const Profile: React.FC = () => {
   const [profileError, setProfileError] = useState('');
   const [profileSuccess, setProfileSuccess] = useState('');
 
-  const [prefTags, setPrefTags] = useState<string[]>([]);
-  const [prefPriority, setPrefPriority] = useState<Record<string, number>>({
-    price: 50,
-    area: 50,
-    rooms: 50,
-    location: 50,
-  });
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [minArea, setMinArea] = useState('');
+  const [prefDistrict, setPrefDistrict] = useState('');
+  const [prefMetro, setPrefMetro] = useState('');
+  const [prefMaterial, setPrefMaterial] = useState('');
+  const [prefRepairType, setPrefRepairType] = useState('');
+  const [prefMinBuildYear, setPrefMinBuildYear] = useState('');
+  const [prefMaxBuildYear, setPrefMaxBuildYear] = useState('');
   const [prefError, setPrefError] = useState('');
   const [prefSuccess, setPrefSuccess] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -69,14 +76,47 @@ const Profile: React.FC = () => {
 
     preferencesService.getPreferences()
       .then((data) => {
-        if (data.tags) setPrefTags(data.tags);
-        if (data.priority_weight) setPrefPriority(data.priority_weight);
         if (data.min_price) setMinPrice(String(data.min_price));
         if (data.max_price) setMaxPrice(String(data.max_price));
         if (data.min_area) setMinArea(String(data.min_area));
+        if (data.district) setPrefDistrict(data.district);
+        if (data.metro) setPrefMetro(data.metro);
+        if (data.material) setPrefMaterial(data.material);
+        if (data.repair_type) setPrefRepairType(data.repair_type);
+        if (data.min_build_year) setPrefMinBuildYear(String(data.min_build_year));
+        if (data.max_build_year) setPrefMaxBuildYear(String(data.max_build_year));
       })
       .catch(() => {});
   }, [user]);
+
+  useEffect(() => {
+    if (activeTab === 'my-properties' && user) {
+      loadMyProperties();
+    }
+  }, [activeTab, user]);
+
+  const loadMyProperties = async () => {
+    setLoadingProps(true);
+    try {
+      const allProps = await propertyService.getProperties();
+      const myProps = allProps.filter(p => p.owner?.id === user?.id);
+      setMyProperties(myProps);
+    } catch (error) {
+      console.error('Failed to load properties:', error);
+    } finally {
+      setLoadingProps(false);
+    }
+  };
+
+  const handleDeleteProperty = async (id: string) => {
+    if (!confirm('Удалить объект?')) return;
+    try {
+      await propertyService.deleteProperty(id);
+      setMyProperties(prev => prev.filter(p => p.id !== id));
+    } catch (error) {
+      console.error('Failed to delete:', error);
+    }
+  };
 
   const handleProfileSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,16 +158,6 @@ const Profile: React.FC = () => {
     }
   };
 
-  const toggleTag = (tag: string) => {
-    setPrefTags(prev =>
-      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
-    );
-  };
-
-  const handlePriorityChange = (key: string, value: number) => {
-    setPrefPriority(prev => ({ ...prev, [key]: value }));
-  };
-
   const handlePreferencesSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setPrefError('');
@@ -138,8 +168,12 @@ const Profile: React.FC = () => {
       min_price: minPrice ? Number(minPrice) : undefined,
       max_price: maxPrice ? Number(maxPrice) : undefined,
       min_area: minArea ? Number(minArea) : undefined,
-      tags: prefTags.length > 0 ? prefTags : undefined,
-      priority_weight: prefPriority,
+      district: prefDistrict || undefined,
+      metro: prefMetro || undefined,
+      material: prefMaterial || undefined,
+      repair_type: prefRepairType || undefined,
+      min_build_year: prefMinBuildYear ? Number(prefMinBuildYear) : undefined,
+      max_build_year: prefMaxBuildYear ? Number(prefMaxBuildYear) : undefined,
     };
 
     try {
@@ -182,6 +216,12 @@ const Profile: React.FC = () => {
             onClick={() => setActiveTab('preferences')}
           >
             AI Preferences
+          </button>
+          <button
+            className={`profile-tab ${activeTab === 'my-properties' ? 'profile-tab--active' : ''}`}
+            onClick={() => setActiveTab('my-properties')}
+          >
+            My Properties
           </button>
         </div>
 
@@ -242,42 +282,60 @@ const Profile: React.FC = () => {
                 onChange={(e) => setMinArea(e.target.value)}
                 placeholder="50"
               />
-            </div>
-
-            <div className="profile-prefs__group">
-              <label className="profile-prefs__label">Atmosphere Tags</label>
-              <p className="profile-prefs__hint">Select the atmosphere you prefer</p>
-              <div className="profile-prefs__chips">
-                {TAG_OPTIONS.map(tag => (
-                  <Chip
-                    key={tag}
-                    label={tag}
-                    active={prefTags.includes(tag)}
-                    onClick={() => toggleTag(tag)}
-                  />
+              <Input
+                label="Min Build Year"
+                type="number"
+                value={prefMinBuildYear}
+                onChange={(e) => setPrefMinBuildYear(e.target.value)}
+                placeholder="2000"
+              />
+              <Input
+                label="Max Build Year"
+                type="number"
+                value={prefMaxBuildYear}
+                onChange={(e) => setPrefMaxBuildYear(e.target.value)}
+                placeholder="2023"
+              />
+              <select
+                className="profile-prefs__select"
+                value={prefDistrict}
+                onChange={(e) => setPrefDistrict(e.target.value)}
+              >
+                <option value="">Any district</option>
+                {DISTRICT_OPTIONS.map(d => (
+                  <option key={d} value={d}>{d}</option>
                 ))}
-              </div>
-            </div>
-
-            <div className="profile-prefs__group">
-              <label className="profile-prefs__label">Priority Weights</label>
-              <p className="profile-prefs__hint">Adjust what matters most to you</p>
-              {PRIORITY_KEYS.map(key => (
-                <div key={key} className="profile-prefs__slider-group">
-                  <span className="profile-prefs__slider-label">
-                    {key.charAt(0).toUpperCase() + key.slice(1)}
-                  </span>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={prefPriority[key] || 50}
-                    onChange={(e) => handlePriorityChange(key, Number(e.target.value))}
-                    className="profile-prefs__slider"
-                  />
-                  <span className="profile-prefs__slider-value">{prefPriority[key] || 50}%</span>
-                </div>
-              ))}
+              </select>
+              <select
+                className="profile-prefs__select"
+                value={prefMetro}
+                onChange={(e) => setPrefMetro(e.target.value)}
+              >
+                <option value="">Any metro</option>
+                {METRO_OPTIONS.map(m => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+              <select
+                className="profile-prefs__select"
+                value={prefMaterial}
+                onChange={(e) => setPrefMaterial(e.target.value)}
+              >
+                <option value="">Any material</option>
+                {MATERIAL_OPTIONS.map(m => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+              <select
+                className="profile-prefs__select"
+                value={prefRepairType}
+                onChange={(e) => setPrefRepairType(e.target.value)}
+              >
+                <option value="">Any repair type</option>
+                {REPAIR_TYPE_OPTIONS.map(r => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
+              </select>
             </div>
 
             <Button
@@ -289,6 +347,41 @@ const Profile: React.FC = () => {
               {isSaving ? 'Saving...' : 'Save Preferences'}
             </Button>
           </form>
+        )}
+
+        {activeTab === 'my-properties' && (
+          <div className="profile-section">
+            <div className="profile-section__header">
+              <h2 className="profile-section__title">My Properties</h2>
+              <Button variant="primary" onClick={() => navigate('/add-property')}>
+                Add Property
+              </Button>
+            </div>
+            {loadingProps ? (
+              <p>Loading...</p>
+            ) : (
+              <div className="my-properties-list">
+                {myProperties.length === 0 ? (
+                  <p>You have no properties yet.</p>
+                ) : (
+                  myProperties.map(prop => (
+                    <div key={prop.id} className="my-property-card">
+                      <div className="my-property-card__info">
+                        <h3>{prop.title}</h3>
+                        <p>{prop.price.toLocaleString()} ₽ • {prop.area} m²</p>
+                        <p className="my-property-card__address">{prop.address}</p>
+                      </div>
+                      <div className="my-property-card__actions">
+                        <Button variant="secondary" onClick={() => handleDeleteProperty(prop.id)}>
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>
