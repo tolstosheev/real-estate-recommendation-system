@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination, Navigation } from 'swiper/modules';
 import { recommendationsService } from '@shared/api/recommendations.service';
@@ -15,21 +15,23 @@ const Home: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
-  useEffect(() => {
-    const fetchRecs = async () => {
-      try {
-        const data = await recommendationsService.getRecommendations();
-        setRecs(data);
-        setHasError(false);
-      } catch (e) {
-        console.error('Failed to fetch recommendations', e);
-        setHasError(true);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchRecs();
+  const fetchRecs = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const data = await recommendationsService.getRecommendations();
+      setRecs(data);
+      setHasError(false);
+    } catch (e) {
+      console.error('Failed to fetch recommendations', e);
+      setHasError(true);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchRecs();
+  }, [fetchRecs]);
 
   return (
     <div className="home-page">

@@ -82,6 +82,50 @@
       background-color: $color-primary-dark;
     }
   }
+
+  &__disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  &__more {
+    margin-top: calc-rem(12);
+    border: 1px solid $color-gray-200;
+    border-radius: calc-rem(8);
+    padding: calc-rem(8) calc-rem(12);
+    cursor: pointer;
+
+    &-toggle {
+      font-size: calc-rem(13);
+      font-weight: 600;
+      color: $color-primary;
+      cursor: pointer;
+      list-style: none;
+      padding: calc-rem(4) 0;
+
+      &::-webkit-details-marker {
+        display: none;
+      }
+
+      &::before {
+        content: '▶';
+        margin-right: calc-rem(8);
+        font-size: calc-rem(10);
+        transition: transform 0.2s;
+      }
+    }
+
+    &[open] &-toggle::before {
+      transform: rotate(90deg);
+    }
+
+    &-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: calc-rem(8);
+      margin-top: calc-rem(10);
+    }
+  }
 }
 
 .catalog-tabs {

@@ -179,6 +179,39 @@
   }
 }
 
+.property-card__location-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.property-card__location-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  background: $color-gray-100;
+  border-radius: 4px;
+  font-size: 10px;
+  color: $color-gray-600;
+  font-weight: 500;
+
+  svg {
+    flex-shrink: 0;
+    color: $color-gray-400;
+  }
+
+  &--metro {
+    background: rgba(#3399cc, 0.1);
+    color: #3399cc;
+
+    svg {
+      color: #3399cc;
+    }
+  }
+}
+
 .property-card__features {
   display: flex;
   flex-wrap: wrap;

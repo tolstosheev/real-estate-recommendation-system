@@ -21,6 +21,13 @@ const Catalog: React.FC = () => {
     maxPrice: '',
     rooms: '',
     propertyType: '',
+    district: '',
+    metro: '',
+    material: '',
+    repairType: '',
+    minBuildYear: '',
+    maxBuildYear: '',
+    propertyPurpose: '',
   });
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -44,6 +51,13 @@ const Catalog: React.FC = () => {
         if (filters.maxPrice) params.max_price = filters.maxPrice;
         if (filters.rooms) params.rooms = filters.rooms;
         if (filters.propertyType) params.property_type = filters.propertyType;
+        if (filters.propertyPurpose) params.property_purpose = filters.propertyPurpose;
+        if (filters.district) params.district = filters.district;
+        if (filters.metro) params.metro = filters.metro;
+        if (filters.material) params.material = filters.material;
+        if (filters.repairType) params.repair_type = filters.repairType;
+        if (filters.minBuildYear) params.min_build_year = filters.minBuildYear;
+        if (filters.maxBuildYear) params.max_build_year = filters.maxBuildYear;
         if (filters.search) params.search = filters.search;
       }
 
@@ -137,51 +151,127 @@ const Catalog: React.FC = () => {
           />
         </div>
 
-         <div className="catalog-filters">
-           <h3 className="catalog-filters__title">Filters</h3>
-           <div className={cn("catalog-filters__grid", { 'catalog-filters__disabled': activeTab !== 'all' })}>
-             <input
-               type="number"
-               placeholder="Min Price"
-               className="catalog-filters__input"
-               value={filters.minPrice}
-               onChange={(e) => activeTab === 'all' && handleFilterChange('minPrice', e.target.value)}
-               disabled={activeTab !== 'all'}
-             />
-             <input
-               type="number"
-               placeholder="Max Price"
-               className="catalog-filters__input"
-               value={filters.maxPrice}
-               onChange={(e) => activeTab === 'all' && handleFilterChange('maxPrice', e.target.value)}
-               disabled={activeTab !== 'all'}
-             />
-             <input
-               type="number"
-               placeholder="Rooms"
-               className="catalog-filters__input"
-               value={filters.rooms}
-               onChange={(e) => activeTab === 'all' && handleFilterChange('rooms', e.target.value)}
-               disabled={activeTab !== 'all'}
-             />
-             <select
-               className="catalog-filters__input"
-               value={filters.propertyType}
-               onChange={(e) => activeTab === 'all' && handleFilterChange('propertyType', e.target.value)}
-               disabled={activeTab !== 'all'}
-             >
-               <option value="">Any type</option>
-               <option value="Apartment">Apartment</option>
-               <option value="House">House</option>
-               <option value="Commercial">Commercial</option>
-             </select>
-           </div>
-           {activeTab === 'all' && (
-             <button className="catalog-filters__apply-btn" onClick={applyFilters}>
-               Apply Filters
-             </button>
-           )}
-         </div>
+           <div className="catalog-filters">
+            <h3 className="catalog-filters__title">Filters</h3>
+            <div className={cn("catalog-filters__grid", { 'catalog-filters__disabled': activeTab !== 'all' })}>
+              <input
+                type="number"
+                placeholder="Min Price"
+                className="catalog-filters__input"
+                value={filters.minPrice}
+                onChange={(e) => activeTab === 'all' && handleFilterChange('minPrice', e.target.value)}
+                disabled={activeTab !== 'all'}
+              />
+              <input
+                type="number"
+                placeholder="Max Price"
+                className="catalog-filters__input"
+                value={filters.maxPrice}
+                onChange={(e) => activeTab === 'all' && handleFilterChange('maxPrice', e.target.value)}
+                disabled={activeTab !== 'all'}
+              />
+              <input
+                type="number"
+                placeholder="Rooms"
+                className="catalog-filters__input"
+                value={filters.rooms}
+                onChange={(e) => activeTab === 'all' && handleFilterChange('rooms', e.target.value)}
+                disabled={activeTab !== 'all'}
+              />
+              <select
+                className="catalog-filters__input"
+                value={filters.propertyType}
+                onChange={(e) => activeTab === 'all' && handleFilterChange('propertyType', e.target.value)}
+                disabled={activeTab !== 'all'}
+              >
+                <option value="">Any type</option>
+                <option value="Apartment">Apartment</option>
+                <option value="House">House</option>
+                <option value="Commercial">Commercial</option>
+              </select>
+              <select
+                className="catalog-filters__input"
+                value={filters.propertyPurpose}
+                onChange={(e) => activeTab === 'all' && handleFilterChange('propertyPurpose', e.target.value)}
+                disabled={activeTab !== 'all'}
+              >
+                <option value="">Any purpose</option>
+                <option value="sale">Sale</option>
+                <option value="rent">Rent</option>
+              </select>
+            </div>
+
+            <details className="catalog-filters__more">
+              <summary className="catalog-filters__more-toggle">More filters</summary>
+              <div className="catalog-filters__more-grid">
+                <input
+                  type="text"
+                  placeholder="District"
+                  className="catalog-filters__input"
+                  value={filters.district}
+                  onChange={(e) => activeTab === 'all' && handleFilterChange('district', e.target.value)}
+                  disabled={activeTab !== 'all'}
+                />
+                <input
+                  type="text"
+                  placeholder="Metro"
+                  className="catalog-filters__input"
+                  value={filters.metro}
+                  onChange={(e) => activeTab === 'all' && handleFilterChange('metro', e.target.value)}
+                  disabled={activeTab !== 'all'}
+                />
+                <select
+                  className="catalog-filters__input"
+                  value={filters.material}
+                  onChange={(e) => activeTab === 'all' && handleFilterChange('material', e.target.value)}
+                  disabled={activeTab !== 'all'}
+                >
+                  <option value="">Any material</option>
+                  <option value="Brick">Brick</option>
+                  <option value="Panel">Panel</option>
+                  <option value="Monolith">Monolith</option>
+                  <option value="Brick-Monolith">Brick-Monolith</option>
+                  <option value="Wood">Wood</option>
+                  <option value="Block">Block</option>
+                </select>
+                <select
+                  className="catalog-filters__input"
+                  value={filters.repairType}
+                  onChange={(e) => activeTab === 'all' && handleFilterChange('repairType', e.target.value)}
+                  disabled={activeTab !== 'all'}
+                >
+                  <option value="">Any repair</option>
+                  <option value="Cosmetic">Cosmetic</option>
+                  <option value="Euro">Euro</option>
+                  <option value="Design">Design</option>
+                  <option value="Rough">Rough</option>
+                  <option value="Renovated">Renovated</option>
+                </select>
+                <input
+                  type="number"
+                  placeholder="Min Year"
+                  className="catalog-filters__input"
+                  value={filters.minBuildYear}
+                  onChange={(e) => activeTab === 'all' && handleFilterChange('minBuildYear', e.target.value)}
+                  disabled={activeTab !== 'all'}
+                />
+                <input
+                  type="number"
+                  placeholder="Max Year"
+                  className="catalog-filters__input"
+                  value={filters.maxBuildYear}
+                  onChange={(e) => activeTab === 'all' && handleFilterChange('maxBuildYear', e.target.value)}
+                  disabled={activeTab !== 'all'}
+                />
+              </div>
+            </details>
+
+            {activeTab === 'all' && (
+              <button className="catalog-filters__apply-btn" onClick={applyFilters}>
+                Apply Filters
+              </button>
+            )}
+          </div>
 
 
         <div className="catalog-tabs">

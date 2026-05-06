@@ -20,12 +20,19 @@ const MapPage: React.FC = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasData, setHasData] = useState(false);
-  const [currentBounds, setCurrentBounds] = useState<{ northEast: { lat: number; lon: number }; southWest: { lat: number; lon: number } } | null>(null);
+  const [currentBounds, setCurrentBounds] = useState<[number, number, number, number] | null>(null);
   const [filters, setFilters] = useState({
     minPrice: '',
     maxPrice: '',
     rooms: '',
     propertyType: '',
+    district: '',
+    metro: '',
+    material: '',
+    repairType: '',
+    minBuildYear: '',
+    maxBuildYear: '',
+    propertyPurpose: '',
   });
   const [visibleCount, setVisibleCount] = useState(MAP_PAGE_SIZE);
   const boundsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -34,13 +41,10 @@ const MapPage: React.FC = () => {
     setVisibleCount(prev => Math.min(prev + MAP_PAGE_SIZE, properties.length));
   };
 
-  const fetchProperties = useCallback(async (bounds: { northEast: { lat: number; lon: number }; southWest: { lat: number; lon: number } }, activeFilters: typeof filters, reset = false) => {
+  const fetchProperties = useCallback(async (bounds: [number, number, number, number], activeFilters: typeof filters, reset = false) => {
     setIsLoading(true);
     try {
-      const north = bounds.northEast.lat;
-      const east = bounds.northEast.lon;
-      const south = bounds.southWest.lat;
-      const west = bounds.southWest.lon;
+      const [north, east, south, west] = bounds;
       const params: Record<string, string | number> = {
         min_lat: south,
         max_lat: north,
@@ -53,6 +57,13 @@ const MapPage: React.FC = () => {
       if (activeFilters.maxPrice) params.max_price = Number(activeFilters.maxPrice);
       if (activeFilters.rooms) params.rooms = Number(activeFilters.rooms);
       if (activeFilters.propertyType) params.property_type = activeFilters.propertyType;
+      if (activeFilters.propertyPurpose) params.property_purpose = activeFilters.propertyPurpose;
+      if (activeFilters.district) params.district = activeFilters.district;
+      if (activeFilters.metro) params.metro = activeFilters.metro;
+      if (activeFilters.material) params.material = activeFilters.material;
+      if (activeFilters.repairType) params.repair_type = activeFilters.repairType;
+      if (activeFilters.minBuildYear) params.min_build_year = Number(activeFilters.minBuildYear);
+      if (activeFilters.maxBuildYear) params.max_build_year = Number(activeFilters.maxBuildYear);
 
       const response = await api.get(`/api/properties/map`, { params });
       
@@ -70,7 +81,7 @@ const MapPage: React.FC = () => {
     }
   }, [properties.length]);
 
-  const handleBoundsChange = (bounds: { northEast: { lat: number; lon: number }; southWest: { lat: number; lon: number } }) => {
+  const handleBoundsChange = (bounds: [number, number, number, number]) => {
     setCurrentBounds(bounds);
     if (boundsTimeoutRef.current) {
       clearTimeout(boundsTimeoutRef.current);
@@ -89,10 +100,7 @@ const MapPage: React.FC = () => {
     if (currentBounds) {
       fetchProperties(currentBounds, filters, true);
     } else {
-      fetchProperties({ 
-        northEast: { lat: 56.5, lon: 38.5 },
-        southWest: { lat: 55.0, lon: 36.5 }
-      }, filters, true);
+      fetchProperties([56.5, 38.5, 55.0, 36.5], filters, true);
     }
   };
 
@@ -133,6 +141,68 @@ const MapPage: React.FC = () => {
               <option value="House">House</option>
               <option value="Commercial">Commercial</option>
             </select>
+            <select
+              className="map-filters__input"
+              value={filters.propertyPurpose}
+              onChange={(e) => handleFilterChange('propertyPurpose', e.target.value)}
+            >
+              <option value="">Any purpose</option>
+              <option value="sale">Sale</option>
+              <option value="rent">Rent</option>
+            </select>
+            <input
+              type="text"
+              placeholder="District"
+              className="map-filters__input"
+              value={filters.district}
+              onChange={(e) => handleFilterChange('district', e.target.value)}
+            />
+            <input
+              type="text"
+              placeholder="Metro"
+              className="map-filters__input"
+              value={filters.metro}
+              onChange={(e) => handleFilterChange('metro', e.target.value)}
+            />
+            <select
+              className="map-filters__input"
+              value={filters.material}
+              onChange={(e) => handleFilterChange('material', e.target.value)}
+            >
+              <option value="">Any material</option>
+              <option value="Brick">Brick</option>
+              <option value="Panel">Panel</option>
+              <option value="Monolith">Monolith</option>
+              <option value="Brick-Monolith">Brick-Monolith</option>
+              <option value="Wood">Wood</option>
+              <option value="Block">Block</option>
+            </select>
+            <select
+              className="map-filters__input"
+              value={filters.repairType}
+              onChange={(e) => handleFilterChange('repairType', e.target.value)}
+            >
+              <option value="">Any repair</option>
+              <option value="Cosmetic">Cosmetic</option>
+              <option value="Euro">Euro</option>
+              <option value="Design">Design</option>
+              <option value="Rough">Rough</option>
+              <option value="Renovated">Renovated</option>
+            </select>
+            <input
+              type="number"
+              placeholder="Min Year"
+              className="map-filters__input"
+              value={filters.minBuildYear}
+              onChange={(e) => handleFilterChange('minBuildYear', e.target.value)}
+            />
+            <input
+              type="number"
+              placeholder="Max Year"
+              className="map-filters__input"
+              value={filters.maxBuildYear}
+              onChange={(e) => handleFilterChange('maxBuildYear', e.target.value)}
+            />
           </div>
           <button className="map-filters__apply-btn" onClick={applyFilters}>
             Apply Filters
