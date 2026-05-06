@@ -10,13 +10,10 @@ class PropertyRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_by_bbox(self, min_lat: float,
-                          max_lat: float, min_lon: float, max_lon: float):
+    async def get_by_bbox(self, min_lat: float, max_lat: float, min_lon: float, max_lon: float):
         bbox = func.ST_MakeEnvelope(min_lon, min_lat, max_lon, max_lat, 4326)
         query = select(
-            Property,
-            func.ST_X(Property.location).label("lon"),
-            func.ST_Y(Property.location).label("lat")
+            Property, func.ST_X(Property.location).label("lon"), func.ST_Y(Property.location).label("lat")
         ).filter(func.ST_Intersects(Property.location, bbox))
 
         result = await self.session.execute(query)
@@ -26,27 +23,33 @@ class PropertyRepository:
         lat = property_data.pop("lat")
         lon = property_data.pop("lon")
 
-        property_obj = Property(
-            **property_data,
-            location=func.ST_GeomFromText(f"POINT({lon} {lat})", 4326)
-        )
+        property_obj = Property(**property_data, location=func.ST_GeomFromText(f"POINT({lon} {lat})", 4326))
         self.session.add(property_obj)
         await self.session.commit()
         await self.session.refresh(property_obj)
         return property_obj
 
     async def get_all(
-        self, limit: int = 100, offset: int = 0,
-        min_price: float = None, max_price: float = None,
-        rooms: int = None, property_type: str = None,
-        lat: float = None, lon: float = None, radius_km: float = None
+        self,
+        limit: int = 100,
+        offset: int = 0,
+        min_price: float = None,
+        max_price: float = None,
+        rooms: int = None,
+        property_type: str = None,
+        lat: float = None,
+        lon: float = None,
+        radius_km: float = None,
+        district: str = None,
+        metro: str = None,
+        material: str = None,
+        repair_type: str = None,
+        min_build_year: int = None,
+        max_build_year: int = None,
+        property_purpose: str = None,
     ):
 
-        query = select(
-            Property,
-            func.ST_X(Property.location).label("lon"),
-            func.ST_Y(Property.location).label("lat")
-        )
+        query = select(Property, func.ST_X(Property.location).label("lon"), func.ST_Y(Property.location).label("lat"))
 
         if min_price is not None:
             query = query.filter(Property.price >= min_price)
@@ -56,14 +59,26 @@ class PropertyRepository:
             query = query.filter(Property.rooms == rooms)
         if property_type is not None:
             query = query.filter(Property.property_type == property_type)
+        if property_purpose is not None:
+            query = query.filter(Property.property_purpose == property_purpose)
+        if district is not None:
+            query = query.filter(Property.district == district)
+        if metro is not None:
+            query = query.filter(Property.metro == metro)
+        if material is not None:
+            query = query.filter(Property.material == material)
+        if repair_type is not None:
+            query = query.filter(Property.repair_type == repair_type)
+        if min_build_year is not None:
+            query = query.filter(Property.build_year >= min_build_year)
+        if max_build_year is not None:
+            query = query.filter(Property.build_year <= max_build_year)
 
         if lat is not None and lon is not None and radius_km is not None:
             point = func.ST_GeomFromText(f"POINT({lon} {lat})", 4326)
             query = query.filter(
-                func.ST_DWithin(
-                    cast(
-                        Property.location, Geography), cast(
-                        point, Geography), radius_km * 1000))
+                func.ST_DWithin(cast(Property.location, Geography), cast(point, Geography), radius_km * 1000)
+            )
 
         query = query.offset(offset).limit(limit)
         result = await self.session.execute(query)
@@ -71,10 +86,8 @@ class PropertyRepository:
 
     async def get_by_id(self, property_id: str):
         query = select(
-            Property, func.ST_X(
-                Property.location).label("lon"), func.ST_Y(
-                Property.location).label("lat")).filter(
-            Property.id == property_id)
+            Property, func.ST_X(Property.location).label("lon"), func.ST_Y(Property.location).label("lat")
+        ).filter(Property.id == property_id)
         result = await self.session.execute(query)
         return result.first()
 
@@ -85,19 +98,18 @@ class PropertyRepository:
         result = await self.session.execute(query)
         return result.scalars().all()
 
-    async def update(self, property_id: str,
-                     update_data: dict) -> Property | None:
+    async def update(self, property_id: str, update_data: dict) -> Property | None:
         if "lat" in update_data and "lon" in update_data:
             lat = update_data.pop("lat")
             lon = update_data.pop("lon")
-            update_data["location"] = func.ST_GeomFromText(
-                f"POINT({lon} {lat})", 4326)
+            update_data["location"] = func.ST_GeomFromText(f"POINT({lon} {lat})", 4326)
 
-        query = update(Property).where(
-            Property.id == property_id
-        ).values(
-            **update_data
-        ).execution_options(synchronize_session="fetch")
+        query = (
+            update(Property)
+            .where(Property.id == property_id)
+            .values(**update_data)
+            .execution_options(synchronize_session="fetch")
+        )
         await self.session.execute(query)
         await self.session.commit()
 

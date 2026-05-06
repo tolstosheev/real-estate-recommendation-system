@@ -9,13 +9,13 @@ from app.models.models import User
 router = APIRouter()
 
 
-@router.get("/preferences", response_model=UserPreferenceOut,
-            summary="Get User Preferences",
-            description="Get search preferences of current user")
-async def get_my_preferences(
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
-):
+@router.get(
+    "/preferences",
+    response_model=UserPreferenceOut,
+    summary="Get User Preferences",
+    description="Get search preferences of current user",
+)
+async def get_my_preferences(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     service = UserPreferenceService(db)
     prefs = await service.get_preferences(current_user.id)
     if not prefs:
@@ -28,13 +28,10 @@ async def get_my_preferences(
     response_model=UserPreferenceOut,
     status_code=status.HTTP_200_OK,
     summary="Update User Preferences",
-    description="Set or update search preferences")
+    description="Set or update search preferences",
+)
 async def update_my_preferences(
-    pref_in: UserPreferenceCreate,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    pref_in: UserPreferenceCreate, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
 ):
     service = UserPreferenceService(db)
-    return await service.set_preferences(
-        current_user.id, pref_in.model_dump()
-    )
+    return await service.set_preferences(current_user.id, pref_in.model_dump())

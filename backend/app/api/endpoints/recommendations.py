@@ -12,14 +12,13 @@ router = APIRouter()
 
 @router.get("/", response_model=List[PropertyOut])
 async def get_recommendations(
-    limit: int = 10,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    limit: int = 10, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
 ):
     service = RecommendationService(db)
     recommendations = await service.recommend(current_user.id, limit=limit)
 
     from app.services.property_service import PropertyService
+
     prop_service = PropertyService(db)
 
     enriched_recs = []

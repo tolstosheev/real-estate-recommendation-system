@@ -27,16 +27,16 @@ class InteractionService:
 
         if existing:
             if interaction_type == "like":
-                await self.interaction_repo.remove_interaction(existing.id)
+                existing_id = existing[0].id if existing[0] else None
+                if existing_id:
+                    await self.interaction_repo.remove_interaction(existing_id)
                 property_obj.likes_count = max(0, property_obj.likes_count - 1)
                 await self.session.commit()
                 await RedisClient.clear_user_cache(user_id)
                 return {"status": "removed", "interaction": None}
             return {"status": "exists", "interaction": existing}
 
-        interaction = await self.interaction_repo.create_interaction(
-            {**interaction_data, "user_id": user_id}
-        )
+        interaction = await self.interaction_repo.create_interaction({**interaction_data, "user_id": user_id})
 
         if interaction_type == "view":
             property_obj.views_count += 1

@@ -29,9 +29,7 @@ class PropertyService:
 
     def _get_cache_key(self, prefix: str, **kwargs) -> str:
         sorted_params = sorted(kwargs.items())
-        param_str = '&'.join(
-            f"{k}={v}" for k,
-            v in sorted_params if v is not None)
+        param_str = "&".join(f"{k}={v}" for k, v in sorted_params if v is not None)
         param_hash = hashlib.md5(param_str.encode()).hexdigest()
         return f"{prefix}:{param_hash}"
 
@@ -66,15 +64,18 @@ class PropertyService:
                     property_data["lat"], property_data["lon"] = coords
 
         if "lat" not in property_data or "lon" not in property_data:
-            raise ValueError(
-                "Coordinates are required and could not be determined from the address")
+            raise ValueError("Coordinates are required and could not be determined from the address")
+
+        lat = property_data.get("lat", 0)
+        lon = property_data.get("lon", 0)
+        if not (-90 <= lat <= 90) or not (-180 <= lon <= 180):
+            raise ValueError("Invalid coordinates")
 
         prop = await self.repository.create(property_data)
         result = await self.repository.get_by_id(str(prop.id))
         return await self._enrich_property(result)
 
-    async def get_properties_in_bbox(
-            self, min_lat: float, max_lat: float, min_lon: float, max_lon: float):
+    async def get_properties_in_bbox(self, min_lat: float, max_lat: float, min_lon: float, max_lon: float):
         results = await self.repository.get_by_bbox(min_lat, max_lat, min_lon, max_lon)
         return [await self._enrich_property(res) for res in results]
 
@@ -97,33 +98,58 @@ class PropertyService:
                 "phone_number": property_obj.owner.phone_number if property_obj.owner else None,
                 "telegram_handle": property_obj.owner.telegram_handle if property_obj.owner else None,
             }
-            await redis.setex(cache_key, 600, json.dumps({
-                "id": str(property_obj.id),
-                "user_id": str(property_obj.user_id),
-                "title": property_obj.title,
-                "description": property_obj.description,
-                "price": float(property_obj.price) if property_obj.price else 0.0,
-                "area": float(property_obj.area) if property_obj.area else None,
-                "rooms": property_obj.rooms,
-                "floor": property_obj.floor,
-                "total_floors": property_obj.total_floors,
-                "property_type": property_obj.property_type,
-                "address": property_obj.address,
-                "lat": float(property_obj.lat) if property_obj.lat else 0.0,
-                "lon": float(property_obj.lon) if property_obj.lon else 0.0,
-                "images": list(property_obj.images) if property_obj.images else None,
-                "owner": owner_data,
-                "views_count": property_obj.views_count,
-                "likes_count": property_obj.likes_count
-            }, cls=DecimalEncoder))
+            await redis.setex(
+                cache_key,
+                600,
+                json.dumps(
+                    {
+                        "id": str(property_obj.id),
+                        "user_id": str(property_obj.user_id),
+                        "title": property_obj.title,
+                        "description": property_obj.description,
+                        "price": float(property_obj.price) if property_obj.price else 0.0,
+                        "area": float(property_obj.area) if property_obj.area else None,
+                        "rooms": property_obj.rooms,
+                        "floor": property_obj.floor,
+                        "total_floors": property_obj.total_floors,
+                        "property_type": property_obj.property_type,
+                        "address": property_obj.address,
+                        "lat": float(property_obj.lat) if property_obj.lat else 0.0,
+                        "lon": float(property_obj.lon) if property_obj.lon else 0.0,
+                        "images": list(property_obj.images) if property_obj.images else None,
+                        "owner": owner_data,
+                        "views_count": property_obj.views_count,
+                        "likes_count": property_obj.likes_count,
+                    },
+                    cls=DecimalEncoder,
+                ),
+            )
 
         return property_obj
 
-    async def list_properties(self, limit: int = 100, offset: int = 0,
-                              min_price: float = None, max_price: float = None,
-                              rooms: int = None, property_type: str = None,
-                              lat: float = None, lon: float = None, radius_km: float = None):
-        results = await self.repository.get_all(limit, offset, min_price, max_price, rooms, property_type, lat, lon, radius_km)
+    async def list_properties(
+        self,
+        limit: int = 100,
+        offset: int = 0,
+        min_price: float = None,
+        max_price: float = None,
+        rooms: int = None,
+        property_type: str = None,
+        lat: float = None,
+        lon: float = None,
+        radius_km: float = None,
+        district: str = None,
+        metro: str = None,
+        material: str = None,
+        repair_type: str = None,
+        min_build_year: int = None,
+        max_build_year: int = None,
+        property_purpose: str = None,
+    ):
+        results = await self.repository.get_all(
+            limit, offset, min_price, max_price, rooms, property_type, lat, lon, radius_km,
+            district, metro, material, repair_type, min_build_year, max_build_year, property_purpose
+        )
         return [await self._enrich_property(res) for res in results]
 
     async def update_property(self, property_id: str, update_data: dict):

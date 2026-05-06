@@ -1,26 +1,21 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.endpoints import (
-    properties, auth, user, interactions, recommendations
-)
+from app.api.endpoints import properties, auth, user, interactions, recommendations
 from app.core.db import Base, engine
 import logging
 
-logging.basicConfig(
-    level=logging.INFO,
-    filename='server_errors.log',
-    filemode='a')
+logging.basicConfig(level=logging.INFO, filename="server_errors.log", filemode="a")
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="nestAI API")
+
 
 @app.on_event("startup")
 async def startup():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     print("Tables created")
-
 
 
 @app.exception_handler(Exception)
@@ -35,32 +30,20 @@ async def global_exception_handler(request: Request, exc: Exception):
         },
     )
 
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://localhost:3000",
-        "http://127.0.0.1:3000"],
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000", "http://127.0.0.1:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["*"],
 )
 app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
-app.include_router(
-    properties.router,
-    prefix="/api/properties",
-    tags=["Properties"])
+app.include_router(properties.router, prefix="/api/properties", tags=["Properties"])
 app.include_router(user.router, prefix="/user", tags=["User Profile"])
-app.include_router(
-    interactions.router,
-    prefix="/api/interactions",
-    tags=["Interactions"])
-app.include_router(
-    recommendations.router,
-    prefix="/api/recommendations",
-    tags=["Recommendations"])
+app.include_router(interactions.router, prefix="/api/interactions", tags=["Interactions"])
+app.include_router(recommendations.router, prefix="/api/recommendations", tags=["Recommendations"])
 
 
 @app.get("/")

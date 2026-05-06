@@ -13,9 +13,7 @@ class SimilarityUtils:
         return scaler.fit_transform(features), scaler
 
     @staticmethod
-    def calculate_cosine_similarity(
-        vec_a: np.ndarray, vec_b: np.ndarray
-    ) -> float:
+    def calculate_cosine_similarity(vec_a: np.ndarray, vec_b: np.ndarray) -> float:
         a = vec_a.reshape(1, -1)
         b = vec_b.reshape(1, -1)
         return float(cosine_similarity(a, b)[0][0])
@@ -25,7 +23,7 @@ class SimilarityUtils:
         explicit_prefs: Optional[List[float]],
         implicit_prefs: Optional[List[float]],
         explicit_weight: float = 0.1,
-        implicit_weight: float = 0.9
+        implicit_weight: float = 0.9,
     ):
         if explicit_prefs is None and implicit_prefs is None:
             return None
@@ -35,8 +33,4 @@ class SimilarityUtils:
         if implicit_prefs is None:
             return np.array(explicit_prefs)
 
-        return (
-            np.array(explicit_prefs) * explicit_weight
-            + np.array(implicit_prefs) * implicit_weight
-        )
-
+        return np.array(explicit_prefs) * explicit_weight + np.array(implicit_prefs) * implicit_weight

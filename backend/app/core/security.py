@@ -7,8 +7,7 @@ from app.services.auth_service import AuthService
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 
 
-async def get_current_user(token: str = Depends(
-        oauth2_scheme), db: AsyncSession = Depends(get_db)):
+async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
     service = AuthService(db)
     user = await service.get_current_user(token)
     if not user:

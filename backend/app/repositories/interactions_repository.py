@@ -10,8 +10,7 @@ class InteractionRepository:
 
     async def create_interaction(self, interaction_data: dict) -> Interaction:
         weights = {"view": 1, "like": 5, "dislike": -5}
-        interaction_data["weight"] = weights.get(
-            interaction_data["interaction_type"], 1)
+        interaction_data["weight"] = weights.get(interaction_data["interaction_type"], 1)
 
         interaction_obj = Interaction(**interaction_data)
         self.session.add(interaction_obj)
@@ -23,10 +22,7 @@ class InteractionRepository:
         query = (
             select(Property)
             .join(Interaction, Property.id == Interaction.property_id)
-            .filter(
-                Interaction.user_id == user_id,
-                Interaction.interaction_type == "like"
-            )
+            .filter(Interaction.user_id == user_id, Interaction.interaction_type == "like")
             .offset(offset)
             .limit(limit)
         )
@@ -37,16 +33,13 @@ class InteractionRepository:
         query = (
             select(Property, Interaction.created_at)
             .join(Interaction, Property.id == Interaction.property_id)
-            .filter(
-                Interaction.user_id == user_id,
-                Interaction.interaction_type == "view"
-            )
+            .filter(Interaction.user_id == user_id, Interaction.interaction_type == "view")
             .order_by(Interaction.created_at.desc())
             .offset(offset)
             .limit(limit)
         )
         result = await self.session.execute(query)
-        
+
         seen = set()
         unique_properties = []
         for row in result.all():
@@ -57,10 +50,7 @@ class InteractionRepository:
         return unique_properties
 
     async def find_interaction(self, user_id: str, property_id: str, interaction_type: str = None):
-        query = select(Interaction).filter(
-            Interaction.user_id == user_id,
-            Interaction.property_id == property_id
-        )
+        query = select(Interaction).filter(Interaction.user_id == user_id, Interaction.property_id == property_id)
         if interaction_type:
             query = query.filter(Interaction.interaction_type == interaction_type)
         query = query.order_by(Interaction.created_at.desc())

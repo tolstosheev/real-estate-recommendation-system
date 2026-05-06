@@ -10,33 +10,33 @@ router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 
-@router.post("/register", response_model=UserOut,
-             status_code=status.HTTP_201_CREATED,
-             summary="User Registration",
-             description="Creates a new user account in the system")
+@router.post(
+    "/register",
+    response_model=UserOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="User Registration",
+    description="Creates a new user account in the system",
+)
 async def register(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
     service = AuthService(db)
     try:
         user = await service.register_user(
-            user_in.email,
-            user_in.password,
-            user_in.full_name,
-            user_in.phone_number,
-            user_in.telegram_handle
+            user_in.email, user_in.password, user_in.full_name, user_in.phone_number, user_in.telegram_handle
         )
         return user
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/login", response_model=Token,
-             summary="User Authentication",
-             description="Authenticates user and returns a JWT access token")
+@router.post(
+    "/login",
+    response_model=Token,
+    summary="User Authentication",
+    description="Authenticates user and returns a JWT access token",
+)
 async def login(login_data: UserLogin, db: AsyncSession = Depends(get_db)):
     service = AuthService(db)
-    user = await service.authenticate_user(
-        login_data.email, login_data.password
-    )
+    user = await service.authenticate_user(login_data.email, login_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -48,17 +48,14 @@ async def login(login_data: UserLogin, db: AsyncSession = Depends(get_db)):
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-@router.get("/me", response_model=UserOut,
-            summary="Get Current User",
-            description="Returns profile info of authenticated user")
-async def get_me(token: str = Depends(oauth2_scheme),
-                 db: AsyncSession = Depends(get_db)):
+@router.get(
+    "/me", response_model=UserOut, summary="Get Current User", description="Returns profile info of authenticated user"
+)
+async def get_me(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
     service = AuthService(db)
     user = await service.get_current_user(token)
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication credentials")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authentication credentials")
     return user
 
 
@@ -66,19 +63,12 @@ async def get_me(token: str = Depends(oauth2_scheme),
     "/me",
     response_model=UserOut,
     summary="Update Current User",
-    description="Updates profile info of authenticated user")
-async def update_me(
-    user_in: UserUpdate,
-    token: str = Depends(oauth2_scheme),
-    db: AsyncSession = Depends(get_db)
-):
+    description="Updates profile info of authenticated user",
+)
+async def update_me(user_in: UserUpdate, token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
     service = AuthService(db)
     user = await service.get_current_user(token)
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication credentials")
-    updated_user = await service.update_user(
-        str(user.id), user_in.model_dump(exclude_unset=True)
-    )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authentication credentials")
+    updated_user = await service.update_user(str(user.id), user_in.model_dump(exclude_unset=True))
     return updated_user
