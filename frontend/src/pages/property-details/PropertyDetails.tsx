@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAppSelector } from '@app/store/hooks';
 import YandexMap from '@shared/ui/Map';
 import YMapMarker from '@shared/ui/Map/YMapMarker';
@@ -11,10 +11,40 @@ import './PropertyDetails.scss';
 const PropertyDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const navigate = useNavigate();
   const [property, setProperty] = useState<Property | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [imgErrors, setImgErrors] = useState<Record<number, boolean>>({});
   const [activePhoto, setActivePhoto] = useState(0);
+
+  const handleLikeToggle = useCallback(async () => {
+    if (!isAuthenticated) {
+      navigate('/auth');
+      return;
+    }
+    try {
+      if (property?.is_liked_by_me) {
+        await api.delete(`/api/interactions/like/${id}`);
+        setProperty(prev => prev ? {
+          ...prev,
+          is_liked_by_me: false,
+          likes_count: prev.likes_count - 1,
+        } : null);
+      } else {
+        await api.post('/api/interactions/', {
+          property_id: id,
+          interaction_type: 'like',
+        });
+        setProperty(prev => prev ? {
+          ...prev,
+          is_liked_by_me: true,
+          likes_count: prev.likes_count + 1,
+        } : null);
+      }
+    } catch (err) {
+      console.error('Failed to toggle like:', err);
+    }
+  }, [id, isAuthenticated, property?.is_liked_by_me, navigate]);
 
   useEffect(() => {
     const fetchProperty = async () => {
@@ -94,9 +124,23 @@ const PropertyDetails: React.FC = () => {
                 {property.property_type && (
                   <span className="content-badge">{property.property_type}</span>
                 )}
+                {property.property_purpose && (
+                  <span className="content-badge content-badge--purpose">{property.property_purpose}</span>
+                )}
               </div>
-              <div className="content-price">
-                {Number(property.price).toLocaleString()} ₽
+              <div className="content-header__right">
+                <div className="content-price">
+                  {Number(property.price).toLocaleString()} ₽
+                </div>
+                <button
+                  className={`like-button ${property.is_liked_by_me ? 'like-button--active' : ''}`}
+                  onClick={handleLikeToggle}
+                  title={property.is_liked_by_me ? 'Remove from favorites' : 'Add to favorites'}
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill={property.is_liked_by_me ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                  </svg>
+                </button>
               </div>
             </div>
             <div className="content-address">
@@ -120,6 +164,14 @@ const PropertyDetails: React.FC = () => {
                 </svg>
                 {property.likes_count || 0} likes
               </span>
+              {property.is_ai_recommendation && (
+                <span className="content-stat content-stat--ai">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                  </svg>
+                  AI Recommended
+                </span>
+              )}
             </div>
           </div>
 
@@ -133,8 +185,35 @@ const PropertyDetails: React.FC = () => {
                   </svg>
                 </div>
                 <div className="spec-card__info">
-                  <span className="spec-card__value">{property.area}</span>
-                  <span className="spec-card__label">m² area</span>
+                  <span className="spec-card__value">{property.area} m²</span>
+                  <span className="spec-card__label">Total Area</span>
+                </div>
+              </div>
+            )}
+            {property.sq_living && (
+              <div className="spec-card">
+                <div className="spec-card__icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                    <path d="M3 9h18M9 21V9"/>
+                  </svg>
+                </div>
+                <div className="spec-card__info">
+                  <span className="spec-card__value">{property.sq_living} m²</span>
+                  <span className="spec-card__label">Living Area</span>
+                </div>
+              </div>
+            )}
+            {property.sq_kitchen && (
+              <div className="spec-card">
+                <div className="spec-card__icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M18 8h-1V6c0-2.21-1.79-4-4-4S9 3.79 9 6v2H8c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM12 16c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3-8H9V6c0-1.66 1.34-3 3-3s3 1.34 3 3v2z"/>
+                  </svg>
+                </div>
+                <div className="spec-card__info">
+                  <span className="spec-card__value">{property.sq_kitchen} m²</span>
+                  <span className="spec-card__label">Kitchen Area</span>
                 </div>
               </div>
             )}
@@ -148,7 +227,7 @@ const PropertyDetails: React.FC = () => {
                 </div>
                 <div className="spec-card__info">
                   <span className="spec-card__value">{property.rooms}</span>
-                  <span className="spec-card__label">rooms</span>
+                  <span className="spec-card__label">Rooms</span>
                 </div>
               </div>
             )}
@@ -163,11 +242,106 @@ const PropertyDetails: React.FC = () => {
                 </div>
                 <div className="spec-card__info">
                   <span className="spec-card__value">{property.floor}/{property.total_floors}</span>
-                  <span className="spec-card__label">floor</span>
+                  <span className="spec-card__label">Floor</span>
+                </div>
+              </div>
+            )}
+            {property.build_year && (
+              <div className="spec-card">
+                <div className="spec-card__icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2"/>
+                    <path d="M16 2v4M8 2v4M3 10h18"/>
+                  </svg>
+                </div>
+                <div className="spec-card__info">
+                  <span className="spec-card__value">{property.build_year}</span>
+                  <span className="spec-card__label">Build Year</span>
                 </div>
               </div>
             )}
           </div>
+
+          {(property.district || property.metro || property.material || property.repair_type || property.room_type || property.is_new !== null) && (
+            <div className="content-section">
+              <h2 className="content-section__title">Building Details</h2>
+              <div className="content-details-grid">
+                {property.district && (
+                  <div className="detail-item">
+                    <span className="detail-item__label">District</span>
+                    <span className="detail-item__value">{property.district}</span>
+                  </div>
+                )}
+                {property.metro && (
+                  <div className="detail-item">
+                    <span className="detail-item__label">Metro</span>
+                    <span className="detail-item__value detail-item__value--metro">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                        <circle cx="12" cy="12" r="8"/>
+                        <circle cx="12" cy="12" r="3"/>
+                      </svg>
+                      {property.metro}
+                    </span>
+                  </div>
+                )}
+                {property.build_year && (
+                  <div className="detail-item">
+                    <span className="detail-item__label">Build Year</span>
+                    <span className="detail-item__value">{property.build_year}</span>
+                  </div>
+                )}
+                {property.material && (
+                  <div className="detail-item">
+                    <span className="detail-item__label">Material</span>
+                    <span className="detail-item__value">{property.material}</span>
+                  </div>
+                )}
+                {property.repair_type && (
+                  <div className="detail-item">
+                    <span className="detail-item__label">Repair Type</span>
+                    <span className="detail-item__value">{property.repair_type}</span>
+                  </div>
+                )}
+                {property.room_type && (
+                  <div className="detail-item">
+                    <span className="detail-item__label">Room Type</span>
+                    <span className="detail-item__value">{property.room_type}</span>
+                  </div>
+                )}
+                {property.is_new !== null && (
+                  <div className="detail-item">
+                    <span className="detail-item__label">Building Type</span>
+                    <span className="detail-item__value">{property.is_new === 'new' ? 'New Building' : 'Secondary'}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {(property.balcony || property.parking) && (
+            <div className="content-section">
+              <h2 className="content-section__title">Amenities</h2>
+              <div className="content-amenities">
+                {property.balcony && (
+                  <div className="amenity-tag">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="3" y="3" width="18" height="18" rx="2"/>
+                      <line x1="3" y1="12" x2="21" y2="12"/>
+                    </svg>
+                    {property.balcony === 'yes' ? 'Has Balcony' : 'No Balcony'}
+                  </div>
+                )}
+                {property.parking && (
+                  <div className="amenity-tag">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M5 12h14M12 5v14M12 5C8 5 5 8 5 12s3 7 7 7 7-3 7-7-3-7-7-7z"/>
+                    </svg>
+                    {property.parking === 'yes' ? 'Has Parking' : property.parking === 'paid' ? 'Paid Parking' : 'No Parking'}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {property.description && (
             <div className="content-section">
