@@ -121,7 +121,84 @@ def get_property_images(prop_type, seed):
         f"{base_url}?text={prop_type}+3",
     ]
 
-# Coordinates dictionary removed - now using geocoder only
+# Fallback coordinates dictionary for Yandex Geocoder
+STREET_COORDS = {
+    "Tverskaya St": (55.7558, 37.6173),
+    "Novy Arbat St": (55.7517, 37.5900),
+    "Sadovaya-Kudrinskaya St": (55.7622, 37.5825),
+    "Patriarshiye Prudy": (55.7603, 37.6010),
+    "Pokrovka St": (55.7667, 37.6500),
+    "Leningradsky Prospekt": (55.8000, 37.5333),
+    "Prospekt Mira": (55.8167, 37.6333),
+    "Volgogradsky Prospekt": (55.6833, 37.7333),
+    "Leninsky Prospekt": (55.7000, 37.5833),
+    "Kutuzovsky Prospekt": (55.7333, 37.4667),
+    "Nevsky Prospekt": (59.9333, 30.3167),
+    "Gorokhovaya St": (59.9333, 30.3000),
+    "Kamennoostrovsky Prospekt": (59.9667, 30.3167),
+    "Vyborgskaya Embankment": (59.9500, 30.3333),
+    "Moskovsky Prospekt": (59.9000, 30.3167),
+    "Prospekt Energovikov": (59.9167, 30.3833),
+    "Baumana St": (55.7833, 49.1167),
+    "Pushkina St": (55.8000, 49.1167),
+    "Pobedy Prospekt": (55.7833, 49.1333),
+    "Peterburgskaya St": (55.7667, 49.1333),
+    "Krasny Prospekt": (55.0333, 82.9167),
+    "Gogolya St": (55.0333, 82.9333),
+    "Lenina St": (55.0500, 82.9167),
+    "Lenina Prospekt": (56.8333, 60.6000),
+    "8 Marta St": (56.8167, 60.6000),
+    "Navaginskaya St": (43.5833, 39.7300),
+    "Kurortny Prospekt": (43.6000, 39.7167),
+    "Lenina Prospekt": (54.1961, 37.6182),
+    "Proletarskaya St": (54.1833, 37.6167),
+    "Sovetskaya St": (54.2000, 37.6167),
+    "Komsomolskaya St": (54.0500, 38.2700),
+    "Lenina St": (53.9800, 38.3300),
+    "Sovetskaya St": (54.5000, 37.0700),
+    "Kommunarka": (55.6167, 37.5167),
+    "Troitsk": (55.4667, 37.2000),
+}
+
+async def get_coordinates(geocoder, city, street, house):
+    full_address = f"{city}, {street}, {house}"
+
+    try:
+        coords = await geocoder.get_coords_from_address(full_address)
+        if coords:
+            lat, lon = coords
+            return (lat, lon, "")
+    except Exception as e:
+        print(f"Geocoder error for {full_address}: {e}")
+
+    # Fallback to street dictionary
+    if street in STREET_COORDS:
+        base_lat, base_lon = STREET_COORDS[street]
+        lat = base_lat + random.uniform(-0.005, 0.005)
+        lon = base_lon + random.uniform(-0.005, 0.005)
+        return (lat, lon, "")
+
+    # Fallback to city center coordinates
+    city_centers = {
+        "Moscow": (55.7558, 37.6173),
+        "Saint Petersburg": (59.9343, 30.3351),
+        "Kazan": (55.8304, 49.0661),
+        "Novosibirsk": (55.0302, 82.9204),
+        "Yekaterinburg": (56.8389, 60.6030),
+        "Sochi": (43.5994, 39.7305),
+        "Tula": (54.1961, 37.6182),
+        "Novomoskovsk": (54.0500, 38.2700),
+        "Donskoy": (53.9800, 38.3300),
+        "Aleksin": (54.5000, 37.0700),
+    }
+
+    if city in city_centers:
+        base_lat, base_lon = city_centers[city]
+        lat = base_lat + random.uniform(-0.01, 0.01)
+        lon = base_lon + random.uniform(-0.01, 0.01)
+        return (lat, lon, "")
+
+    return (55.7558, 37.6173, "")
 
 # Reference books for generation
 MATERIALS = ["Panel", "Brick", "Monolith", "Brick-Monolith", "Wood", "Block"]
