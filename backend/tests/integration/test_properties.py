@@ -4,7 +4,7 @@ from httpx import AsyncClient
 
 @pytest.mark.asyncio
 async def test_property_crud(client: AsyncClient):
-    payload = {"email": "owner@example.com", "password": "password123", "full_name": "Owner"}
+    payload = {"email": "owner@example.com", "password": "password123", "full_name": "Owner", "phone_number": "+79001112233"}
     await client.post("/auth/register", json=payload)
     login_data = {"email": "owner@example.com", "password": "password123"}
     token_res = await client.post("/auth/login", json=login_data)
@@ -52,8 +52,8 @@ async def test_property_crud(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_property_unauthorized_access(client: AsyncClient):
-    u1_payload = {"email": "u1@example.com", "password": "password123", "full_name": "User 1"}
-    u2_payload = {"email": "u2@example.com", "password": "password123", "full_name": "User 2"}
+    u1_payload = {"email": "u1@example.com", "password": "password123", "full_name": "User 1", "phone_number": "+79001112233"}
+    u2_payload = {"email": "u2@example.com", "password": "password123", "full_name": "User 2", "phone_number": "+79004445566"}
     await client.post("/auth/register", json=u1_payload)
     await client.post("/auth/register", json=u2_payload)
 
