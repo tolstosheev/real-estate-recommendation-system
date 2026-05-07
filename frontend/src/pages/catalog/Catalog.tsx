@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import './Catalog.scss'
 import { useAppSelector } from '@app/store/hooks';
 import PropertyCard from '@entities/property/ui/PropertyCard';
 import type { Property } from '@entities/property/model/types';
-import api from '@shared/api/api';
+import { propertyService } from '@shared/api/properties.service';
 import cn from 'classnames';
-import './Catalog.scss';
+import api from '@shared/api/api';
 
 type TabType = 'all' | 'viewed' | 'liked';
 
@@ -32,6 +33,17 @@ const Catalog: React.FC = () => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const loaderRef = useRef<HTMLDivElement>(null);
+  const [meta, setMeta] = useState<{
+    districts: string[];
+    metro: string[];
+    materials: string[];
+    repair_types: string[];
+    property_types: string[];
+  }>({ districts: [], metro: [], materials: [], repair_types: [], property_types: [] });
+
+  useEffect(() => {
+    propertyService.getMeta().then(setMeta).catch(() => {});
+  }, []);
 
   const fetchProperties = useCallback(async (tab: TabType, pageNum: number, isNewTab = false) => {
     setIsLoading(true);
@@ -62,7 +74,13 @@ const Catalog: React.FC = () => {
       }
 
       const response = await api.get(url, { params });
-      const data = response.data as Property[];
+      let data = response.data as Property[];
+
+      if (tab === 'all' && data.length > 0) {
+        const aiProps = data.filter(p => p.is_ai_recommendation);
+        const otherProps = data.filter(p => !p.is_ai_recommendation);
+        data = [...aiProps, ...otherProps];
+      }
 
       if (isNewTab) {
         setProperties(data);
@@ -153,7 +171,7 @@ const Catalog: React.FC = () => {
 
            <div className="catalog-filters">
             <h3 className="catalog-filters__title">Filters</h3>
-            <div className={cn("catalog-filters__grid", { 'catalog-filters__disabled': activeTab !== 'all' })}>
+              <div className={cn("catalog-filters__grid", { 'catalog-filters__disabled': activeTab !== 'all' })}>
               <input
                 type="number"
                 placeholder="Min Price"
@@ -185,9 +203,7 @@ const Catalog: React.FC = () => {
                 disabled={activeTab !== 'all'}
               >
                 <option value="">Any type</option>
-                <option value="Apartment">Apartment</option>
-                <option value="House">House</option>
-                <option value="Commercial">Commercial</option>
+                {meta.property_types.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
               <select
                 className="catalog-filters__input"
@@ -204,22 +220,34 @@ const Catalog: React.FC = () => {
             <details className="catalog-filters__more">
               <summary className="catalog-filters__more-toggle">More filters</summary>
               <div className="catalog-filters__more-grid">
-                <input
-                  type="text"
-                  placeholder="District"
-                  className="catalog-filters__input"
-                  value={filters.district}
-                  onChange={(e) => activeTab === 'all' && handleFilterChange('district', e.target.value)}
-                  disabled={activeTab !== 'all'}
-                />
-                <input
-                  type="text"
-                  placeholder="Metro"
-                  className="catalog-filters__input"
-                  value={filters.metro}
-                  onChange={(e) => activeTab === 'all' && handleFilterChange('metro', e.target.value)}
-                  disabled={activeTab !== 'all'}
-                />
+                <div className="catalog-filters__input-wrapper">
+                  <input
+                    type="text"
+                    placeholder="District"
+                    className="catalog-filters__input"
+                    value={filters.district}
+                    onChange={(e) => activeTab === 'all' && handleFilterChange('district', e.target.value)}
+                    disabled={activeTab !== 'all'}
+                    list="districts-list"
+                  />
+                  <datalist id="districts-list">
+                    {meta.districts.map(d => <option key={d} value={d} />)}
+                  </datalist>
+                </div>
+                <div className="catalog-filters__input-wrapper">
+                  <input
+                    type="text"
+                    placeholder="Metro"
+                    className="catalog-filters__input"
+                    value={filters.metro}
+                    onChange={(e) => activeTab === 'all' && handleFilterChange('metro', e.target.value)}
+                    disabled={activeTab !== 'all'}
+                    list="metro-list"
+                  />
+                  <datalist id="metro-list">
+                    {meta.metro.map(m => <option key={m} value={m} />)}
+                  </datalist>
+                </div>
                 <select
                   className="catalog-filters__input"
                   value={filters.material}
@@ -227,12 +255,7 @@ const Catalog: React.FC = () => {
                   disabled={activeTab !== 'all'}
                 >
                   <option value="">Any material</option>
-                  <option value="Brick">Brick</option>
-                  <option value="Panel">Panel</option>
-                  <option value="Monolith">Monolith</option>
-                  <option value="Brick-Monolith">Brick-Monolith</option>
-                  <option value="Wood">Wood</option>
-                  <option value="Block">Block</option>
+                  {meta.materials.map(m => <option key={m} value={m}>{m}</option>)}
                 </select>
                 <select
                   className="catalog-filters__input"
@@ -241,11 +264,7 @@ const Catalog: React.FC = () => {
                   disabled={activeTab !== 'all'}
                 >
                   <option value="">Any repair</option>
-                  <option value="Cosmetic">Cosmetic</option>
-                  <option value="Euro">Euro</option>
-                  <option value="Design">Design</option>
-                  <option value="Rough">Rough</option>
-                  <option value="Renovated">Renovated</option>
+                  {meta.repair_types.map(r => <option key={r} value={r}>{r}</option>)}
                 </select>
                 <input
                   type="number"

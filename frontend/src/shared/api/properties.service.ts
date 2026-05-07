@@ -21,6 +21,22 @@ export const propertyService = {
     await api.delete(`/api/properties/${id}`);
   },
 
+  async getMyProperties(): Promise<Property[]> {
+    const response = await api.get('/api/properties/my');
+    return response.data;
+  },
+
+  async getMeta(): Promise<{
+    districts: string[];
+    metro: string[];
+    materials: string[];
+    repair_types: string[];
+    property_types: string[];
+  }> {
+    const response = await api.get('/api/properties/meta');
+    return response.data;
+  },
+
   async getPropertiesInBox(bounds: [number, number, number, number], filters: Record<string, unknown> = {}): Promise<Property[]> {
     const [north, east, south, west] = bounds;
     const params = {

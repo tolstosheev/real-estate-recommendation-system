@@ -97,6 +97,16 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, variant = 'vertic
             {property.property_type}
           </span>
         )}
+        {property.property_purpose && (
+          <span className="property-card__badge property-card__badge--purpose">
+            {property.property_purpose}
+          </span>
+        )}
+        {property.category && (
+          <span className="property-card__badge property-card__badge--category">
+            {property.category}
+          </span>
+        )}
 
         {showActions && property.is_ai_recommendation && (
           <span className="property-card__ai-badge property-card__ai-badge--center">AI</span>

@@ -5,7 +5,6 @@ import YandexMap from '@shared/ui/Map';
 import YMapMarker from '@shared/ui/Map/YMapMarker';
 import type { Property } from '@entities/property/model/types';
 import api from '@shared/api/api';
-import Button from '@shared/ui/Button';
 import './PropertyDetails.scss';
 
 const PropertyDetails: React.FC = () => {
@@ -126,6 +125,9 @@ const PropertyDetails: React.FC = () => {
                 )}
                 {property.property_purpose && (
                   <span className="content-badge content-badge--purpose">{property.property_purpose}</span>
+                )}
+                {property.category && (
+                  <span className="content-badge">{property.category}</span>
                 )}
               </div>
               <div className="content-header__right">
@@ -262,61 +264,73 @@ const PropertyDetails: React.FC = () => {
             )}
           </div>
 
-          {(property.district || property.metro || property.material || property.repair_type || property.room_type || property.is_new !== null) && (
-            <div className="content-section">
-              <h2 className="content-section__title">Building Details</h2>
-              <div className="content-details-grid">
-                {property.district && (
-                  <div className="detail-item">
-                    <span className="detail-item__label">District</span>
-                    <span className="detail-item__value">{property.district}</span>
-                  </div>
-                )}
-                {property.metro && (
-                  <div className="detail-item">
-                    <span className="detail-item__label">Metro</span>
-                    <span className="detail-item__value detail-item__value--metro">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                        <circle cx="12" cy="12" r="8"/>
-                        <circle cx="12" cy="12" r="3"/>
-                      </svg>
-                      {property.metro}
-                    </span>
-                  </div>
-                )}
-                {property.build_year && (
-                  <div className="detail-item">
-                    <span className="detail-item__label">Build Year</span>
-                    <span className="detail-item__value">{property.build_year}</span>
-                  </div>
-                )}
-                {property.material && (
-                  <div className="detail-item">
-                    <span className="detail-item__label">Material</span>
-                    <span className="detail-item__value">{property.material}</span>
-                  </div>
-                )}
-                {property.repair_type && (
-                  <div className="detail-item">
-                    <span className="detail-item__label">Repair Type</span>
-                    <span className="detail-item__value">{property.repair_type}</span>
-                  </div>
-                )}
-                {property.room_type && (
-                  <div className="detail-item">
-                    <span className="detail-item__label">Room Type</span>
-                    <span className="detail-item__value">{property.room_type}</span>
-                  </div>
-                )}
-                {property.is_new !== null && (
-                  <div className="detail-item">
-                    <span className="detail-item__label">Building Type</span>
-                    <span className="detail-item__value">{property.is_new === 'new' ? 'New Building' : 'Secondary'}</span>
-                  </div>
-                )}
+            {(property.district || property.metro || property.material || property.repair_type || property.room_type || property.is_new !== null || property.property_purpose || property.category) && (
+              <div className="content-section">
+                <h2 className="content-section__title">Building Details</h2>
+                <div className="content-details-grid">
+                  {property.property_purpose && (
+                    <div className="detail-item">
+                      <span className="detail-item__label">Purpose</span>
+                      <span className="detail-item__value">{property.property_purpose}</span>
+                    </div>
+                  )}
+                  {property.category && (
+                    <div className="detail-item">
+                      <span className="detail-item__label">Category</span>
+                      <span className="detail-item__value">{property.category}</span>
+                    </div>
+                  )}
+                  {property.district && (
+                    <div className="detail-item">
+                      <span className="detail-item__label">District</span>
+                      <span className="detail-item__value">{property.district}</span>
+                    </div>
+                  )}
+                  {property.metro && (
+                    <div className="detail-item">
+                      <span className="detail-item__label">Metro</span>
+                      <span className="detail-item__value detail-item__value--metro">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                          <circle cx="12" cy="12" r="8"/>
+                          <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        {property.metro}
+                      </span>
+                    </div>
+                  )}
+                  {property.build_year && (
+                    <div className="detail-item">
+                      <span className="detail-item__label">Build Year</span>
+                      <span className="detail-item__value">{property.build_year}</span>
+                    </div>
+                  )}
+                  {property.material && (
+                    <div className="detail-item">
+                      <span className="detail-item__label">Material</span>
+                      <span className="detail-item__value">{property.material}</span>
+                    </div>
+                  )}
+                  {property.repair_type && (
+                    <div className="detail-item">
+                      <span className="detail-item__label">Repair Type</span>
+                      <span className="detail-item__value">{property.repair_type}</span>
+                    </div>
+                  )}
+                  {property.room_type && (
+                    <div className="detail-item">
+                      <span className="detail-item__label">Room Type</span>
+                      <span className="detail-item__value">{property.room_type}</span>
+                    </div>
+                  )}
+                  {property.is_new !== null && (
+                    <div className="detail-item">
+                      <span className="detail-item__label">Building Type</span>
+                      <span className="detail-item__value">{property.is_new === 'new' ? 'New Building' : 'Secondary'}</span>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
           {(property.balcony || property.parking) && (
             <div className="content-section">
@@ -353,8 +367,8 @@ const PropertyDetails: React.FC = () => {
           <div className="content-section">
             <h2 className="content-section__title">Location</h2>
             <div className="content-map">
-              <YandexMap center={[property.lat, property.lon]} zoom={15}>
-                <YMapMarker coordinates={[property.lat, property.lon]}>
+              <YandexMap center={[property.lon, property.lat]} zoom={15}>
+                <YMapMarker coordinates={[property.lon, property.lat]}>
                   <div className="map-marker">📍</div>
                 </YMapMarker>
               </YandexMap>
@@ -389,9 +403,16 @@ const PropertyDetails: React.FC = () => {
                 )}
               </div>
             </div>
-            <Button variant="primary" className="contact-card__button">
-              Send Message
-            </Button>
+            {property.owner.telegram_handle && (
+              <a
+                href={`https://t.me/${property.owner.telegram_handle.replace('@', '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="contact-card__button"
+              >
+                Write in Telegram
+              </a>
+            )}
           </div>
         </aside>
       </div>
