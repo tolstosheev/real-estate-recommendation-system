@@ -1,13 +1,37 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import distinct, select
 from app.core.db import get_db
 from app.services.property_service import PropertyService
 from app.schemas.property import PropertyCreate, PropertyUpdate, PropertyOut
 from app.core.security import get_current_user
-from app.models.models import User
+from app.models.models import User, Property
 from typing import List, Optional
 
 router = APIRouter()
+
+
+@router.get(
+    "/meta",
+    summary="Get Property Meta",
+    description="Get distinct values for filters (districts, metro, materials, repair_types)",
+)
+async def get_properties_meta(db: AsyncSession = Depends(get_db)):
+    from sqlalchemy import distinct, select
+
+    districts = (await db.execute(select(distinct(Property.district)).where(Property.district.isnot(None)))).scalars().all()
+    metro = (await db.execute(select(distinct(Property.metro)).where(Property.metro.isnot(None)))).scalars().all()
+    materials = (await db.execute(select(distinct(Property.material)).where(Property.material.isnot(None)))).scalars().all()
+    repair_types = (await db.execute(select(distinct(Property.repair_type)).where(Property.repair_type.isnot(None)))).scalars().all()
+    property_types = (await db.execute(select(distinct(Property.property_type)).where(Property.property_type.isnot(None)))).scalars().all()
+
+    return {
+        "districts": [d for d in districts if d],
+        "metro": [m for m in metro if m],
+        "materials": [m for m in materials if m],
+        "repair_types": [r for r in repair_types if r],
+        "property_types": [p for p in property_types if p],
+    }
 
 
 @router.get(
@@ -81,19 +105,51 @@ async def get_properties(
     metro: Optional[str] = None,
     material: Optional[str] = None,
     repair_type: Optional[str] = None,
-    min_build_year: Optional[int] = None,
-    max_build_year: Optional[int] = None,
-    lat: Optional[float] = None,
-    lon: Optional[float] = None,
-    radius_km: Optional[float] = None,
-    db: AsyncSession = Depends(get_db),
-):
+        min_build_year: Optional[int] = None,
+        max_build_year: Optional[int] = None,
+        city: Optional[str] = None,
+        lat: Optional[float] = None,
+        lon: Optional[float] = None,
+        radius_km: Optional[float] = None,
+        db: AsyncSession = Depends(get_db),
+    ):
     service = PropertyService(db)
     properties = await service.list_properties(
         limit, offset, min_price, max_price, rooms, property_type, lat, lon, radius_km,
-        district, metro, material, repair_type, min_build_year, max_build_year, property_purpose
+        district, metro, material, repair_type, min_build_year, max_build_year, city, property_purpose
     )
     return properties
+
+
+@router.post(
+    "/",
+    response_model=PropertyOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create Property",
+    description="Create a new property listing",
+)
+async def create_property(
+    property_data: PropertyCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    service = PropertyService(db)
+    prop_dict = property_data.model_dump()
+    prop_dict["user_id"] = str(current_user.id)
+    return await service.create_property(prop_dict)
+
+
+@router.get(
+    "/my",
+    response_model=List[PropertyOut],
+    summary="Get My Properties",
+    description="Get properties created by current user",
+)
+async def get_my_properties(
+    current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+):
+    service = PropertyService(db)
+    return await service.get_user_properties(str(current_user.id))
 
 
 @router.get(
@@ -105,46 +161,6 @@ async def get_property(property_id: str, db: AsyncSession = Depends(get_db)):
     if not property_obj:
         raise HTTPException(status_code=404, detail="Property not found")
     return property_obj
-
-
-@router.post(
-    "/",
-    response_model=PropertyOut,
-    status_code=status.HTTP_201_CREATED,
-    summary="Create Property",
-    description="Create new property listing",
-)
-async def create_property(
-    property_in: PropertyCreate, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
-):
-    service = PropertyService(db)
-    data = property_in.model_dump()
-    data["user_id"] = current_user.id
-    try:
-        return await service.create_property(data)
-    except ValueError as e:
-        raise HTTPException(status_code=422, detail=str(e))
-
-
-@router.put(
-    "/{property_id}", response_model=PropertyOut, summary="Update Property", description="Update property details"
-)
-async def update_property(
-    property_id: str,
-    property_in: PropertyUpdate,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    service = PropertyService(db)
-    result = await service.repository.get_by_id(property_id)
-    if not result:
-        raise HTTPException(status_code=404, detail="Property not found")
-
-    property_obj = result[0]
-    if property_obj.user_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to edit this property")
-
-    return await service.update_property(property_id, property_in.model_dump(exclude_unset=True))
 
 
 @router.delete(

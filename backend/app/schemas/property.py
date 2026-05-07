@@ -5,6 +5,7 @@ from uuid import UUID
 
 class PropertyBase(BaseModel):
     title: str = Field(..., json_schema_extra={"example": "Modern Apartment in City Center"})
+    city: Optional[str] = Field(None, json_schema_extra={"example": "Москва"})
     description: Optional[str] = Field(
         None, json_schema_extra={"example": "A beautiful 2-bedroom apartment with a great view"}
     )
@@ -47,6 +48,7 @@ class PropertyCreate(PropertyBase):
 
 class PropertyUpdate(BaseModel):
     title: Optional[str] = None
+    city: Optional[str] = None
     description: Optional[str] = None
     price: Optional[float] = None
     rooms: Optional[int] = None
@@ -84,6 +86,7 @@ class OwnerOut(BaseModel):
 class PropertyOut(BaseModel):
     id: UUID
     title: str
+    city: Optional[str] = None
     description: Optional[str] = None
     price: float
     rooms: Optional[int] = None
