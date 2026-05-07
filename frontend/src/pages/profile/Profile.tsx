@@ -98,8 +98,7 @@ const Profile: React.FC = () => {
   const loadMyProperties = async () => {
     setLoadingProps(true);
     try {
-      const allProps = await propertyService.getProperties();
-      const myProps = allProps.filter(p => p.owner?.id === user?.id);
+      const myProps = await propertyService.getMyProperties();
       setMyProperties(myProps);
     } catch (error) {
       console.error('Failed to load properties:', error);
@@ -179,6 +178,7 @@ const Profile: React.FC = () => {
     try {
       await preferencesService.updatePreferences(data);
       setPrefSuccess('Preferences saved successfully');
+      navigate('/');
     } catch {
       setPrefError('Failed to save preferences');
     } finally {

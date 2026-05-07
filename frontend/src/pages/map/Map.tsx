@@ -13,7 +13,6 @@ const MapPage: React.FC = () => {
   const navigate = useNavigate();
   
   const handleMarkerClick = (propertyId: string) => {
-    console.log('Marker clicked, navigating to:', propertyId);
     navigate(`/property/${propertyId}`);
   };
   
@@ -66,12 +65,19 @@ const MapPage: React.FC = () => {
       if (activeFilters.maxBuildYear) params.max_build_year = Number(activeFilters.maxBuildYear);
 
       const response = await api.get(`/api/properties/map`, { params });
+      let data = response.data;
+
+      if (reset && data.length > 0) {
+        const aiProps = data.filter((p: Property) => p.is_ai_recommendation);
+        const otherProps = data.filter((p: Property) => !p.is_ai_recommendation);
+        data = [...aiProps, ...otherProps];
+      }
       
       if (reset) {
-        setProperties(response.data);
+        setProperties(data);
         setVisibleCount(MAP_PAGE_SIZE);
       } else {
-        setProperties(prev => [...prev, ...response.data]);
+        setProperties(prev => [...prev, ...data]);
       }
       setHasData(true);
     } catch (err) {
@@ -80,6 +86,8 @@ const MapPage: React.FC = () => {
       setIsLoading(false);
     }
   }, [properties.length]);
+
+  // Center is now handled by onBoundsChange
 
   const handleBoundsChange = (bounds: [number, number, number, number]) => {
     setCurrentBounds(bounds);
@@ -230,14 +238,14 @@ const MapPage: React.FC = () => {
           )}
         </div>
       </aside>
-       <main className="map-map-container">
+        <main className="map-map-container">
         <YandexMap onBoundsChange={handleBoundsChange}>
           {properties.slice(0, visibleCount).map(prop => (
-              <YMapMarker
-                key={prop.id}
-                coordinates={[prop.lat, prop.lon]}
-                onClick={() => handleMarkerClick(prop.id)}
-              >
+            <YMapMarker
+              key={prop.id}
+              coordinates={[prop.lon, prop.lat]}
+              onClick={() => handleMarkerClick(prop.id)}
+            >
               <div className="map-marker-label">
                 <div className="map-marker-label__title">{prop.title}</div>
                 <div className="map-marker-label__price">{Number(prop.price).toLocaleString()} ₽</div>
