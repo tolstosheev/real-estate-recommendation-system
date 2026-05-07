@@ -1,8 +1,10 @@
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, func
 from app.repositories.property_repository import PropertyRepository
 from app.repositories.user_repository import UserRepository
 from app.services.geocoding_service import GeocodingService
 from app.core.redis import RedisClient
+from app.models.models import Property
 import json
 import hashlib
 from decimal import Decimal
@@ -144,17 +146,25 @@ class PropertyService:
         repair_type: str = None,
         min_build_year: int = None,
         max_build_year: int = None,
+        city: str = None,
         property_purpose: str = None,
     ):
         results = await self.repository.get_all(
             limit, offset, min_price, max_price, rooms, property_type, lat, lon, radius_km,
-            district, metro, material, repair_type, min_build_year, max_build_year, property_purpose
+            district, metro, material, repair_type, min_build_year, max_build_year, city, property_purpose
         )
         return [await self._enrich_property(res) for res in results]
 
     async def update_property(self, property_id: str, update_data: dict):
         result = await self.repository.update(property_id, update_data)
         return await self._enrich_property(result)
+
+    async def get_user_properties(self, user_id: str):
+        query = select(Property, func.ST_X(Property.location).label("lon"), func.ST_Y(Property.location).label("lat")) \
+            .filter(Property.user_id == user_id) \
+            .order_by(Property.created_at.desc())
+        result = await self.repository.session.execute(query)
+        return [await self._enrich_property(res) for res in result.all()]
 
     async def delete_property(self, property_id: str):
         return await self.repository.delete(property_id)

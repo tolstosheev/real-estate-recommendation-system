@@ -47,7 +47,6 @@ class RecommendationService:
             )
             area = (float(prefs.min_area or 0) + 100) / 2 if prefs.min_area else 50.0
             rooms = sum(prefs.preferred_rooms) / len(prefs.preferred_rooms) if prefs.preferred_rooms else 2.0
-            # Добавляем build_year в вектор (используем среднее между min и max)
             if prefs.min_build_year and prefs.max_build_year:
                 build_year = (prefs.min_build_year + prefs.max_build_year) / 2
             else:
@@ -55,16 +54,28 @@ class RecommendationService:
             explicit_vec = [price, area, rooms, 0.0, 0.0, build_year]
 
         favorites = await self.inter_repo.get_user_favorites(user_id)
+        views = await self.inter_repo.get_user_view_history(user_id)
+        
         implicit_vec = None
-        if favorites:
-            fav_vectors = []
-            for p in favorites:
-                res = await self.prop_repo.get_by_id(p.id)
-                if res:
-                    fav_vectors.append(self._get_property_vector(res[0], res[1], res[2]))
-
-            if fav_vectors:
-                implicit_vec = np.mean(fav_vectors, axis=0).tolist()
+        if favorites or views:
+            weighted_vectors = []
+            
+            if favorites:
+                for p in favorites:
+                    res = await self.prop_repo.get_by_id(p.id)
+                    if res:
+                        vec = self._get_property_vector(res[0], res[1], res[2])
+                        weighted_vectors.append(vec * 1.0)
+            
+            if views:
+                for p in views:
+                    res = await self.prop_repo.get_by_id(p.id)
+                    if res:
+                        vec = self._get_property_vector(res[0], res[1], res[2])
+                        weighted_vectors.append(vec * 0.2)
+            
+            if weighted_vectors:
+                implicit_vec = np.mean(weighted_vectors, axis=0).tolist()
 
         user_vec = self.utils.compute_user_profile_vector(explicit_vec, implicit_vec)
         if user_vec is not None and redis:
@@ -82,10 +93,8 @@ class RecommendationService:
                 props = await self.prop_repo.get_by_ids(prop_ids)
                 return props
 
-        # Получаем предпочтения пользователя для фильтрации
         prefs = await self.pref_repo.get_by_user_id(user_id)
 
-        # Базовые параметры фильтрации из предпочтений
         filter_kwargs = {}
         if prefs:
             if prefs.district:
@@ -103,6 +112,18 @@ class RecommendationService:
 
         user_vec = await self._build_user_vector(user_id)
         all_rows = await self.prop_repo.get_all(limit=1000, **filter_kwargs)
+        
+        # Fallback: if no properties match the strict filters, try fetching without some of them
+        if not all_rows:
+            # Try without district and metro filters first
+            relaxed_filters = filter_kwargs.copy()
+            relaxed_filters.pop('district', None)
+            relaxed_filters.pop('metro', None)
+            all_rows = await self.prop_repo.get_all(limit=1000, **relaxed_filters)
+            
+            # If still empty, try fetching everything to provide some baseline recommendations
+            if not all_rows:
+                all_rows = await self.prop_repo.get_all(limit=1000)
 
         if not all_rows:
             return []

@@ -46,6 +46,7 @@ class PropertyRepository:
         repair_type: str = None,
         min_build_year: int = None,
         max_build_year: int = None,
+        city: str = None,
         property_purpose: str = None,
     ):
 
@@ -59,6 +60,8 @@ class PropertyRepository:
             query = query.filter(Property.rooms == rooms)
         if property_type is not None:
             query = query.filter(Property.property_type == property_type)
+        if city is not None:
+            query = query.filter(Property.city == city)
         if property_purpose is not None:
             query = query.filter(Property.property_purpose == property_purpose)
         if district is not None:

@@ -3,6 +3,7 @@ import os
 from sqlalchemy import engine_from_config, pool
 from alembic import context
 from app.core.db import Base
+from app.models import models
 
 config = context.config
 
@@ -26,6 +27,11 @@ def run_migrations_offline() -> None:
     with context.begin_transaction():
         context.run_migrations()
 
+def include_object(object, name, type_, reflected, compare_to):
+    if type_ == "table" and name not in ["users", "properties", "user_preferences", "interactions"]:
+        return False
+    return True
+
 def run_migrations_online() -> None:
     configuration = config.get_section(config.config_ini_section, {})
     configuration["sqlalchemy.url"] = get_url()
@@ -35,7 +41,11 @@ def run_migrations_online() -> None:
         poolclass=pool.NullPool,
     )
     with connectable.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
+        context.configure(
+            connection=connection, 
+            target_metadata=target_metadata,
+            include_object=include_object
+        )
         with context.begin_transaction():
             context.run_migrations()
 
