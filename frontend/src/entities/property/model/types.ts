@@ -1,6 +1,7 @@
 export interface Property {
   id: string;
   title: string;
+  city: string | null;
   description: string | null;
   price: number;
   area: number | null;

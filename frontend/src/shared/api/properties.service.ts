@@ -32,6 +32,7 @@ export const propertyService = {
     materials: string[];
     repair_types: string[];
     property_types: string[];
+    cities: string[];
   }> {
     const response = await api.get('/api/properties/meta');
     return response.data;
