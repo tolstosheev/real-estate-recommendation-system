@@ -26,6 +26,7 @@ describe('recommendationsService', () => {
         property_purpose: 'sale',
         category: '2-к квартира',
         address: 'Main St 1',
+        city: 'Moscow',
         district: 'Центр',
         metro: 'Пушкинская',
         lat: 55.7558,
@@ -78,10 +79,9 @@ describe('recommendationsService', () => {
     await expect(recommendationsService.getRecommendations()).rejects.toThrow();
   });
 
-  it('should handle malformed response data', async () => {
+  it('should reject malformed response data', async () => {
     mock.onGet('/api/recommendations').reply(200, { invalid: 'data' });
 
-    const result = await recommendationsService.getRecommendations();
-    expect(Array.isArray(result)).toBe(false);
+    await expect(recommendationsService.getRecommendations()).rejects.toThrow();
   });
 });
