@@ -16,6 +16,12 @@
     transform: translateY(-6px);
     box-shadow: 0 12px 32px rgba(26, 54, 93, 0.12);
   }
+
+  &--no-hover,
+  &--no-hover:hover {
+    transform: none !important;
+    box-shadow: none !important;
+  }
 }
 
 .property-card__image-wrapper {
@@ -35,12 +41,13 @@
   font-weight: 700;
   padding: calc-rem(4) calc-rem(8);
   border-radius: calc-rem(4);
-  z-index: 2;
+  z-index: 3;
   letter-spacing: 0.5px;
 
   &--center {
     left: 50%;
     transform: translateX(-50%);
+    top: calc-rem(6);
   }
 
   &--right {
@@ -63,18 +70,15 @@
   align-items: center;
   justify-content: center;
   color: $color-gray-500;
-  transition: all 0.2s ease;
+  transition: color 0.2s ease;
   z-index: 2;
 
   &:hover {
-    background: $color-white;
-    color: $color-primary;
     transform: scale(1.1);
   }
 
   &--active {
     color: #e74c3c;
-    background: $color-white;
   }
 }
 
@@ -145,6 +149,14 @@
   flex: 1;
   min-width: 0;
   overflow: hidden;
+}
+
+.property-card__price {
+  font-size: 20px;
+  font-weight: 800;
+  color: $color-primary;
+  line-height: 1.2;
+  margin: 0 0 4px;
 }
 
 .property-card__title {
@@ -288,6 +300,11 @@
     padding: 12px 16px;
     justify-content: center;
     gap: 6px;
+  }
+
+  .property-card__price {
+    font-size: 16px;
+    margin-bottom: 0;
   }
 
   .property-card__title {
