@@ -23,7 +23,10 @@ const PropertyDetails: React.FC = () => {
     }
     try {
       if (property?.is_liked_by_me) {
-        await api.delete(`/api/interactions/like/${id}`);
+        await api.post('/api/interactions/', {
+          property_id: id,
+          interaction_type: 'like',
+        });
         setProperty(prev => prev ? {
           ...prev,
           is_liked_by_me: false,
@@ -145,10 +148,18 @@ const PropertyDetails: React.FC = () => {
                 </button>
               </div>
             </div>
+            {property.city && (
+              <div className="content-address">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                  <circle cx="12" cy="10" r="3"/>
+                </svg>
+                {property.city}
+              </div>
+            )}
             <div className="content-address">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                <circle cx="12" cy="10" r="3"/>
+                <path d="M3 12h18M12 3v18"/>
               </svg>
               {property.address}
             </div>

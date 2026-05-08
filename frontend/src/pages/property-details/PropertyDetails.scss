@@ -325,15 +325,16 @@
   flex-shrink: 0;
 
   &:hover {
-    border-color: #e53e3e;
-    color: #e53e3e;
     transform: scale(1.1);
   }
 
   &--active {
-    border-color: #e53e3e;
     color: #e53e3e;
-    background: rgba(229, 62, 62, 0.1);
+  }
+
+  &--active:hover {
+    color: #e53e3e;
+    border-color: #e53e3e;
   }
 
   svg {
