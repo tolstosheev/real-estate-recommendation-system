@@ -12,4 +12,4 @@ Populated Cities (50 properties each):
 - Самара
 
 Total: 500 properties
-User ID: 0a95121d-c988-4e1b-b654-5891c2e684e9
+User ID: 6d06518e-f705-4146-861e-b930415ec13a

@@ -48,6 +48,10 @@ class PropertyRepository:
         max_build_year: int = None,
         city: str = None,
         property_purpose: str = None,
+        search: str = None,
+        min_area: float = None,
+        max_area: float = None,
+        is_new: str = None,
     ):
 
         query = select(Property, func.ST_X(Property.location).label("lon"), func.ST_Y(Property.location).label("lat"))
@@ -76,6 +80,17 @@ class PropertyRepository:
             query = query.filter(Property.build_year >= min_build_year)
         if max_build_year is not None:
             query = query.filter(Property.build_year <= max_build_year)
+        if min_area is not None:
+            query = query.filter(Property.area >= min_area)
+        if max_area is not None:
+            query = query.filter(Property.area <= max_area)
+        if is_new is not None:
+            query = query.filter(Property.is_new == is_new)
+        if search is not None:
+            like_pattern = f"%{search}%"
+            query = query.filter(
+                Property.title.ilike(like_pattern) | Property.address.ilike(like_pattern)
+            )
 
         if lat is not None and lon is not None and radius_km is not None:
             point = func.ST_GeomFromText(f"POINT({lon} {lat})", 4326)

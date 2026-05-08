@@ -24,6 +24,7 @@ async def get_properties_meta(db: AsyncSession = Depends(get_db)):
     materials = (await db.execute(select(distinct(Property.material)).where(Property.material.isnot(None)))).scalars().all()
     repair_types = (await db.execute(select(distinct(Property.repair_type)).where(Property.repair_type.isnot(None)))).scalars().all()
     property_types = (await db.execute(select(distinct(Property.property_type)).where(Property.property_type.isnot(None)))).scalars().all()
+    cities = (await db.execute(select(distinct(Property.city)).where(Property.city.isnot(None)).order_by(Property.city))).scalars().all()
 
     return {
         "districts": [d for d in districts if d],
@@ -31,6 +32,7 @@ async def get_properties_meta(db: AsyncSession = Depends(get_db)):
         "materials": [m for m in materials if m],
         "repair_types": [r for r in repair_types if r],
         "property_types": [p for p in property_types if p],
+        "cities": [c for c in cities if c],
     }
 
 
@@ -56,6 +58,12 @@ async def get_properties_map(
     repair_type: Optional[str] = None,
     min_build_year: Optional[int] = None,
     max_build_year: Optional[int] = None,
+    city: Optional[str] = None,
+    min_area: Optional[float] = None,
+    max_area: Optional[float] = None,
+    is_new: Optional[str] = None,
+    limit: int = 50,
+    offset: int = 0,
     db: AsyncSession = Depends(get_db),
 ):
     service = PropertyService(db)
@@ -83,8 +91,16 @@ async def get_properties_map(
         properties = [p for p in properties if p.build_year and p.build_year >= min_build_year]
     if max_build_year is not None:
         properties = [p for p in properties if p.build_year and p.build_year <= max_build_year]
+    if city is not None:
+        properties = [p for p in properties if p.city == city]
+    if min_area is not None:
+        properties = [p for p in properties if p.area and p.area >= min_area]
+    if max_area is not None:
+        properties = [p for p in properties if p.area and p.area <= max_area]
+    if is_new is not None:
+        properties = [p for p in properties if p.is_new == is_new]
 
-    return properties
+    return properties[offset:offset + limit]
 
 
 @router.get(
@@ -105,18 +121,23 @@ async def get_properties(
     metro: Optional[str] = None,
     material: Optional[str] = None,
     repair_type: Optional[str] = None,
-        min_build_year: Optional[int] = None,
-        max_build_year: Optional[int] = None,
-        city: Optional[str] = None,
-        lat: Optional[float] = None,
-        lon: Optional[float] = None,
-        radius_km: Optional[float] = None,
-        db: AsyncSession = Depends(get_db),
-    ):
+    min_build_year: Optional[int] = None,
+    max_build_year: Optional[int] = None,
+    city: Optional[str] = None,
+    lat: Optional[float] = None,
+    lon: Optional[float] = None,
+    radius_km: Optional[float] = None,
+    search: Optional[str] = None,
+    min_area: Optional[float] = None,
+    max_area: Optional[float] = None,
+    is_new: Optional[str] = None,
+    db: AsyncSession = Depends(get_db),
+):
     service = PropertyService(db)
     properties = await service.list_properties(
         limit, offset, min_price, max_price, rooms, property_type, lat, lon, radius_km,
-        district, metro, material, repair_type, min_build_year, max_build_year, city, property_purpose
+        district, metro, material, repair_type, min_build_year, max_build_year, city, property_purpose,
+        search, min_area, max_area, is_new,
     )
     return properties
 
