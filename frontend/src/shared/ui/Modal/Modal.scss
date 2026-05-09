@@ -1,0 +1,77 @@
+@use '@app/styles/index' as *;
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background-color: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc-rem(20);
+  animation: modalFadeIn 0.2s ease;
+}
+
+.modal-content {
+  background: $color-white;
+  border-radius: calc-rem(16);
+  width: 100%;
+  max-width: calc-rem(520);
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 calc-rem(8) calc-rem(32) rgba(0, 0, 0, 0.15);
+  animation: modalSlideIn 0.25s ease;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: calc-rem(20) calc-rem(24);
+  border-bottom: 1px solid $color-gray-100;
+  flex-shrink: 0;
+}
+
+.modal-title {
+  font-size: calc-rem(18);
+  font-weight: 700;
+  color: $color-primary;
+  margin: 0;
+}
+
+.modal-close {
+  width: calc-rem(32);
+  height: calc-rem(32);
+  border: none;
+  background: $color-gray-100;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: $color-gray-500;
+  transition: all 0.2s;
+
+  &:hover {
+    background: $color-gray-200;
+    color: $color-gray-700;
+  }
+}
+
+.modal-body {
+  padding: calc-rem(20) calc-rem(24) calc-rem(24);
+  overflow-y: auto;
+  flex: 1;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalSlideIn {
+  from { opacity: 0; transform: translateY(calc-rem(-8)) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
