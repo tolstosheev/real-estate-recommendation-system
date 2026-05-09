@@ -45,7 +45,9 @@ class RecommendationService:
                 if (prefs.min_price and prefs.max_price)
                 else float(prefs.min_price or prefs.max_price or 0)
             )
-            area = (float(prefs.min_area or 0) + 100) / 2 if prefs.min_area else 50.0
+            a_min = float(prefs.min_area or 0)
+            a_max = float(prefs.max_area or 200)
+            area = (a_min + a_max) / 2 if a_min > 0 or a_max < 200 else 100.0
             rooms = sum(prefs.preferred_rooms) / len(prefs.preferred_rooms) if prefs.preferred_rooms else 2.0
             if prefs.min_build_year and prefs.max_build_year:
                 build_year = (prefs.min_build_year + prefs.max_build_year) / 2
@@ -97,32 +99,40 @@ class RecommendationService:
 
         filter_kwargs = {}
         if prefs:
-            if prefs.district:
-                filter_kwargs['district'] = prefs.district
-            if prefs.metro:
-                filter_kwargs['metro'] = prefs.metro
             if prefs.material:
-                filter_kwargs['material'] = prefs.material
+                filter_kwargs['material'] = [prefs.material]
             if prefs.repair_type:
-                filter_kwargs['repair_type'] = prefs.repair_type
+                filter_kwargs['repair_type'] = [prefs.repair_type]
             if prefs.min_build_year:
                 filter_kwargs['min_build_year'] = prefs.min_build_year
             if prefs.max_build_year:
                 filter_kwargs['max_build_year'] = prefs.max_build_year
+            if prefs.preferred_rooms:
+                filter_kwargs['rooms'] = prefs.preferred_rooms
+            if prefs.property_types:
+                filter_kwargs['property_type'] = prefs.property_types
+            if prefs.property_purposes:
+                filter_kwargs['property_purpose'] = prefs.property_purposes
+            if prefs.cities:
+                filter_kwargs['city'] = prefs.cities
+            if prefs.min_area:
+                filter_kwargs['min_area'] = prefs.min_area
+            if prefs.max_area:
+                filter_kwargs['max_area'] = prefs.max_area
 
         user_vec = await self._build_user_vector(user_id)
         all_rows = await self.prop_repo.get_all(limit=1000, **filter_kwargs)
         
-        # Fallback: if no properties match the strict filters, try fetching without some of them
-        if not all_rows:
-            # Try without district and metro filters first
+        # Fallback: if too few properties match strict filters, gradually relax
+        if not all_rows or len(all_rows) < limit:
             relaxed_filters = filter_kwargs.copy()
-            relaxed_filters.pop('district', None)
-            relaxed_filters.pop('metro', None)
-            all_rows = await self.prop_repo.get_all(limit=1000, **relaxed_filters)
+            for key in ('material', 'repair_type', 'rooms', 'property_type', 'property_purpose', 'city', 'min_area', 'max_area'):
+                relaxed_filters.pop(key, None)
+            relaxed_rows = await self.prop_repo.get_all(limit=1000, **relaxed_filters)
+            if relaxed_rows and (not all_rows or len(relaxed_rows) > len(all_rows)):
+                all_rows = relaxed_rows
             
-            # If still empty, try fetching everything to provide some baseline recommendations
-            if not all_rows:
+            if not all_rows or len(all_rows) < limit:
                 all_rows = await self.prop_repo.get_all(limit=1000)
 
         if not all_rows:

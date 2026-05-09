@@ -3,7 +3,7 @@ from sqlalchemy.future import select
 from sqlalchemy import update, delete, func, cast
 from geoalchemy2 import Geography
 from app.models.models import Property
-from typing import List
+from typing import List, Optional
 
 
 class PropertyRepository:
@@ -35,23 +35,23 @@ class PropertyRepository:
         offset: int = 0,
         min_price: float = None,
         max_price: float = None,
-        rooms: int = None,
-        property_type: str = None,
+        rooms: Optional[List[int]] = None,
+        property_type: Optional[List[str]] = None,
         lat: float = None,
         lon: float = None,
         radius_km: float = None,
         district: str = None,
         metro: str = None,
-        material: str = None,
-        repair_type: str = None,
+        material: Optional[List[str]] = None,
+        repair_type: Optional[List[str]] = None,
         min_build_year: int = None,
         max_build_year: int = None,
-        city: str = None,
-        property_purpose: str = None,
+        city: Optional[List[str]] = None,
+        property_purpose: Optional[List[str]] = None,
         search: str = None,
         min_area: float = None,
         max_area: float = None,
-        is_new: str = None,
+        is_new: Optional[List[str]] = None,
     ):
 
         query = select(Property, func.ST_X(Property.location).label("lon"), func.ST_Y(Property.location).label("lat"))
@@ -60,22 +60,22 @@ class PropertyRepository:
             query = query.filter(Property.price >= min_price)
         if max_price is not None:
             query = query.filter(Property.price <= max_price)
-        if rooms is not None:
-            query = query.filter(Property.rooms == rooms)
-        if property_type is not None:
-            query = query.filter(Property.property_type == property_type)
-        if city is not None:
-            query = query.filter(Property.city == city)
-        if property_purpose is not None:
-            query = query.filter(Property.property_purpose == property_purpose)
+        if rooms:
+            query = query.filter(Property.rooms.in_(rooms))
+        if property_type:
+            query = query.filter(Property.property_type.in_(property_type))
+        if city:
+            query = query.filter(Property.city.in_(city))
+        if property_purpose:
+            query = query.filter(Property.property_purpose.in_(property_purpose))
         if district is not None:
             query = query.filter(Property.district == district)
         if metro is not None:
             query = query.filter(Property.metro == metro)
-        if material is not None:
-            query = query.filter(Property.material == material)
-        if repair_type is not None:
-            query = query.filter(Property.repair_type == repair_type)
+        if material:
+            query = query.filter(Property.material.in_(material))
+        if repair_type:
+            query = query.filter(Property.repair_type.in_(repair_type))
         if min_build_year is not None:
             query = query.filter(Property.build_year >= min_build_year)
         if max_build_year is not None:
@@ -84,8 +84,8 @@ class PropertyRepository:
             query = query.filter(Property.area >= min_area)
         if max_area is not None:
             query = query.filter(Property.area <= max_area)
-        if is_new is not None:
-            query = query.filter(Property.is_new == is_new)
+        if is_new:
+            query = query.filter(Property.is_new.in_(is_new))
         if search is not None:
             like_pattern = f"%{search}%"
             query = query.filter(

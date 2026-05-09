@@ -5,7 +5,9 @@ from app.services.recommendation_service import RecommendationService
 from app.schemas.property import PropertyOut
 from app.core.security import get_current_user
 from app.models.models import User
+from app.repositories.interactions_repository import InteractionRepository
 from typing import List
+
 
 router = APIRouter()
 
@@ -25,5 +27,16 @@ async def get_recommendations(
     for prop in recommendations:
         res = await prop_service.get_property_details(str(prop.id))
         enriched_recs.append(res)
+
+    if enriched_recs:
+        repo = InteractionRepository(db)
+        liked_ids = await repo.batch_check_likes(current_user.id, [str(p["id"] if isinstance(p, dict) else p.id) for p in enriched_recs])
+        for p in enriched_recs:
+            pid = str(p["id"] if isinstance(p, dict) else p.id)
+            if pid in liked_ids:
+                if isinstance(p, dict):
+                    p["is_liked_by_me"] = True
+                else:
+                    p.is_liked_by_me = True
 
     return enriched_recs

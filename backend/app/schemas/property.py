@@ -5,7 +5,7 @@ from uuid import UUID
 
 class PropertyBase(BaseModel):
     title: str = Field(..., json_schema_extra={"example": "Modern Apartment in City Center"})
-    city: Optional[str] = Field(None, json_schema_extra={"example": "Москва"})
+    city: Optional[str] = Field(None, json_schema_extra={"example": "London"})
     description: Optional[str] = Field(
         None, json_schema_extra={"example": "A beautiful 2-bedroom apartment with a great view"}
     )
@@ -16,10 +16,10 @@ class PropertyBase(BaseModel):
     total_floors: Optional[int] = Field(None, json_schema_extra={"example": 10})
     property_type: Optional[str] = Field(None, json_schema_extra={"example": "Apartment"})
     property_purpose: Optional[str] = Field(None, json_schema_extra={"example": "sale"})
-    category: Optional[str] = Field(None, json_schema_extra={"example": "2-к квартира"})
+    category: Optional[str] = Field(None, json_schema_extra={"example": "2-bedroom"})
     address: str = Field(..., json_schema_extra={"example": "123 Main St, New York, NY"})
-    district: Optional[str] = Field(None, json_schema_extra={"example": "Центральный"})
-    metro: Optional[str] = Field(None, json_schema_extra={"example": "Пушкинская"})
+    district: Optional[str] = Field(None, json_schema_extra={"example": "Central"})
+    metro: Optional[str] = Field(None, json_schema_extra={"example": "Oxford Circus"})
     lat: float = Field(0.0)
     lon: float = Field(0.0)
     images: Optional[List[str]] = Field(
@@ -34,12 +34,12 @@ class PropertyBase(BaseModel):
     sq_living: Optional[float] = Field(None, json_schema_extra={"example": 40.5})
     sq_kitchen: Optional[float] = Field(None, json_schema_extra={"example": 12.0})
     build_year: Optional[int] = Field(None, json_schema_extra={"example": 2015})
-    material: Optional[str] = Field(None, json_schema_extra={"example": "кирпич"})
-    repair_type: Optional[str] = Field(None, json_schema_extra={"example": "евро"})
-    room_type: Optional[str] = Field(None, json_schema_extra={"example": "изолированные"})
-    is_new: Optional[str] = Field(None, json_schema_extra={"example": "новостройка"})
-    balcony: Optional[str] = Field(None, json_schema_extra={"example": "есть"})
-    parking: Optional[str] = Field(None, json_schema_extra={"example": "есть"})
+    material: Optional[str] = Field(None, json_schema_extra={"example": "brick"})
+    repair_type: Optional[str] = Field(None, json_schema_extra={"example": "designer"})
+    room_type: Optional[str] = Field(None, json_schema_extra={"example": "separated"})
+    is_new: Optional[str] = Field(None, json_schema_extra={"example": "new building"})
+    balcony: Optional[str] = Field(None, json_schema_extra={"example": "yes"})
+    parking: Optional[str] = Field(None, json_schema_extra={"example": "yes"})
 
 
 class PropertyCreate(PropertyBase):

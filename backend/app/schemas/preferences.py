@@ -6,11 +6,13 @@ from uuid import UUID
 
 class UserPreferenceBase(BaseModel):
     min_price: Optional[Decimal] = Field(None, json_schema_extra={"example": 100000.0})
-    max_price: Optional[Decimal] = Field(None, json_schema_extra={"example": 500000.0})
+    max_price: Optional[Decimal] = Field(None, json_schema_extra={"example": 5000000.0})
     min_area: Optional[Decimal] = Field(None, json_schema_extra={"example": 50.0})
+    max_area: Optional[Decimal] = Field(None, json_schema_extra={"example": 150.0})
     preferred_rooms: Optional[List[int]] = Field(None, json_schema_extra={"example": [2, 3]})
-    district: Optional[str] = Field(None, json_schema_extra={"example": "CAO"})
-    metro: Optional[str] = Field(None, json_schema_extra={"example": "Tverskaya"})
+    property_types: Optional[List[str]] = Field(None, json_schema_extra={"example": ["Apartment", "House"]})
+    property_purposes: Optional[List[str]] = Field(None, json_schema_extra={"example": ["sale"]})
+    cities: Optional[List[str]] = Field(None, json_schema_extra={"example": ["Москва", "Санкт-Петербург"]})
     material: Optional[str] = Field(None, json_schema_extra={"example": "Brick"})
     repair_type: Optional[str] = Field(None, json_schema_extra={"example": "Euro"})
     min_build_year: Optional[int] = Field(None, json_schema_extra={"example": 2000})

@@ -5,6 +5,7 @@ from app.repositories.user_repository import UserRepository
 from app.services.geocoding_service import GeocodingService
 from app.core.redis import RedisClient
 from app.models.models import Property
+from typing import List, Optional
 import json
 import hashlib
 from decimal import Decimal
@@ -44,16 +45,21 @@ class PropertyService:
             prop = result[0]
             lon = mapping.get("lon")
             lat = mapping.get("lat")
-        elif isinstance(result, (tuple, list)) and len(result) == 3:
-            prop, lon, lat = result
+        elif isinstance(result, (tuple, list)) and len(result) >= 2:
+            prop = result[0]
+            lon, lat = result[1], result[2] if len(result) >= 3 else (None, None)
         else:
             prop = result
             lat, lon = None, None
 
-        if prop:
+        if prop is not None:
             prop.lat = lat
             prop.lon = lon
-            prop.owner = await self.user_repo.get_by_id(str(prop.user_id))
+            try:
+                user_id = str(prop.user_id) if prop.user_id else None
+                prop.owner = await self.user_repo.get_by_id(user_id) if user_id else None
+            except Exception:
+                prop.owner = None
 
         return prop
 
@@ -149,23 +155,23 @@ class PropertyService:
         offset: int = 0,
         min_price: float = None,
         max_price: float = None,
-        rooms: int = None,
-        property_type: str = None,
+        rooms: Optional[List[int]] = None,
+        property_type: Optional[List[str]] = None,
         lat: float = None,
         lon: float = None,
         radius_km: float = None,
         district: str = None,
         metro: str = None,
-        material: str = None,
-        repair_type: str = None,
+        material: Optional[List[str]] = None,
+        repair_type: Optional[List[str]] = None,
         min_build_year: int = None,
         max_build_year: int = None,
-        city: str = None,
-        property_purpose: str = None,
+        city: Optional[List[str]] = None,
+        property_purpose: Optional[List[str]] = None,
         search: str = None,
         min_area: float = None,
         max_area: float = None,
-        is_new: str = None,
+        is_new: Optional[List[str]] = None,
     ):
         results = await self.repository.get_all(
             limit, offset, min_price, max_price, rooms, property_type, lat, lon, radius_km,

@@ -4,8 +4,9 @@ from sqlalchemy import distinct, select
 from app.core.db import get_db
 from app.services.property_service import PropertyService
 from app.schemas.property import PropertyCreate, PropertyUpdate, PropertyOut
-from app.core.security import get_current_user
+from app.core.security import get_current_user, get_current_user_optional
 from app.models.models import User, Property
+from app.repositories.interactions_repository import InteractionRepository
 from typing import List, Optional
 
 router = APIRouter()
@@ -49,22 +50,23 @@ async def get_properties_map(
     max_lon: float = Query(...),
     min_price: Optional[float] = None,
     max_price: Optional[float] = None,
-    rooms: Optional[int] = None,
-    property_type: Optional[str] = None,
-    property_purpose: Optional[str] = None,
+    rooms: Optional[List[int]] = Query(None),
+    property_type: Optional[List[str]] = Query(None),
+    property_purpose: Optional[List[str]] = Query(None),
     district: Optional[str] = None,
     metro: Optional[str] = None,
-    material: Optional[str] = None,
-    repair_type: Optional[str] = None,
+    material: Optional[List[str]] = Query(None),
+    repair_type: Optional[List[str]] = Query(None),
     min_build_year: Optional[int] = None,
     max_build_year: Optional[int] = None,
-    city: Optional[str] = None,
+    city: Optional[List[str]] = Query(None),
     min_area: Optional[float] = None,
     max_area: Optional[float] = None,
-    is_new: Optional[str] = None,
+    is_new: Optional[List[str]] = Query(None),
     limit: int = 50,
     offset: int = 0,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user_optional),
 ):
     service = PropertyService(db)
     properties = await service.get_properties_in_bbox(min_lat, max_lat, min_lon, max_lon)
@@ -73,34 +75,43 @@ async def get_properties_map(
         properties = [p for p in properties if p.price >= min_price]
     if max_price is not None:
         properties = [p for p in properties if p.price <= max_price]
-    if rooms is not None:
-        properties = [p for p in properties if p.rooms == rooms]
-    if property_type is not None:
-        properties = [p for p in properties if p.property_type == property_type]
-    if property_purpose is not None:
-        properties = [p for p in properties if p.property_purpose == property_purpose]
+    if rooms:
+        properties = [p for p in properties if p.rooms in rooms]
+    if property_type:
+        properties = [p for p in properties if p.property_type in property_type]
+    if property_purpose:
+        properties = [p for p in properties if p.property_purpose in property_purpose]
     if district is not None:
         properties = [p for p in properties if p.district == district]
     if metro is not None:
         properties = [p for p in properties if p.metro == metro]
-    if material is not None:
-        properties = [p for p in properties if p.material == material]
-    if repair_type is not None:
-        properties = [p for p in properties if p.repair_type == repair_type]
+    if material:
+        properties = [p for p in properties if p.material in material]
+    if repair_type:
+        properties = [p for p in properties if p.repair_type in repair_type]
     if min_build_year is not None:
         properties = [p for p in properties if p.build_year and p.build_year >= min_build_year]
     if max_build_year is not None:
         properties = [p for p in properties if p.build_year and p.build_year <= max_build_year]
-    if city is not None:
-        properties = [p for p in properties if p.city == city]
+    if city:
+        properties = [p for p in properties if p.city in city]
     if min_area is not None:
         properties = [p for p in properties if p.area and p.area >= min_area]
     if max_area is not None:
         properties = [p for p in properties if p.area and p.area <= max_area]
-    if is_new is not None:
-        properties = [p for p in properties if p.is_new == is_new]
+    if is_new:
+        properties = [p for p in properties if p.is_new in is_new]
 
-    return properties[offset:offset + limit]
+    result = properties[offset:offset + limit]
+
+    if current_user:
+        repo = InteractionRepository(db)
+        liked_ids = await repo.batch_check_likes(current_user.id, [str(p.id) for p in result])
+        for p in result:
+            if str(p.id) in liked_ids:
+                p.is_liked_by_me = True
+
+    return result
 
 
 @router.get(
@@ -114,24 +125,25 @@ async def get_properties(
     offset: int = 0,
     min_price: Optional[float] = None,
     max_price: Optional[float] = None,
-    rooms: Optional[int] = None,
-    property_type: Optional[str] = None,
-    property_purpose: Optional[str] = None,
+    rooms: Optional[List[int]] = Query(None),
+    property_type: Optional[List[str]] = Query(None),
+    property_purpose: Optional[List[str]] = Query(None),
     district: Optional[str] = None,
     metro: Optional[str] = None,
-    material: Optional[str] = None,
-    repair_type: Optional[str] = None,
+    material: Optional[List[str]] = Query(None),
+    repair_type: Optional[List[str]] = Query(None),
     min_build_year: Optional[int] = None,
     max_build_year: Optional[int] = None,
-    city: Optional[str] = None,
+    city: Optional[List[str]] = Query(None),
     lat: Optional[float] = None,
     lon: Optional[float] = None,
     radius_km: Optional[float] = None,
     search: Optional[str] = None,
     min_area: Optional[float] = None,
     max_area: Optional[float] = None,
-    is_new: Optional[str] = None,
+    is_new: Optional[List[str]] = Query(None),
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user_optional),
 ):
     service = PropertyService(db)
     properties = await service.list_properties(
@@ -139,6 +151,14 @@ async def get_properties(
         district, metro, material, repair_type, min_build_year, max_build_year, city, property_purpose,
         search, min_area, max_area, is_new,
     )
+
+    if current_user and properties:
+        repo = InteractionRepository(db)
+        liked_ids = await repo.batch_check_likes(current_user.id, [str(p.id) for p in properties])
+        for p in properties:
+            if str(p.id) in liked_ids:
+                p.is_liked_by_me = True
+
     return properties
 
 
@@ -176,11 +196,24 @@ async def get_my_properties(
 @router.get(
     "/{property_id}", response_model=PropertyOut, summary="Get Property Details", description="Get property by ID"
 )
-async def get_property(property_id: str, db: AsyncSession = Depends(get_db)):
+async def get_property(
+    property_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user_optional),
+):
     service = PropertyService(db)
     property_obj = await service.get_property_details(property_id)
     if not property_obj:
         raise HTTPException(status_code=404, detail="Property not found")
+
+    if current_user:
+        repo = InteractionRepository(db)
+        liked = await repo.find_interaction(current_user.id, property_id, "like")
+        if isinstance(property_obj, dict):
+            property_obj["is_liked_by_me"] = liked is not None
+        else:
+            property_obj.is_liked_by_me = liked is not None
+
     return property_obj
 
 
