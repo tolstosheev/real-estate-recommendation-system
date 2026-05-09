@@ -10,7 +10,7 @@ class InteractionRepository:
         self.session = session
 
     async def create_interaction(self, interaction_data: dict) -> Interaction:
-        weights = {"view": 1, "like": 5, "dislike": -5}
+        weights = {"view": 1, "like": 5}
         interaction_data["weight"] = weights.get(interaction_data["interaction_type"], 1)
 
         interaction_obj = Interaction(**interaction_data)
