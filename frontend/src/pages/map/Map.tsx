@@ -4,50 +4,111 @@ import { useAppSelector } from '@app/store/hooks';
 import YandexMap from '@shared/ui/Map';
 import YMapMarker from '@shared/ui/Map/YMapMarker';
 import PropertyCard from '@entities/property/ui/PropertyCard';
+import Modal from '@shared/ui/Modal';
 import type { Property } from '@entities/property/model/types';
 import { propertyService } from '@shared/api/properties.service';
 import { recommendationsService } from '@shared/api/recommendations.service';
 import api from '@shared/api/api';
+import RangeSlider from '@shared/ui/RangeSlider/RangeSlider';
+import CheckboxGroup from '@shared/ui/CheckboxGroup/CheckboxGroup';
 import './Map.scss';
 
-const MAP_PAGE_SIZE = 10;
+interface MapFilters {
+  priceRange: [number, number];
+  areaRange: [number, number];
+  buildYearRange: [number, number];
+  rooms: number[];
+  propertyTypes: string[];
+  propertyPurposes: string[];
+  cities: string[];
+  materials: string[];
+  repairTypes: string[];
+  isNew: string[];
+}
+
+const defaultMapFilters: MapFilters = {
+  priceRange: [0, 50000000],
+  areaRange: [0, 300],
+  buildYearRange: [1960, 2025],
+  rooms: [],
+  propertyTypes: [],
+  propertyPurposes: [],
+  cities: [],
+  materials: [],
+  repairTypes: [],
+  isNew: [],
+};
+
+const MAP_PAGE_SIZE = 100;
+const ZOOM_THRESHOLD = 13;
+const DEFAULT_BOUNDS: [number, number, number, number] = [55.96, 37.92, 55.55, 37.32];
+
+const isWithinBounds = (p: Property, bounds: [number, number, number, number]) => {
+  const [north, east, south, west] = bounds;
+  if (p.lat == null || p.lon == null) return false;
+  return p.lat >= south && p.lat <= north && p.lon >= west && p.lon <= east;
+};
 
 const MapPage: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAppSelector((state) => state.auth);
-  
+
   const handleMarkerClick = (propertyId: string) => {
     navigate(`/property/${propertyId}`);
   };
-  
+
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
+  const [mapCenter, setMapCenter] = useState<[number, number]>([37.6173, 55.7558]);
+  const [commandedZoom, setCommandedZoom] = useState(11);
+  const [trackedZoom, setTrackedZoom] = useState(11);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
+  const handleCardClick = (propertyId: string) => {
+    const prop = displayProperties.find(p => p.id === propertyId);
+    if (prop) {
+      setSelectedPropertyId(propertyId);
+      setMapCenter([prop.lon, prop.lat]);
+      setCommandedZoom(15);
+    }
+  };
+
+  const handleLikeToggle = (propertyId: string, isLiked: boolean) => {
+    setProperties(prev =>
+      prev.map(p => p.id === propertyId ? {
+        ...p,
+        is_liked_by_me: isLiked,
+        likes_count: isLiked ? p.likes_count + 1 : Math.max(0, p.likes_count - 1)
+      } : p)
+    );
+    setRecVersion(v => v + 1);
+  };
+
+  const isZoomedOut = trackedZoom < ZOOM_THRESHOLD;
   const [properties, setProperties] = useState<Property[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasData, setHasData] = useState(false);
   const [currentBounds, setCurrentBounds] = useState<[number, number, number, number] | null>(null);
   const [aiRecs, setAiRecs] = useState<Property[]>([]);
+  const [recVersion, setRecVersion] = useState(0);
   const [meta, setMeta] = useState<{ cities: string[]; materials: string[]; repair_types: string[]; property_types: string[] }>({
     cities: [], materials: [], repair_types: [], property_types: []
   });
-  const [filters, setFilters] = useState({
-    minPrice: '',
-    maxPrice: '',
-    rooms: '',
-    propertyType: '',
-    material: '',
-    repairType: '',
-    minBuildYear: '',
-    maxBuildYear: '',
-    propertyPurpose: '',
-    city: '',
-    areaFrom: '',
-    areaTo: '',
-    isNew: '',
-  });
-  const [hasMore, setHasMore] = useState(false);
-  const mapOffsetRef = useRef(0);
+  const [draftFilters, setDraftFilters] = useState<MapFilters>(defaultMapFilters);
+  const [appliedFilters, setAppliedFilters] = useState<MapFilters>(defaultMapFilters);
+  const [openSections, setOpenSections] = useState<Set<string>>(new Set());
   const boundsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const loaderRef = useRef<HTMLDivElement>(null);
-  const loadMoreRef = useRef<() => void>(() => {});
+  const hasInitialFetch = useRef(false);
+  const appliedFiltersRef = useRef(appliedFilters);
+  appliedFiltersRef.current = appliedFilters;
+  const suppressBoundsFetchRef = useRef(true);
+
+  useEffect(() => {
+    if (!hasInitialFetch.current) {
+      hasInitialFetch.current = true;
+      setCurrentBounds(null);
+      fetchProperties(null, appliedFiltersRef.current);
+    }
+  }, []);
 
   useEffect(() => {
     propertyService.getMeta().then(data => {
@@ -66,284 +127,377 @@ const MapPage: React.FC = () => {
     } else {
       setAiRecs([]);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, recVersion]);
 
   const filteredAiRecs = useMemo(() => {
     if (!aiRecs.length) return [];
     return aiRecs.filter(p => {
-      if (filters.city && p.city !== filters.city) return false;
-      if (filters.propertyType && p.property_type !== filters.propertyType) return false;
-      if (filters.propertyPurpose && p.property_purpose !== filters.propertyPurpose) return false;
-      if (filters.isNew && p.is_new !== filters.isNew) return false;
-      if (filters.material && p.material !== filters.material) return false;
-      if (filters.repairType && p.repair_type !== filters.repairType) return false;
-      if (filters.minPrice && (!p.price || p.price < Number(filters.minPrice))) return false;
-      if (filters.maxPrice && (!p.price || p.price > Number(filters.maxPrice))) return false;
-      if (filters.rooms && p.rooms !== Number(filters.rooms)) return false;
-      if (filters.areaFrom && (!p.area || p.area < Number(filters.areaFrom))) return false;
-      if (filters.areaTo && (!p.area || p.area > Number(filters.areaTo))) return false;
-      if (filters.minBuildYear && (!p.build_year || p.build_year < Number(filters.minBuildYear))) return false;
-      if (filters.maxBuildYear && (!p.build_year || p.build_year > Number(filters.maxBuildYear))) return false;
+      if (currentBounds && !isWithinBounds(p, currentBounds)) return false;
+      const af = appliedFilters;
+      if (af.cities.length && (!p.city || !af.cities.includes(p.city))) return false;
+      if (af.propertyTypes.length && (!p.property_type || !af.propertyTypes.includes(p.property_type))) return false;
+      if (af.propertyPurposes.length && (!p.property_purpose || !af.propertyPurposes.includes(p.property_purpose))) return false;
+      if (af.isNew.length && (!p.is_new || !af.isNew.includes(p.is_new))) return false;
+      if (af.materials.length && (!p.material || !af.materials.includes(p.material))) return false;
+      if (af.repairTypes.length && (!p.repair_type || !af.repairTypes.includes(p.repair_type))) return false;
+      if (af.priceRange[0] > 0 && (!p.price || p.price < af.priceRange[0])) return false;
+      if (af.priceRange[1] < 50000000 && (!p.price || p.price > af.priceRange[1])) return false;
+      if (af.rooms.length && (!p.rooms || !af.rooms.includes(p.rooms))) return false;
+      if (af.areaRange[0] > 0 && (!p.area || p.area < af.areaRange[0])) return false;
+      if (af.areaRange[1] < 300 && (!p.area || p.area > af.areaRange[1])) return false;
+      if (af.buildYearRange[0] > 1960 && (!p.build_year || p.build_year < af.buildYearRange[0])) return false;
+      if (af.buildYearRange[1] < 2025 && (!p.build_year || p.build_year > af.buildYearRange[1])) return false;
       return true;
     });
-  }, [aiRecs, filters]);
+  }, [aiRecs, appliedFilters, currentBounds]);
 
   const displayProperties = useMemo(() => {
     if (!filteredAiRecs.length) return properties;
-    const merged = [
-      ...filteredAiRecs.map(r => {
-        const updated = properties.find(p => p.id === r.id);
-        return { ...r, ...updated, is_ai_recommendation: true, id: r.id };
-      }),
-      ...properties.filter(p => !filteredAiRecs.some(ai => ai.id === p.id)),
-    ];
+    const seen = new Set<string>();
+    const merged: Property[] = [];
+    for (const r of filteredAiRecs) {
+      seen.add(r.id);
+      const updated = properties.find(p => p.id === r.id);
+      merged.push(updated ? { ...updated, is_ai_recommendation: true } : r);
+    }
+    for (const p of properties) {
+      if (!seen.has(p.id)) {
+        seen.add(p.id);
+        merged.push(p);
+      }
+    }
     return merged;
   }, [filteredAiRecs, properties]);
 
-  const fetchProperties = useCallback(async (bounds: [number, number, number, number], activeFilters: typeof filters, offset: number, append = false) => {
+  const buildParams = (f: MapFilters, bounds: [number, number, number, number] | null, offset: number) => {
+    const params: Record<string, unknown> = {
+      limit: MAP_PAGE_SIZE,
+      offset,
+    };
+
+    if (bounds) {
+      const [north, east, south, west] = bounds;
+      params.min_lat = south;
+      params.max_lat = north;
+      params.min_lon = west;
+      params.max_lon = east;
+    }
+    if (f.priceRange[0] > 0) params.min_price = f.priceRange[0];
+    if (f.priceRange[1] < 50000000) params.max_price = f.priceRange[1];
+    if (f.areaRange[0] > 0) params.min_area = f.areaRange[0];
+    if (f.areaRange[1] < 300) params.max_area = f.areaRange[1];
+    if (f.buildYearRange[0] > 1960) params.min_build_year = f.buildYearRange[0];
+    if (f.buildYearRange[1] < 2025) params.max_build_year = f.buildYearRange[1];
+    if (f.rooms.length) params.rooms = f.rooms;
+    if (f.propertyTypes.length) params.property_type = f.propertyTypes;
+    if (f.propertyPurposes.length) params.property_purpose = f.propertyPurposes;
+    if (f.cities.length) params.city = f.cities;
+    if (f.materials.length) params.material = f.materials;
+    if (f.repairTypes.length) params.repair_type = f.repairTypes;
+    if (f.isNew.length) params.is_new = f.isNew;
+    return params;
+  };
+
+  const fetchProperties = useCallback(async (bounds: [number, number, number, number] | null, activeFilters: MapFilters): Promise<Property[]> => {
     setIsLoading(true);
     try {
-      const [north, east, south, west] = bounds;
-      const params: Record<string, string | number> = {
-        min_lat: south,
-        max_lat: north,
-        min_lon: west,
-        max_lon: east,
-        limit: MAP_PAGE_SIZE,
-        offset,
-      };
-
-      if (activeFilters.minPrice) params.min_price = Number(activeFilters.minPrice);
-      if (activeFilters.maxPrice) params.max_price = Number(activeFilters.maxPrice);
-      if (activeFilters.rooms) params.rooms = Number(activeFilters.rooms);
-      if (activeFilters.propertyType) params.property_type = activeFilters.propertyType;
-      if (activeFilters.propertyPurpose) params.property_purpose = activeFilters.propertyPurpose;
-      if (activeFilters.material) params.material = activeFilters.material;
-      if (activeFilters.repairType) params.repair_type = activeFilters.repairType;
-      if (activeFilters.minBuildYear) params.min_build_year = Number(activeFilters.minBuildYear);
-      if (activeFilters.maxBuildYear) params.max_build_year = Number(activeFilters.maxBuildYear);
-      if (activeFilters.city) params.city = activeFilters.city;
-      if (activeFilters.areaFrom) params.min_area = Number(activeFilters.areaFrom);
-      if (activeFilters.areaTo) params.max_area = Number(activeFilters.areaTo);
-      if (activeFilters.isNew) params.is_new = activeFilters.isNew;
-
-      const response = await api.get(`/api/properties/map`, { params });
+      const params = buildParams(activeFilters, bounds, 0);
+      const endpoint = bounds ? `/api/properties/map` : `/api/properties/`;
+      const response = await api.get(endpoint, { params });
       const data = response.data as Property[];
-
-      if (append) {
-        setProperties(prev => {
-          const existingIds = new Set(prev.map(p => p.id));
-          const newItems = data.filter(item => !existingIds.has(item.id));
-          return [...prev, ...newItems];
-        });
-      } else {
-        setProperties(data);
-      }
-
-      setHasMore(data.length === MAP_PAGE_SIZE);
+      setProperties(data);
       setHasData(true);
+      return data;
     } catch (err) {
       console.error('Failed to fetch properties:', err);
+      return [];
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  const loadMore = () => {
-    mapOffsetRef.current += MAP_PAGE_SIZE;
-    if (currentBounds) {
-      fetchProperties(currentBounds, filters, mapOffsetRef.current, true);
-    }
-  };
-  loadMoreRef.current = loadMore;
 
-  useEffect(() => {
-    if (!loaderRef.current || !hasMore) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && hasMore && !isLoading) {
-          loadMoreRef.current();
-        }
-      },
-      { threshold: 0.1 }
-    );
-    observer.observe(loaderRef.current);
-    return () => observer.disconnect();
-  }, [hasMore, isLoading]);
-
-  // Center is now handled by onBoundsChange
-
-  const handleBoundsChange = (bounds: [number, number, number, number]) => {
+  const handleBoundsChange = useCallback((bounds: [number, number, number, number]) => {
     setCurrentBounds(bounds);
-    mapOffsetRef.current = 0;
+
+    if (suppressBoundsFetchRef.current) {
+      suppressBoundsFetchRef.current = false;
+      return;
+    }
+
     if (boundsTimeoutRef.current) {
       clearTimeout(boundsTimeoutRef.current);
     }
     boundsTimeoutRef.current = setTimeout(() => {
-      fetchProperties(bounds, filters, 0, false);
-    }, 500) as unknown as ReturnType<typeof setTimeout>;
+      fetchProperties(bounds, appliedFiltersRef.current);
+    }, 200);
+  }, [fetchProperties]);
+
+  const handleZoomChange = useCallback((zoom: number) => {
+    setTrackedZoom(zoom);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (boundsTimeoutRef.current) {
+        clearTimeout(boundsTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleDraftChange = (key: keyof MapFilters, value: unknown) => {
+    setDraftFilters(prev => ({ ...prev, [key]: value }));
   };
 
-  const handleFilterChange = (key: string, value: string) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
-  };
-
-  const applyFilters = () => {
-    mapOffsetRef.current = 0;
-    if (currentBounds) {
-      fetchProperties(currentBounds, filters, 0, false);
+  const applyFilters = async () => {
+    if (boundsTimeoutRef.current) {
+      clearTimeout(boundsTimeoutRef.current);
+      boundsTimeoutRef.current = null;
+    }
+    setAppliedFilters(draftFilters);
+    setFiltersOpen(false);
+    setOpenSections(new Set());
+    const hasCityFilter = draftFilters.cities.length > 0;
+    if (hasCityFilter) {
+      setCurrentBounds(null);
+      const data = await fetchProperties(null, draftFilters);
+      const first = data[0];
+      if (first) {
+        setMapCenter([first.lon, first.lat]);
+        setCommandedZoom(12);
+        setTrackedZoom(12);
+      }
     } else {
-      fetchProperties([56.5, 38.5, 55.0, 36.5], filters, 0, false);
+      const bounds = currentBounds || DEFAULT_BOUNDS;
+      setCurrentBounds(bounds);
+      fetchProperties(bounds, draftFilters);
     }
   };
+
+  const toggleSection = (section: string) => {
+    setOpenSections(prev => {
+      const next = new Set(prev);
+      if (next.has(section)) next.delete(section);
+      else next.add(section);
+      return next;
+    });
+  };
+
+  const resetFilters = () => {
+    setDraftFilters(defaultMapFilters);
+  };
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    const f = appliedFilters;
+    if (f.priceRange[0] > 0 || f.priceRange[1] < 50000000) count++;
+    if (f.areaRange[0] > 0 || f.areaRange[1] < 300) count++;
+    if (f.buildYearRange[0] > 1960 || f.buildYearRange[1] < 2025) count++;
+    if (f.rooms.length) count++;
+    if (f.propertyTypes.length) count++;
+    if (f.propertyPurposes.length) count++;
+    if (f.cities.length) count++;
+    if (f.materials.length) count++;
+    if (f.repairTypes.length) count++;
+    if (f.isNew.length) count++;
+    return count;
+  }, [appliedFilters]);
+
+  const renderFilterContent = () => (
+    <>
+      <div className="filter-section filter-section--open">
+        <div className="filter-section__header" onClick={() => toggleSection('main')}>
+          <span>Main</span>
+          <span className="filter-section__arrow">{openSections.has('main') ? '▼' : '▶'}</span>
+        </div>
+        <div className="filter-section__body">
+
+          <RangeSlider
+            label="Price"
+            min={0}
+            max={50000000}
+            step={100000}
+            value={draftFilters.priceRange}
+            onChange={(v) => handleDraftChange('priceRange', v)}
+            formatLabel={(v) => `${(v / 1000000).toFixed(1)}M ₽`}
+          />
+
+          <CheckboxGroup
+            label="Rooms"
+            options={[
+              { label: '1', value: '1' },
+              { label: '2', value: '2' },
+              { label: '3', value: '3' },
+              { label: '4+', value: '4' },
+            ]}
+            selected={draftFilters.rooms.map(String)}
+            onChange={(v) => handleDraftChange('rooms', v.map(Number))}
+          />
+
+          <CheckboxGroup
+            label="Property type"
+            options={meta.property_types.map(t => ({ label: t, value: t }))}
+            selected={draftFilters.propertyTypes}
+            onChange={(v) => handleDraftChange('propertyTypes', v)}
+          />
+
+          <CheckboxGroup
+            label="Purpose"
+            options={[
+              { label: 'Sale', value: 'sale' },
+              { label: 'Rent', value: 'rent' },
+              { label: 'Daily rent', value: 'daily_rent' },
+            ]}
+            selected={draftFilters.propertyPurposes}
+            onChange={(v) => handleDraftChange('propertyPurposes', v)}
+          />
+
+        </div>
+      </div>
+
+      <div className={`filter-section ${openSections.has('location') ? 'filter-section--open' : ''}`}>
+        <div className="filter-section__header" onClick={() => toggleSection('location')}>
+          <span>Location</span>
+          <span className="filter-section__arrow">{openSections.has('location') ? '▼' : '▶'}</span>
+        </div>
+        <div className="filter-section__body">
+
+          <CheckboxGroup
+            label="City"
+            options={meta.cities.map(c => ({ label: c, value: c }))}
+            selected={draftFilters.cities}
+            onChange={(v) => handleDraftChange('cities', v)}
+          />
+
+        </div>
+      </div>
+
+      <div className={`filter-section ${openSections.has('details') ? 'filter-section--open' : ''}`}>
+        <div className="filter-section__header" onClick={() => toggleSection('details')}>
+          <span>Details</span>
+          <span className="filter-section__arrow">{openSections.has('details') ? '▼' : '▶'}</span>
+        </div>
+        <div className="filter-section__body">
+
+          <RangeSlider
+            label="Area (m²)"
+            min={0}
+            max={300}
+            step={5}
+            value={draftFilters.areaRange}
+            onChange={(v) => handleDraftChange('areaRange', v)}
+            formatLabel={(v) => `${v} m²`}
+          />
+
+          <RangeSlider
+            label="Build year"
+            min={1960}
+            max={2025}
+            step={1}
+            value={draftFilters.buildYearRange}
+            onChange={(v) => handleDraftChange('buildYearRange', v)}
+          />
+
+          <CheckboxGroup
+            label="Material"
+            options={meta.materials.map(m => ({ label: m, value: m }))}
+            selected={draftFilters.materials}
+            onChange={(v) => handleDraftChange('materials', v)}
+          />
+
+          <CheckboxGroup
+            label="Repair type"
+            options={meta.repair_types.map(r => ({ label: r, value: r }))}
+            selected={draftFilters.repairTypes}
+            onChange={(v) => handleDraftChange('repairTypes', v)}
+          />
+
+          <CheckboxGroup
+            label="Building type"
+            options={[
+              { label: 'New building', value: 'new building' },
+              { label: 'Secondary', value: 'secondary' },
+              { label: 'Under construction', value: 'under construction' },
+            ]}
+            selected={draftFilters.isNew}
+            onChange={(v) => handleDraftChange('isNew', v)}
+          />
+
+        </div>
+      </div>
+
+      <div className="map-filters-modal__actions">
+        <button className="map-filters__reset-btn" onClick={resetFilters}>Reset</button>
+        <button className="map-filters__apply-btn" onClick={applyFilters}>Apply Filters</button>
+      </div>
+    </>
+  );
 
   return (
     <div className="map-page">
       <aside className="map-sidebar">
-            <div className="map-filters">
-            <h3 className="map-filters__title">Filters</h3>
-            <div className="map-filters__grid">
-              <input
-                type="number"
-                placeholder="Min Price"
-                className="map-filters__input"
-                value={filters.minPrice}
-                onChange={(e) => handleFilterChange('minPrice', e.target.value)}
-              />
-              <input
-                type="number"
-                placeholder="Max Price"
-                className="map-filters__input"
-                value={filters.maxPrice}
-                onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
-              />
-              <input
-                type="number"
-                placeholder="Min Area"
-                className="map-filters__input"
-                value={filters.areaFrom}
-                onChange={(e) => handleFilterChange('areaFrom', e.target.value)}
-              />
-              <input
-                type="number"
-                placeholder="Max Area"
-                className="map-filters__input"
-                value={filters.areaTo}
-                onChange={(e) => handleFilterChange('areaTo', e.target.value)}
-              />
-              <input
-                type="number"
-                placeholder="Rooms"
-                className="map-filters__input"
-                value={filters.rooms}
-                onChange={(e) => handleFilterChange('rooms', e.target.value)}
-              />
-              <select
-                className="map-filters__input"
-                value={filters.propertyType}
-                onChange={(e) => handleFilterChange('propertyType', e.target.value)}
-              >
-                <option value="">Any type</option>
-                {meta.property_types.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
-              <select
-                className="map-filters__input"
-                value={filters.propertyPurpose}
-                onChange={(e) => handleFilterChange('propertyPurpose', e.target.value)}
-              >
-                <option value="">Any purpose</option>
-                <option value="sale">Sale</option>
-                <option value="rent">Rent</option>
-              </select>
-              <select
-                className="map-filters__input"
-                value={filters.city}
-                onChange={(e) => handleFilterChange('city', e.target.value)}
-              >
-                <option value="">Any city</option>
-                {meta.cities.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-              <select
-                className="map-filters__input"
-                value={filters.isNew}
-                onChange={(e) => handleFilterChange('isNew', e.target.value)}
-              >
-                <option value="">Any building type</option>
-                <option value="новостройка">New building</option>
-                <option value="вторичка">Secondary</option>
-              </select>
-              <select
-                className="map-filters__input"
-                value={filters.material}
-                onChange={(e) => handleFilterChange('material', e.target.value)}
-              >
-                <option value="">Any material</option>
-                {meta.materials.map(m => <option key={m} value={m}>{m}</option>)}
-              </select>
-              <select
-                className="map-filters__input"
-                value={filters.repairType}
-                onChange={(e) => handleFilterChange('repairType', e.target.value)}
-              >
-                <option value="">Any repair</option>
-                {meta.repair_types.map(r => <option key={r} value={r}>{r}</option>)}
-              </select>
-              <input
-                type="number"
-                placeholder="Min Year"
-                className="map-filters__input"
-                value={filters.minBuildYear}
-                onChange={(e) => handleFilterChange('minBuildYear', e.target.value)}
-              />
-              <input
-                type="number"
-                placeholder="Max Year"
-                className="map-filters__input"
-                value={filters.maxBuildYear}
-                onChange={(e) => handleFilterChange('maxBuildYear', e.target.value)}
-              />
-            </div>
-          <button className="map-filters__apply-btn" onClick={applyFilters}>
-            Apply Filters
+        <div className="map-sidebar__header">
+          <button
+            className={`map-sidebar__filter-btn ${activeFilterCount > 0 ? 'map-sidebar__filter-btn--active' : ''}`}
+            onClick={() => setFiltersOpen(true)}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="4" y1="6" x2="20" y2="6" />
+              <line x1="8" y1="12" x2="20" y2="12" />
+              <line x1="12" y1="18" x2="20" y2="18" />
+              <circle cx="6" cy="6" r="2" />
+              <circle cx="10" cy="12" r="2" />
+              <circle cx="14" cy="18" r="2" />
+            </svg>
+            Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
           </button>
         </div>
         <div className="map-list">
           {isLoading && <div className="map-list__loading">Loading...</div>}
           {!isLoading && hasData && displayProperties.length === 0 && (
-            <div className="map-list__empty">
-              No properties found in this area.
-            </div>
+            <div className="map-list__empty">No properties found in this area.</div>
           )}
           {!isLoading && !hasData && displayProperties.length === 0 && (
-            <div className="map-list__empty">
-              Move the map to load properties
-            </div>
+            <div className="map-list__empty">Move the map to load properties</div>
           )}
           {displayProperties.map(prop => (
-            <PropertyCard key={prop.id} property={prop} variant="horizontal" />
-          ))}
-          {hasMore && (
-            <div ref={loaderRef} className="map-list__load-more">
-              {isLoading ? <span>Loading more...</span> : <span>Scroll for more</span>}
+            <div key={prop.id} className={prop.id === selectedPropertyId ? 'map-list__card--selected' : ''}>
+              <PropertyCard
+                property={prop}
+                variant="horizontal"
+                onClick={handleCardClick}
+                onLikeToggle={handleLikeToggle}
+              />
             </div>
-          )}
+          ))}
+
         </div>
       </aside>
-        <main className="map-map-container">
-        <YandexMap onBoundsChange={handleBoundsChange}>
+
+      <main className="map-map-container">
+        <YandexMap center={mapCenter} zoom={commandedZoom} onBoundsChange={handleBoundsChange} onZoomChange={handleZoomChange}>
           {displayProperties.map(prop => (
             <YMapMarker
               key={prop.id}
               coordinates={[prop.lon, prop.lat]}
               onClick={() => handleMarkerClick(prop.id)}
+              isSelected={prop.id === selectedPropertyId}
             >
-              <div className="map-marker-label">
-                <div className="map-marker-label__title">{prop.title}</div>
-                <div className="map-marker-label__price">{Number(prop.price).toLocaleString()} ₽</div>
-              </div>
+              {isZoomedOut && prop.id !== selectedPropertyId ? (
+                <div className="map-marker-pin" />
+              ) : (
+                <div className={`map-marker-label ${prop.id === selectedPropertyId ? 'map-marker-label--selected' : ''}`}>
+                  <div className="map-marker-label__price">{Number(prop.price).toLocaleString()} ₽</div>
+                  <div className="map-marker-label__address">{prop.address}</div>
+                </div>
+              )}
             </YMapMarker>
           ))}
         </YandexMap>
+
+        <Modal isOpen={filtersOpen} onClose={() => setFiltersOpen(false)} title="Filters">
+          {renderFilterContent()}
+        </Modal>
       </main>
     </div>
   );

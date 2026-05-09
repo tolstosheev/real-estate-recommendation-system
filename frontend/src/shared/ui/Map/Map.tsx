@@ -1,33 +1,84 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import './Map.scss';
 import { getYmapsComponents } from '@shared/api/ymaps3';
-
-interface YMapBounds {
-  northEast: { lat: number; lon: number };
-  southWest: { lat: number; lon: number };
-}
 
 interface MapProps {
   center?: [number, number];
   zoom?: number;
   onBoundsChange?: (bounds: [number, number, number, number]) => void;
+  onZoomChange?: (zoom: number) => void;
   children?: React.ReactNode;
 }
 
 type YMapsComponents = Awaited<ReturnType<typeof getYmapsComponents>>;
 
-const YandexMap: React.FC<MapProps> = ({ center = [55.7558, 37.6173], zoom = 11, onBoundsChange, children }) => {
+function extractLat(v: unknown): number | undefined {
+  if (!v || typeof v !== 'object') return undefined;
+  const o = v as Record<string, unknown>;
+  if (typeof o.lat === 'number') return o.lat;
+  if (typeof (o as any).getLat === 'function') return (o as any).getLat();
+  return undefined;
+}
+
+function extractLon(v: unknown): number | undefined {
+  if (!v || typeof v !== 'object') return undefined;
+  const o = v as Record<string, unknown>;
+  if (typeof o.lon === 'number') return o.lon;
+  if (typeof o.lng === 'number') return o.lng;
+  if (typeof o.longitude === 'number') return o.longitude;
+  if (typeof (o as any).getLon === 'function') return (o as any).getLon();
+  if (typeof (o as any).getLng === 'function') return (o as any).getLng();
+  return undefined;
+}
+
+const YandexMap: React.FC<MapProps> = ({ center = [37.6173, 55.7558], zoom = 11, onBoundsChange, onZoomChange, children }) => {
   const [components, setComponents] = useState<YMapsComponents | null>(null);
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     getYmapsComponents()
-      .then(setComponents)
+      .then((comps) => {
+        setComponents(comps);
+      })
       .catch((err) => {
         console.warn('Yandex Maps failed to initialize:', err);
         setHasError(true);
       });
   }, []);
+
+  const handleBounds = useCallback((raw: unknown) => {
+    if (!onBoundsChange || !raw || typeof raw !== 'object') return;
+
+    const o = raw as Record<string, unknown>;
+    const tryNE = (obj: unknown): [number, number] | null => {
+      const lat = extractLat(obj);
+      const lon = extractLon(obj);
+      return (lat != null && lon != null) ? [lat, lon] : null;
+    };
+
+    let ne: [number, number] | null = null;
+    let sw: [number, number] | null = null;
+
+    if ('northEast' in o && 'southWest' in o) {
+      ne = tryNE(o.northEast);
+      sw = tryNE(o.southWest);
+    }
+
+    if ((!ne || !sw) && typeof (o as any).getNorthEast === 'function') {
+      ne = tryNE((o as any).getNorthEast());
+      sw = tryNE((o as any).getSouthWest());
+    }
+
+    if (ne && sw) {
+      onBoundsChange([ne[0], ne[1], sw[0], sw[1]]);
+    }
+  }, [onBoundsChange]);
+
+  const handleUpdate = useCallback((update: { location?: { zoom?: number } }) => {
+    if (onZoomChange && update.location?.zoom != null) {
+      onZoomChange(update.location.zoom);
+    }
+  }, [onZoomChange]);
 
   if (hasError) {
     return (
@@ -51,24 +102,15 @@ const YandexMap: React.FC<MapProps> = ({ center = [55.7558, 37.6173], zoom = 11,
     );
   }
 
-  const { YMap, YMapDefaultSchemeLayer, YMapDefaultFeaturesLayer, reactify } = components;
+  const { YMap, YMapDefaultSchemeLayer, YMapDefaultFeaturesLayer, YMapListener, reactify } = components;
+
+  const location = reactify.useDefault({ center, zoom }, [center, zoom]);
 
   return (
-    <YMap
-      location={reactify.useDefault({ center, zoom })}
-      onBoundsChange={(bounds: YMapBounds) => {
-        if (onBoundsChange) {
-          onBoundsChange([
-            bounds.northEast.lat,
-            bounds.northEast.lon,
-            bounds.southWest.lat,
-            bounds.southWest.lon,
-          ]);
-        }
-      }}
-    >
+    <YMap location={location} onBoundsChange={handleBounds}>
       <YMapDefaultSchemeLayer />
       <YMapDefaultFeaturesLayer />
+      <YMapListener onUpdate={handleUpdate} />
       {children}
     </YMap>
   );

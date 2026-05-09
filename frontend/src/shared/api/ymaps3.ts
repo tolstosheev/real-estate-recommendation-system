@@ -6,6 +6,7 @@ interface YMapsComponents {
   YMapDefaultSchemeLayer: React.ElementType;
   YMapDefaultFeaturesLayer: React.ElementType;
   YMapMarker: React.ElementType;
+  YMapListener: React.ElementType;
   reactify: { useDefault: (value: unknown, deps?: unknown[]) => unknown };
 }
 
@@ -41,7 +42,10 @@ async function initYmaps(): Promise<YMapsComponents> {
   const ymaps3 = window.ymaps3;
   await ymaps3.ready;
 
-  const ymaps3Reactify = await ymaps3.import('@yandex/ymaps3-reactify');
+  const [ymaps3Reactify] = await Promise.all([
+    ymaps3.import('@yandex/ymaps3-reactify'),
+    ymaps3.import('@yandex/ymaps3-default-ui-theme').catch(() => {}),
+  ]);
   const reactify = ymaps3Reactify.reactify.bindTo(React, ReactDOM);
   const components = reactify.module(ymaps3);
 
@@ -50,6 +54,7 @@ async function initYmaps(): Promise<YMapsComponents> {
     YMapDefaultSchemeLayer: components.YMapDefaultSchemeLayer,
     YMapDefaultFeaturesLayer: components.YMapDefaultFeaturesLayer,
     YMapMarker: components.YMapMarker,
+    YMapListener: components.YMapListener,
     reactify,
   };
 }
