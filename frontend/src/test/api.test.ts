@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import api from '../shared/api/api';
 import MockAdapter from 'axios-mock-adapter';
 import type { AxiosError } from 'axios';
+import axios from 'axios';
 
 const mock = new MockAdapter(api);
 
@@ -36,5 +37,51 @@ describe('API Client', () => {
 
     expect(localStorage.getItem('accessToken')).toBeNull();
     expect(window.location.href).toBe('/onboarding');
+  });
+
+  describe('paramsSerializer', () => {
+    it('should serialize single values as query params', () => {
+      const params = { limit: 100, offset: 0 };
+      const result = api.defaults.paramsSerializer!(params);
+      expect(result).toContain('limit=100');
+      expect(result).toContain('offset=0');
+    });
+
+    it('should serialize array values as repeated keys', () => {
+      const params = { city: ['London', 'Paris'] };
+      const result = api.defaults.paramsSerializer!(params);
+      expect(result).toContain('city=London');
+      expect(result).toContain('city=Paris');
+    });
+
+    it('should serialize single-element array as single key', () => {
+      const params = { city: ['London'] };
+      const result = api.defaults.paramsSerializer!(params);
+      expect(result).toBe('city=London');
+    });
+
+    it('should serialize rooms array correctly', () => {
+      const params = { rooms: [1, 2, 3] };
+      const result = api.defaults.paramsSerializer!(params);
+      expect(result).toContain('rooms=1');
+      expect(result).toContain('rooms=2');
+      expect(result).toContain('rooms=3');
+    });
+
+    it('should serialize mixed params with arrays and scalars', () => {
+      const params = { limit: 100, city: ['London'], min_price: 50000 };
+      const result = api.defaults.paramsSerializer!(params);
+      expect(result).toContain('limit=100');
+      expect(result).toContain('city=London');
+      expect(result).toContain('min_price=50000');
+    });
+
+    it('should omit undefined and null values', () => {
+      const params = { limit: 100, city: undefined, extra: null };
+      const result = api.defaults.paramsSerializer!(params);
+      expect(result).toContain('limit=100');
+      expect(result).not.toContain('city');
+      expect(result).not.toContain('extra');
+    });
   });
 });

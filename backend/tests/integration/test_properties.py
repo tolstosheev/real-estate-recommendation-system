@@ -296,3 +296,84 @@ async def test_property_filter_by_material(client: AsyncClient):
     materials = [p["material"] for p in data]
     assert "кирпич" in materials
     assert "панель" in materials
+
+
+@pytest.mark.asyncio
+async def test_property_filter_by_city(client: AsyncClient):
+    payload = {"email": "city@example.com", "password": "password123", "full_name": "City"}
+    await client.post("/auth/register", json=payload)
+    login_data = {"email": "city@example.com", "password": "password123"}
+    token = (await client.post("/auth/login", json=login_data)).json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    moscow = {
+        "title": "Moscow Flat", "price": 100, "address": "A", "lat": 55.75, "lon": 37.61,
+        "property_type": "Apartment", "city": "Moscow",
+    }
+    london = {
+        "title": "London Flat", "price": 200, "address": "B", "lat": 51.50, "lon": -0.12,
+        "property_type": "Apartment", "city": "London",
+    }
+    await client.post("/api/properties/", json=moscow, headers=headers)
+    await client.post("/api/properties/", json=london, headers=headers)
+
+    res = await client.get("/api/properties/", params={"city": "London"})
+    data = res.json()
+    assert len(data) == 1
+    assert data[0]["title"] == "London Flat"
+
+    res = await client.get("/api/properties/", params={"city": ["Moscow", "London"]})
+    data = res.json()
+    assert len(data) == 2
+
+
+@pytest.mark.asyncio
+async def test_property_map_endpoint_with_city(client: AsyncClient):
+    payload = {"email": "mapcity@example.com", "password": "password123", "full_name": "MapCity"}
+    await client.post("/auth/register", json=payload)
+    login_data = {"email": "mapcity@example.com", "password": "password123"}
+    token = (await client.post("/auth/login", json=login_data)).json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    moscow = {
+        "title": "Moscow Map", "price": 100, "address": "A", "lat": 55.75, "lon": 37.61,
+        "property_type": "Apartment", "city": "Moscow",
+    }
+    london = {
+        "title": "London Map", "price": 200, "address": "B", "lat": 51.50, "lon": -0.12,
+        "property_type": "Apartment", "city": "London",
+    }
+    await client.post("/api/properties/", json=moscow, headers=headers)
+    await client.post("/api/properties/", json=london, headers=headers)
+
+    res = await client.get("/api/properties/map", params={
+        "min_lat": 55.0, "max_lat": 56.0, "min_lon": 37.0, "max_lon": 38.0,
+        "city": "Moscow",
+    })
+    data = res.json()
+    assert len(data) == 1
+    assert data[0]["title"] == "Moscow Map"
+
+
+@pytest.mark.asyncio
+async def test_property_list_pagination(client: AsyncClient):
+    payload = {"email": "page@example.com", "password": "password123", "full_name": "Page"}
+    await client.post("/auth/register", json=payload)
+    login_data = {"email": "page@example.com", "password": "password123"}
+    token = (await client.post("/auth/login", json=login_data)).json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    for i in range(5):
+        await client.post("/api/properties/", json={
+            "title": f"Prop {i}", "price": 100 + i, "address": f"S{i}",
+            "lat": 55.75, "lon": 37.61, "property_type": "Apartment",
+        }, headers=headers)
+
+    res = await client.get("/api/properties/", params={"limit": 2, "offset": 0})
+    assert len(res.json()) == 2
+
+    res = await client.get("/api/properties/", params={"limit": 2, "offset": 2})
+    assert len(res.json()) == 2
+
+    res = await client.get("/api/properties/", params={"limit": 2, "offset": 4})
+    assert len(res.json()) == 1
