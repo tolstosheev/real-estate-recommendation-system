@@ -10,6 +10,7 @@ interface PropertyCardProps {
   property: Property;
   variant?: 'horizontal' | 'vertical';
   showActions?: boolean;
+  onClick?: (propertyId: string) => void;
   onLikeToggle?: (propertyId: string, isLiked: boolean) => void;
 }
 
@@ -23,7 +24,7 @@ const getFullImageUrl = (url: string): string => {
   return `${baseUrl}${separator}${url}`;
 };
 
-const PropertyCard: React.FC<PropertyCardProps> = ({ property, variant = 'vertical', showActions = false, onLikeToggle }) => {
+const PropertyCard: React.FC<PropertyCardProps> = ({ property, variant = 'vertical', showActions = false, onClick, onLikeToggle }) => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAppSelector((state) => state.auth);
   const [imgError, setImgError] = useState(false);
@@ -53,7 +54,11 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, variant = 'vertic
   };
 
   const handleClick = () => {
-    navigate(`/property/${property.id}`);
+    if (onClick) {
+      onClick(property.id);
+    } else {
+      navigate(`/property/${property.id}`);
+    }
   };
 
   const handleImgError = () => {

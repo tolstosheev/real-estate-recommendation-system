@@ -5,10 +5,37 @@ import PropertyCard from '@entities/property/ui/PropertyCard';
 import type { Property } from '@entities/property/model/types';
 import { propertyService } from '@shared/api/properties.service';
 import { recommendationsService } from '@shared/api/recommendations.service';
-import cn from 'classnames';
 import api from '@shared/api/api';
+import RangeSlider from '@shared/ui/RangeSlider/RangeSlider';
+import CheckboxGroup from '@shared/ui/CheckboxGroup/CheckboxGroup';
 
 type TabType = 'all' | 'viewed' | 'liked';
+
+interface CatalogFilters {
+  priceRange: [number, number];
+  areaRange: [number, number];
+  buildYearRange: [number, number];
+  rooms: number[];
+  propertyTypes: string[];
+  propertyPurposes: string[];
+  cities: string[];
+  materials: string[];
+  repairTypes: string[];
+  isNew: string[];
+}
+
+const defaultFilters: CatalogFilters = {
+  priceRange: [0, 50000000],
+  areaRange: [0, 300],
+  buildYearRange: [1960, 2025],
+  rooms: [],
+  propertyTypes: [],
+  propertyPurposes: [],
+  cities: [],
+  materials: [],
+  repairTypes: [],
+  isNew: [],
+};
 
 const CATALOG_PAGE_SIZE = 12;
 
@@ -18,22 +45,12 @@ const Catalog: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('all');
   const [aiRecs, setAiRecs] = useState<Property[]>([]);
-  const [filters, setFilters] = useState({
-    search: '',
-    minPrice: '',
-    maxPrice: '',
-    rooms: '',
-    propertyType: '',
-    material: '',
-    repairType: '',
-    minBuildYear: '',
-    maxBuildYear: '',
-    propertyPurpose: '',
-    city: '',
-    areaFrom: '',
-    areaTo: '',
-    isNew: '',
-  });
+  const [recVersion, setRecVersion] = useState(0);
+  const [draftFilters, setDraftFilters] = useState<CatalogFilters>(defaultFilters);
+  const [appliedFilters, setAppliedFilters] = useState<CatalogFilters>(defaultFilters);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [appliedSearch, setAppliedSearch] = useState('');
+  const [openSections, setOpenSections] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const loaderRef = useRef<HTMLDivElement>(null);
@@ -41,26 +58,28 @@ const Catalog: React.FC = () => {
   const filteredAiRecs = useMemo(() => {
     if (activeTab !== 'all' || !aiRecs.length) return [];
     return aiRecs.filter(p => {
-      if (filters.city && p.city !== filters.city) return false;
-      if (filters.propertyType && p.property_type !== filters.propertyType) return false;
-      if (filters.propertyPurpose && p.property_purpose !== filters.propertyPurpose) return false;
-      if (filters.isNew && p.is_new !== filters.isNew) return false;
-      if (filters.material && p.material !== filters.material) return false;
-      if (filters.repairType && p.repair_type !== filters.repairType) return false;
-      if (filters.minPrice && (!p.price || p.price < Number(filters.minPrice))) return false;
-      if (filters.maxPrice && (!p.price || p.price > Number(filters.maxPrice))) return false;
-      if (filters.rooms && p.rooms !== Number(filters.rooms)) return false;
-      if (filters.areaFrom && (!p.area || p.area < Number(filters.areaFrom))) return false;
-      if (filters.areaTo && (!p.area || p.area > Number(filters.areaTo))) return false;
-      if (filters.minBuildYear && (!p.build_year || p.build_year < Number(filters.minBuildYear))) return false;
-      if (filters.maxBuildYear && (!p.build_year || p.build_year > Number(filters.maxBuildYear))) return false;
-      if (filters.search) {
-        const q = filters.search.toLowerCase();
+      const df = draftFilters;
+      if (df.cities.length && (!p.city || !df.cities.includes(p.city))) return false;
+      if (df.propertyTypes.length && (!p.property_type || !df.propertyTypes.includes(p.property_type))) return false;
+      if (df.propertyPurposes.length && (!p.property_purpose || !df.propertyPurposes.includes(p.property_purpose))) return false;
+      if (df.isNew.length && (!p.is_new || !df.isNew.includes(p.is_new))) return false;
+      if (df.materials.length && (!p.material || !df.materials.includes(p.material))) return false;
+      if (df.repairTypes.length && (!p.repair_type || !df.repairTypes.includes(p.repair_type))) return false;
+      if (df.priceRange[0] > 0 && (!p.price || p.price < df.priceRange[0])) return false;
+      if (df.priceRange[1] < 50000000 && (!p.price || p.price > df.priceRange[1])) return false;
+      if (df.rooms.length && (!p.rooms || !df.rooms.includes(p.rooms))) return false;
+      if (df.areaRange[0] > 0 && (!p.area || p.area < df.areaRange[0])) return false;
+      if (df.areaRange[1] < 300 && (!p.area || p.area > df.areaRange[1])) return false;
+      if (df.buildYearRange[0] > 1960 && (!p.build_year || p.build_year < df.buildYearRange[0])) return false;
+      if (df.buildYearRange[1] < 2025 && (!p.build_year || p.build_year > df.buildYearRange[1])) return false;
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
         if (p.title && !p.title.toLowerCase().includes(q) && p.address && !p.address.toLowerCase().includes(q)) return false;
       }
       return true;
     });
-  }, [aiRecs, filters, activeTab]);
+  }, [aiRecs, draftFilters, searchQuery, activeTab]);
+
   const [meta, setMeta] = useState<{
     districts: string[];
     metro: string[];
@@ -80,40 +99,47 @@ const Catalog: React.FC = () => {
     } else {
       setAiRecs([]);
     }
-  }, [isAuthenticated, activeTab]);
+  }, [isAuthenticated, activeTab, recVersion]);
+
+  const buildParams = (f: CatalogFilters, search: string, pageNum: number) => {
+    const params: Record<string, unknown> = {
+      limit: CATALOG_PAGE_SIZE,
+      offset: (pageNum - 1) * CATALOG_PAGE_SIZE,
+    };
+    if (f.priceRange[0] > 0) params.min_price = f.priceRange[0];
+    if (f.priceRange[1] < 50000000) params.max_price = f.priceRange[1];
+    if (f.areaRange[0] > 0) params.min_area = f.areaRange[0];
+    if (f.areaRange[1] < 300) params.max_area = f.areaRange[1];
+    if (f.buildYearRange[0] > 1960) params.min_build_year = f.buildYearRange[0];
+    if (f.buildYearRange[1] < 2025) params.max_build_year = f.buildYearRange[1];
+    if (f.rooms.length) params.rooms = f.rooms;
+    if (f.propertyTypes.length) params.property_type = f.propertyTypes;
+    if (f.propertyPurposes.length) params.property_purpose = f.propertyPurposes;
+    if (f.cities.length) params.city = f.cities;
+    if (f.materials.length) params.material = f.materials;
+    if (f.repairTypes.length) params.repair_type = f.repairTypes;
+    if (f.isNew.length) params.is_new = f.isNew;
+    if (search) params.search = search;
+    return params;
+  };
 
   const fetchProperties = useCallback(async (tab: TabType, pageNum: number, isNewTab = false) => {
     setIsLoading(true);
     try {
       let url = '/api/properties/';
-      const params: Record<string, string | number> = {
-        limit: CATALOG_PAGE_SIZE,
-        offset: (pageNum - 1) * CATALOG_PAGE_SIZE,
-      };
 
       if (tab === 'liked' && isAuthenticated) {
         url = '/api/interactions/favorites';
       } else if (tab === 'viewed' && isAuthenticated) {
         url = '/api/interactions/history';
-      } else {
-        if (filters.minPrice) params.min_price = filters.minPrice;
-        if (filters.maxPrice) params.max_price = filters.maxPrice;
-        if (filters.rooms) params.rooms = filters.rooms;
-        if (filters.propertyType) params.property_type = filters.propertyType;
-        if (filters.propertyPurpose) params.property_purpose = filters.propertyPurpose;
-        if (filters.material) params.material = filters.material;
-        if (filters.repairType) params.repair_type = filters.repairType;
-        if (filters.minBuildYear) params.min_build_year = filters.minBuildYear;
-        if (filters.maxBuildYear) params.max_build_year = filters.maxBuildYear;
-        if (filters.city) params.city = filters.city;
-        if (filters.areaFrom) params.min_area = filters.areaFrom;
-        if (filters.areaTo) params.max_area = filters.areaTo;
-        if (filters.isNew) params.is_new = filters.isNew;
-        if (filters.search) params.search = filters.search;
       }
 
+      const params = tab === 'all'
+        ? buildParams(appliedFilters, appliedSearch, pageNum)
+        : { limit: CATALOG_PAGE_SIZE, offset: (pageNum - 1) * CATALOG_PAGE_SIZE };
+
       const response = await api.get(url, { params });
-      let data = response.data as Property[];
+      const data = response.data as Property[];
 
       if (isNewTab) {
         setProperties(data);
@@ -132,7 +158,7 @@ const Catalog: React.FC = () => {
       setIsLoading(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, filters]);
+  }, [isAuthenticated, appliedFilters, appliedSearch]);
 
   useEffect(() => {
     setProperties([]);
@@ -164,15 +190,41 @@ const Catalog: React.FC = () => {
     }
   }, [page, activeTab, fetchProperties]);
 
-  const handleFilterChange = (key: string, value: string) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+  // debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setAppliedSearch(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // refetch when appliedSearch or appliedFilters change (triggered by apply)
+  useEffect(() => {
+    if (activeTab === 'all') {
+      setProperties([]);
+      setPage(1);
+      setHasMore(true);
+      fetchProperties(activeTab, 1, true);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appliedSearch, appliedFilters]);
+
+  const handleDraftChange = (key: keyof CatalogFilters, value: unknown) => {
+    setDraftFilters(prev => ({ ...prev, [key]: value }));
   };
 
   const applyFilters = () => {
-    setProperties([]);
-    setPage(1);
-    setHasMore(true);
-    fetchProperties(activeTab, 1, true);
+    setAppliedFilters(draftFilters);
+    setOpenSections(new Set());
+  };
+
+  const toggleSection = (section: string) => {
+    setOpenSections(prev => {
+      const next = new Set(prev);
+      if (next.has(section)) next.delete(section);
+      else next.add(section);
+      return next;
+    });
   };
 
   const handleLikeToggle = (propertyId: string, isLiked: boolean) => {
@@ -186,6 +238,7 @@ const Catalog: React.FC = () => {
     if (activeTab === 'liked' && !isLiked) {
       setProperties(prev => prev.filter(p => p.id !== propertyId));
     }
+    setRecVersion(v => v + 1);
   };
 
   return (
@@ -196,141 +249,141 @@ const Catalog: React.FC = () => {
             type="text"
             placeholder="Search by title or address..."
             className="catalog-search__input"
-            value={filters.search}
-            onChange={(e) => handleFilterChange('search', e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && applyFilters()}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
 
-           <div className="catalog-filters">
-            <h3 className="catalog-filters__title">Filters</h3>
-              <div className={cn("catalog-filters__grid", { 'catalog-filters__disabled': activeTab !== 'all' })}>
-              <input
-                type="number"
-                placeholder="Min Price"
-                className="catalog-filters__input"
-                value={filters.minPrice}
-                onChange={(e) => activeTab === 'all' && handleFilterChange('minPrice', e.target.value)}
-                disabled={activeTab !== 'all'}
-              />
-              <input
-                type="number"
-                placeholder="Max Price"
-                className="catalog-filters__input"
-                value={filters.maxPrice}
-                onChange={(e) => activeTab === 'all' && handleFilterChange('maxPrice', e.target.value)}
-                disabled={activeTab !== 'all'}
-              />
-              <input
-                type="number"
-                placeholder="Min Area"
-                className="catalog-filters__input"
-                value={filters.areaFrom}
-                onChange={(e) => activeTab === 'all' && handleFilterChange('areaFrom', e.target.value)}
-                disabled={activeTab !== 'all'}
-              />
-              <input
-                type="number"
-                placeholder="Max Area"
-                className="catalog-filters__input"
-                value={filters.areaTo}
-                onChange={(e) => activeTab === 'all' && handleFilterChange('areaTo', e.target.value)}
-                disabled={activeTab !== 'all'}
-              />
-              <input
-                type="number"
-                placeholder="Rooms"
-                className="catalog-filters__input"
-                value={filters.rooms}
-                onChange={(e) => activeTab === 'all' && handleFilterChange('rooms', e.target.value)}
-                disabled={activeTab !== 'all'}
-              />
-              <select
-                className="catalog-filters__input"
-                value={filters.propertyType}
-                onChange={(e) => activeTab === 'all' && handleFilterChange('propertyType', e.target.value)}
-                disabled={activeTab !== 'all'}
-              >
-                <option value="">Any type</option>
-                {meta.property_types.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
-              <select
-                className="catalog-filters__input"
-                value={filters.propertyPurpose}
-                onChange={(e) => activeTab === 'all' && handleFilterChange('propertyPurpose', e.target.value)}
-                disabled={activeTab !== 'all'}
-              >
-                <option value="">Any purpose</option>
-                <option value="sale">Sale</option>
-                <option value="rent">Rent</option>
-              </select>
-              <select
-                className="catalog-filters__input"
-                value={filters.city}
-                onChange={(e) => activeTab === 'all' && handleFilterChange('city', e.target.value)}
-                disabled={activeTab !== 'all'}
-              >
-                <option value="">Any city</option>
-                {meta.cities.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-              <select
-                className="catalog-filters__input"
-                value={filters.isNew}
-                onChange={(e) => activeTab === 'all' && handleFilterChange('isNew', e.target.value)}
-                disabled={activeTab !== 'all'}
-              >
-                <option value="">Any building type</option>
-                <option value="новостройка">New building</option>
-                <option value="вторичка">Secondary</option>
-              </select>
+        <div className="catalog-filters">
+          <h3 className="catalog-filters__title">Filters</h3>
+
+          <div className="filter-section filter-section--open">
+            <div className="filter-section__header" onClick={() => toggleSection('main')}>
+              <span>Main</span>
+              <span className="filter-section__arrow">{openSections.has('main') ? '▼' : '▶'}</span>
             </div>
+            <div className="filter-section__body">
 
-            <details className="catalog-filters__more">
-              <summary className="catalog-filters__more-toggle">More filters</summary>
-              <div className="catalog-filters__more-grid">
-                <select
-                  className="catalog-filters__input"
-                  value={filters.material}
-                  onChange={(e) => activeTab === 'all' && handleFilterChange('material', e.target.value)}
-                  disabled={activeTab !== 'all'}
-                >
-                  <option value="">Any material</option>
-                  {meta.materials.map(m => <option key={m} value={m}>{m}</option>)}
-                </select>
-                <select
-                  className="catalog-filters__input"
-                  value={filters.repairType}
-                  onChange={(e) => activeTab === 'all' && handleFilterChange('repairType', e.target.value)}
-                  disabled={activeTab !== 'all'}
-                >
-                  <option value="">Any repair</option>
-                  {meta.repair_types.map(r => <option key={r} value={r}>{r}</option>)}
-                </select>
-                <input
-                  type="number"
-                  placeholder="Min Year"
-                  className="catalog-filters__input"
-                  value={filters.minBuildYear}
-                  onChange={(e) => activeTab === 'all' && handleFilterChange('minBuildYear', e.target.value)}
-                  disabled={activeTab !== 'all'}
-                />
-                <input
-                  type="number"
-                  placeholder="Max Year"
-                  className="catalog-filters__input"
-                  value={filters.maxBuildYear}
-                  onChange={(e) => activeTab === 'all' && handleFilterChange('maxBuildYear', e.target.value)}
-                  disabled={activeTab !== 'all'}
-                />
-              </div>
-            </details>
+            <RangeSlider
+              label="Price"
+              min={0}
+              max={50000000}
+              step={100000}
+              value={draftFilters.priceRange}
+              onChange={(v) => handleDraftChange('priceRange', v)}
+              formatLabel={(v) => `${(v / 1000000).toFixed(1)}M ₽`}
+            />
 
-            {activeTab === 'all' && (
-              <button className="catalog-filters__apply-btn" onClick={applyFilters}>
-                Apply Filters
-              </button>
-            )}
+            <CheckboxGroup
+              label="Rooms"
+              options={[
+                { label: '1', value: '1' },
+                { label: '2', value: '2' },
+                { label: '3', value: '3' },
+                { label: '4+', value: '4' },
+              ]}
+              selected={draftFilters.rooms.map(String)}
+              onChange={(v) => handleDraftChange('rooms', v.map(Number))}
+            />
+
+            <CheckboxGroup
+              label="Property type"
+              options={meta.property_types.map(t => ({ label: t, value: t }))}
+              selected={draftFilters.propertyTypes}
+              onChange={(v) => handleDraftChange('propertyTypes', v)}
+            />
+
+            <CheckboxGroup
+              label="Purpose"
+              options={[
+                { label: 'Sale', value: 'sale' },
+                { label: 'Rent', value: 'rent' },
+                { label: 'Daily rent', value: 'daily_rent' },
+              ]}
+              selected={draftFilters.propertyPurposes}
+              onChange={(v) => handleDraftChange('propertyPurposes', v)}
+            />
+
+            </div>
           </div>
+
+          <div className={`filter-section ${openSections.has('location') ? 'filter-section--open' : ''}`}>
+            <div className="filter-section__header" onClick={() => toggleSection('location')}>
+              <span>Location</span>
+              <span className="filter-section__arrow">{openSections.has('location') ? '▼' : '▶'}</span>
+            </div>
+            <div className="filter-section__body">
+
+            <CheckboxGroup
+              label="City"
+              options={meta.cities.map(c => ({ label: c, value: c }))}
+              selected={draftFilters.cities}
+              onChange={(v) => handleDraftChange('cities', v)}
+            />
+
+            </div>
+          </div>
+
+          <div className={`filter-section ${openSections.has('details') ? 'filter-section--open' : ''}`}>
+            <div className="filter-section__header" onClick={() => toggleSection('details')}>
+              <span>Details</span>
+              <span className="filter-section__arrow">{openSections.has('details') ? '▼' : '▶'}</span>
+            </div>
+            <div className="filter-section__body">
+
+            <RangeSlider
+              label="Area (m²)"
+              min={0}
+              max={300}
+              step={5}
+              value={draftFilters.areaRange}
+              onChange={(v) => handleDraftChange('areaRange', v)}
+              formatLabel={(v) => `${v} m²`}
+            />
+
+            <RangeSlider
+              label="Build year"
+              min={1960}
+              max={2025}
+              step={1}
+              value={draftFilters.buildYearRange}
+              onChange={(v) => handleDraftChange('buildYearRange', v)}
+            />
+
+            <CheckboxGroup
+              label="Material"
+              options={meta.materials.map(m => ({ label: m, value: m }))}
+              selected={draftFilters.materials}
+              onChange={(v) => handleDraftChange('materials', v)}
+            />
+
+            <CheckboxGroup
+              label="Repair type"
+              options={meta.repair_types.map(r => ({ label: r, value: r }))}
+              selected={draftFilters.repairTypes}
+              onChange={(v) => handleDraftChange('repairTypes', v)}
+            />
+
+            <CheckboxGroup
+              label="Building type"
+              options={[
+                { label: 'New building', value: 'new building' },
+                { label: 'Secondary', value: 'secondary' },
+                { label: 'Under construction', value: 'under construction' },
+              ]}
+              selected={draftFilters.isNew}
+              onChange={(v) => handleDraftChange('isNew', v)}
+            />
+
+            </div>
+          </div>
+
+          {activeTab === 'all' && (
+            <button className="catalog-filters__apply-btn" onClick={applyFilters}>
+              Apply Filters
+            </button>
+          )}
+        </div>
 
 
         <div className="catalog-tabs">
