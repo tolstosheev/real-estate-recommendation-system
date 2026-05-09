@@ -43,7 +43,7 @@ services:
       - ./frontend:/app
       - /app/node_modules
     ports:
-      - "5173:5173"
+      - "3000:5173"
     environment:
       - VITE_API_URL=http://localhost:8000
       - VITE_YANDEX_MAPS_API_KEY=${VITE_YANDEX_MAPS_API_KEY}
