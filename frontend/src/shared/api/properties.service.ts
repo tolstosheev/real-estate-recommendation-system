@@ -17,6 +17,11 @@ export const propertyService = {
     return response.data;
   },
 
+  async updateProperty(id: string, data: Partial<Property>): Promise<Property> {
+    const response = await api.put(`/api/properties/${id}`, data);
+    return response.data;
+  },
+
   async deleteProperty(id: string): Promise<void> {
     await api.delete(`/api/properties/${id}`);
   },

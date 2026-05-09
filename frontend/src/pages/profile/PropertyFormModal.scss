@@ -1,0 +1,145 @@
+@use '@app/styles/index' as *;
+
+.property-form-modal {
+  .pf-stepper {
+    display: flex;
+    gap: calc-rem(8);
+    margin-bottom: calc-rem(24);
+    background: $color-gray-100;
+    padding: calc-rem(4);
+    border-radius: calc-rem(10);
+  }
+
+  .pf-step {
+    flex: 1;
+    text-align: center;
+    padding: calc-rem(8) calc-rem(12);
+    border-radius: calc-rem(8);
+    font-size: calc-rem(13);
+    font-weight: 600;
+    color: $color-gray-400;
+    background: transparent;
+    transition: all 0.25s ease;
+
+    &--active {
+      background: $color-white;
+      color: $color-primary;
+      box-shadow: 0 calc-rem(2) calc-rem(6) rgba(0, 0, 0, 0.08);
+    }
+  }
+
+  .pf-error {
+    padding: calc-rem(10) calc-rem(12);
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: calc-rem(8);
+    color: #dc2626;
+    font-size: calc-rem(13);
+    margin-bottom: calc-rem(16);
+  }
+
+  .pf-fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: calc-rem(14);
+
+    .pf-field--wide {
+      grid-column: 1 / -1;
+    }
+  }
+
+  .pf-field {
+    display: flex;
+    flex-direction: column;
+    gap: calc-rem(4);
+
+    label {
+      font-size: calc-rem(12);
+      font-weight: 600;
+      color: $color-gray-500;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: calc-rem(10) calc-rem(12);
+      border: 2px solid $color-gray-200;
+      border-radius: calc-rem(8);
+      font-size: calc-rem(14);
+      font-family: inherit;
+      background: $color-white;
+      color: $color-gray-800;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      box-sizing: border-box;
+
+      &::placeholder {
+        color: $color-gray-300;
+      }
+
+      &:focus {
+        outline: none;
+        border-color: $color-primary;
+        box-shadow: 0 0 0 calc-rem(3) rgba($color-primary, 0.12);
+      }
+    }
+
+    select {
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right calc-rem(12) center;
+      padding-right: calc-rem(32);
+    }
+
+    textarea {
+      min-height: calc-rem(80);
+      resize: vertical;
+    }
+  }
+
+  .pf-address-wrapper {
+    position: relative;
+  }
+
+  .pf-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    background: $color-white;
+    border: 1px solid $color-gray-200;
+    border-radius: calc-rem(8);
+    box-shadow: 0 calc-rem(8) calc-rem(24) rgba(0, 0, 0, 0.12);
+    margin-top: calc-rem(4);
+    overflow: hidden;
+  }
+
+  .pf-suggestion-item {
+    padding: calc-rem(10) calc-rem(14);
+    font-size: calc-rem(13);
+    color: $color-gray-700;
+    cursor: pointer;
+    transition: background 0.15s;
+
+    &:hover {
+      background: $color-gray-100;
+    }
+
+    & + & {
+      border-top: 1px solid $color-gray-100;
+    }
+  }
+
+  .pf-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: flex-end;
+    gap: calc-rem(10);
+    margin-top: calc-rem(8);
+    padding-top: calc-rem(16);
+    border-top: 1px solid $color-gray-100;
+  }
+}

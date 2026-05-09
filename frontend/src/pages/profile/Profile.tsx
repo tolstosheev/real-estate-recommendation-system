@@ -11,6 +11,7 @@ import RangeSlider from '@shared/ui/RangeSlider/RangeSlider';
 import CheckboxGroup from '@shared/ui/CheckboxGroup/CheckboxGroup';
 import Button from '@shared/ui/Button';
 import Input from '@shared/ui/Input';
+import PropertyFormModal from './PropertyFormModal';
 import './Profile.scss';
 
 type Tab = 'profile' | 'preferences' | 'my-properties';
@@ -26,6 +27,8 @@ const Profile: React.FC = () => {
   const [wizardStep, setWizardStep] = useState(0);
   const [myProperties, setMyProperties] = useState<Property[]>([]);
   const [loadingProps, setLoadingProps] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [meta, setMeta] = useState<{
     cities: string[]; materials: string[]; repair_types: string[]; property_types: string[];
   }>({ cities: [], materials: [], repair_types: [], property_types: [] });
@@ -112,6 +115,43 @@ const Profile: React.FC = () => {
       await propertyService.deleteProperty(id);
       setMyProperties(prev => prev.filter(p => p.id !== id));
     } catch { /* ignore */ }
+  };
+
+  const handleAddProperty = () => {
+    setEditingProperty(null);
+    setIsModalOpen(true);
+  };
+
+  const handleEditProperty = (prop: Property) => {
+    setEditingProperty(prop);
+    setIsModalOpen(true);
+  };
+
+  const handleModalSuccess = () => {
+    loadMyProperties();
+  };
+
+  const getPropertyBadgeClass = (purpose: string | null) => {
+    if (purpose === 'rent') return 'badge--rent';
+    if (purpose === 'daily_rent') return 'badge--daily';
+    return 'badge--sale';
+  };
+
+  const getPropertyBadgeLabel = (purpose: string | null) => {
+    if (purpose === 'rent') return 'Rent';
+    if (purpose === 'daily_rent') return 'Daily';
+    return 'Sale';
+  };
+
+  const formatPrice = (price: number) => {
+    if (price >= 1000000) return `${(price / 1000000).toFixed(1)}M ₽`;
+    if (price >= 1000) return `${(price / 1000).toFixed(0)}K ₽`;
+    return `${price} ₽`;
+  };
+
+  const getFirstImage = (prop: Property) => {
+    if (prop.images && prop.images.length > 0 && prop.images[0]) return prop.images[0];
+    return null;
   };
 
   const handleProfileSave = async (e: React.FormEvent) => {
@@ -445,34 +485,93 @@ const Profile: React.FC = () => {
         {activeTab === 'my-properties' && (
           <div className="profile-section">
             <div className="profile-section__header">
-              <h2 className="profile-section__title">My Properties</h2>
-              <Button variant="primary" onClick={() => navigate('/add-property')}>Add Property</Button>
+              <h2 className="profile-section__title">
+                My Properties
+                {myProperties.length > 0 && (
+                  <span className="my-props-count">{myProperties.length}</span>
+                )}
+              </h2>
+              <Button variant="primary" onClick={handleAddProperty}>Add Property</Button>
             </div>
-            {loadingProps ? <p>Loading...</p> : (
-              <div className="my-properties-list">
-                {myProperties.length === 0 ? <p>You have no properties yet.</p> : (
-                  myProperties.map(prop => (
-                    <div key={prop.id} className="my-property-card">
-                      <div className="my-property-card__info">
-                        <h3 className="my-property-card__title"
-                          onClick={() => navigate(`/property/${prop.id}`)}>{prop.title}</h3>
-                        <p className="my-property-card__meta">
-                          {Number(prop.price).toLocaleString()} ₽
-                          {prop.area ? ` • ${prop.area} m²` : ''}
-                          {prop.city ? ` • ${prop.city}` : ''}
-                        </p>
+            {loadingProps ? (
+              <div className="my-props-loading">Loading...</div>
+            ) : myProperties.length === 0 ? (
+              <div className="my-props-empty">
+                <div className="my-props-empty__icon">🏠</div>
+                <h3>No properties yet</h3>
+                <p>Add your first property listing to get started</p>
+                <Button variant="primary" onClick={handleAddProperty}>Add Property</Button>
+              </div>
+            ) : (
+              <div className="my-props-grid">
+                {myProperties.map(prop => {
+                  const img = getFirstImage(prop);
+                  return (
+                    <div key={prop.id} className="mp-card">
+                      <div className="mp-card__image" onClick={() => navigate(`/property/${prop.id}`)}>
+                        {img ? (
+                          <img src={img} alt={prop.title} />
+                        ) : (
+                          <div className="mp-card__placeholder">🏠</div>
+                        )}
+                        <span className={`mp-card__badge ${getPropertyBadgeClass(prop.property_purpose)}`}>
+                          {getPropertyBadgeLabel(prop.property_purpose)}
+                        </span>
+                        {prop.property_purpose === 'sale' && prop.price >= 1000000 && (
+                          <span className="mp-card__mortgage">Mortgage available</span>
+                        )}
                       </div>
-                      <div className="my-property-card__actions">
-                        <Button variant="secondary" onClick={() => handleDeleteProperty(prop.id)}>Delete</Button>
+                      <div className="mp-card__body">
+                        <h3 className="mp-card__title" onClick={() => navigate(`/property/${prop.id}`)}>
+                          {prop.title}
+                        </h3>
+                        <div className="mp-card__price">{formatPrice(prop.price)}</div>
+                        <div className="mp-card__specs">
+                          {prop.rooms && <div className="mp-card__spec"><span>🛏</span> {prop.rooms} rooms</div>}
+                          {prop.area && <div className="mp-card__spec"><span>📐</span> {prop.area} m²</div>}
+                          {prop.floor && <div className="mp-card__spec"><span>🏗</span> Floor {prop.floor}{prop.total_floors ? `/${prop.total_floors}` : ''}</div>}
+                          {prop.build_year && <div className="mp-card__spec"><span>📅</span> {prop.build_year}</div>}
+                        </div>
+                        <div className="mp-card__tags">
+                          {prop.property_type && <span className="mp-card__tag">{prop.property_type}</span>}
+                          {prop.city && <span className="mp-card__tag">{prop.city}</span>}
+                          {prop.material && <span className="mp-card__tag">{prop.material}</span>}
+                          {prop.repair_type && <span className="mp-card__tag">{prop.repair_type}</span>}
+                          {prop.balcony === 'yes' && <span className="mp-card__tag mp-card__tag--green">Balcony</span>}
+                          {prop.parking && prop.parking !== 'no' && <span className="mp-card__tag mp-card__tag--green">{prop.parking === 'paid' ? 'Paid parking' : 'Parking'}</span>}
+                        </div>
+                        <div className="mp-card__actions">
+                          <Button variant="secondary" onClick={() => handleEditProperty(prop)}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                            </svg>
+                            Edit
+                          </Button>
+                          <Button variant="secondary" onClick={() => handleDeleteProperty(prop.id)}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="3 6 5 6 21 6" />
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                            </svg>
+                            Delete
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  ))
-                )}
+                  );
+                })}
               </div>
             )}
           </div>
         )}
       </div>
+
+      <PropertyFormModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={handleModalSuccess}
+        property={editingProperty}
+      />
     </div>
   );
 };
