@@ -833,7 +833,40 @@
   }
 
   &__button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     width: 100%;
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    color: white;
+    background: #0088cc;
+    transition: all 0.2s;
+    box-sizing: border-box;
+
+    svg {
+      flex-shrink: 0;
+    }
+
+    &:hover {
+      background: #006fa3;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 136, 204, 0.35);
+    }
+
+    &:active {
+      transform: translateY(0);
+      box-shadow: none;
+    }
+
+    @media (max-width: 768px) {
+      padding: 10px 20px;
+      font-size: 13px;
+    }
   }
 
   @media (max-width: 768px) {

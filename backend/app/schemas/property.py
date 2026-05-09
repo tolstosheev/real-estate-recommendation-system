@@ -20,8 +20,8 @@ class PropertyBase(BaseModel):
     address: str = Field(..., json_schema_extra={"example": "123 Main St, New York, NY"})
     district: Optional[str] = Field(None, json_schema_extra={"example": "Central"})
     metro: Optional[str] = Field(None, json_schema_extra={"example": "Oxford Circus"})
-    lat: float = Field(0.0)
-    lon: float = Field(0.0)
+    lat: float = Field(0.0, ge=-90, le=90)
+    lon: float = Field(0.0, ge=-180, le=180)
     images: Optional[List[str]] = Field(
         None,
         json_schema_extra={
