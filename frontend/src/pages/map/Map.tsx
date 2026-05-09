@@ -46,6 +46,8 @@ const MapPage: React.FC = () => {
   const [hasMore, setHasMore] = useState(false);
   const mapOffsetRef = useRef(0);
   const boundsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const loaderRef = useRef<HTMLDivElement>(null);
+  const loadMoreRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     propertyService.getMeta().then(data => {
@@ -153,6 +155,21 @@ const MapPage: React.FC = () => {
       fetchProperties(currentBounds, filters, mapOffsetRef.current, true);
     }
   };
+  loadMoreRef.current = loadMore;
+
+  useEffect(() => {
+    if (!loaderRef.current || !hasMore) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && hasMore && !isLoading) {
+          loadMoreRef.current();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(loaderRef.current);
+    return () => observer.disconnect();
+  }, [hasMore, isLoading]);
 
   // Center is now handled by onBoundsChange
 
@@ -306,9 +323,9 @@ const MapPage: React.FC = () => {
             <PropertyCard key={prop.id} property={prop} variant="horizontal" />
           ))}
           {hasMore && (
-            <button className="map-list__load-more" onClick={loadMore}>
-              Load More
-            </button>
+            <div ref={loaderRef} className="map-list__load-more">
+              {isLoading ? <span>Loading more...</span> : <span>Scroll for more</span>}
+            </div>
           )}
         </div>
       </aside>
