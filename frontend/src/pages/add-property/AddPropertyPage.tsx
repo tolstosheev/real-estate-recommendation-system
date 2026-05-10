@@ -13,6 +13,7 @@ const PROPERTY_TYPES = ['Apartment', 'Studio', 'House', 'Townhouse'];
 const PROPERTY_PURPOSES = [
   { value: 'sale', label: 'Sale' },
   { value: 'rent', label: 'Rent' },
+  { value: 'daily_rent', label: 'Daily Rent' },
 ];
 const NEW_BUILDING_OPTIONS = [
   { value: 'new', label: 'New Building' },
@@ -124,6 +125,16 @@ export const AddPropertyPage: React.FC = () => {
       return;
     }
 
+    const missing: string[] = [];
+    if (!formData.title.trim()) missing.push('Title');
+    if (!formData.price.trim()) missing.push('Price');
+    if (!formData.address.trim()) missing.push('Address');
+    if (missing.length) {
+      setError(`Please fill required fields: ${missing.join(', ')}`);
+      setLoading(false);
+      return;
+    }
+
     try {
       const data: Partial<Property> = {
         ...formData,
@@ -142,8 +153,8 @@ export const AddPropertyPage: React.FC = () => {
 
       await propertyService.createProperty(data);
       navigate('/');
-    } catch (err) {
-      setError('Failed to create property');
+    } catch {
+      setError('Failed to create property. Check that all required fields are valid.');
     } finally {
       setLoading(false);
     }
@@ -167,11 +178,11 @@ export const AddPropertyPage: React.FC = () => {
         {step === 1 && (
           <div className={styles.stepContent}>
             <div className={styles.formGroup}>
-              <label>Title</label>
+              <label className={styles.required}>Title</label>
               <input name="title" placeholder="Modern Apartment" value={formData.title} onChange={handleChange} required />
             </div>
             <div className={styles.formGroup}>
-              <label>Price (₽)</label>
+              <label className={styles.required}>Price (₽)</label>
               <input name="price" type="number" placeholder="5000000" value={formData.price} onChange={handleChange} required />
             </div>
             <div className={styles.formGroup}>
@@ -262,7 +273,7 @@ export const AddPropertyPage: React.FC = () => {
         {step === 3 && (
           <div className={styles.stepContent}>
             <div className={styles.formGroup} ref={suggestionsRef}>
-              <label>Address</label>
+              <label className={styles.required}>Address</label>
               <div className={styles.addressWrapper}>
                 <input name="address" placeholder="Start typing address..." value={formData.address} onChange={handleAddressChange} required />
                 {showSuggestions && addressSuggestions.length > 0 && (

@@ -61,6 +61,10 @@
       letter-spacing: 0.4px;
     }
 
+    .pf-required {
+      color: #e53e3e;
+    }
+
     input, select, textarea {
       width: 100%;
       padding: calc-rem(10) calc-rem(12);

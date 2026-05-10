@@ -3,6 +3,7 @@ import Modal from '@shared/ui/Modal';
 import Button from '@shared/ui/Button';
 import { propertyService } from '@shared/api/properties.service';
 import { geocodeAddress, type GeocoderResult } from '@shared/api/geocoder.service';
+import { useAppSelector } from '@app/store/hooks';
 import type { Property } from '@entities/property/model/types';
 import './PropertyFormModal.scss';
 
@@ -10,6 +11,7 @@ const PROPERTY_TYPES = ['Apartment', 'Studio', 'House', 'Townhouse'];
 const PROPERTY_PURPOSES = [
   { value: 'sale', label: 'Sale' },
   { value: 'rent', label: 'Rent' },
+  { value: 'daily_rent', label: 'Daily Rent' },
 ];
 const MATERIALS = ['Panel', 'Brick', 'Monolith', 'Brick-Monolith', 'Wood', 'Block'];
 const REPAIR_TYPES = ['Cosmetic', 'Euro', 'Design', 'Rough'];
@@ -66,6 +68,7 @@ type FormData = typeof emptyForm;
 
 const PropertyFormModal: React.FC<PropertyFormModalProps> = ({ isOpen, onClose, onSuccess, property }) => {
   const isEdit = !!property;
+  const { user } = useAppSelector((state) => state.auth);
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<FormData>(emptyForm);
   const [error, setError] = useState('');
@@ -189,6 +192,23 @@ const PropertyFormModal: React.FC<PropertyFormModalProps> = ({ isOpen, onClose, 
     e.preventDefault();
     setError('');
     setLoading(true);
+
+    if (!user?.phone_number && !user?.telegram_handle) {
+      setError('Please add phone number or Telegram in your profile before adding a property');
+      setLoading(false);
+      return;
+    }
+
+    const missing: string[] = [];
+    if (!formData.title.trim()) missing.push('Title');
+    if (!formData.price.trim()) missing.push('Price');
+    if (!formData.address.trim()) missing.push('Address');
+    if (missing.length) {
+      setError(`Please fill required fields: ${missing.join(', ')}`);
+      setLoading(false);
+      return;
+    }
+
     try {
       const payload = buildPayload();
       if (isEdit && property) {
@@ -199,7 +219,7 @@ const PropertyFormModal: React.FC<PropertyFormModalProps> = ({ isOpen, onClose, 
       onSuccess();
       onClose();
     } catch {
-      setError(isEdit ? 'Failed to update property' : 'Failed to create property');
+      setError(isEdit ? 'Failed to update property. Check that all required fields are valid.' : 'Failed to create property. Check that all required fields are valid.');
     } finally {
       setLoading(false);
     }
@@ -223,11 +243,11 @@ const PropertyFormModal: React.FC<PropertyFormModalProps> = ({ isOpen, onClose, 
           {step === 1 && (
             <div className="pf-fields">
               <div className="pf-field pf-field--wide">
-                <label>Title *</label>
+                <label>Title <span className="pf-required">*</span></label>
                 <input name="title" placeholder="Modern Apartment" value={formData.title} onChange={handleChange} required />
               </div>
               <div className="pf-field">
-                <label>Price (₽) *</label>
+                <label>Price (₽) <span className="pf-required">*</span></label>
                 <input name="price" type="number" placeholder="5000000" value={formData.price} onChange={handleChange} required />
               </div>
               <div className="pf-field">
@@ -320,7 +340,7 @@ const PropertyFormModal: React.FC<PropertyFormModalProps> = ({ isOpen, onClose, 
           {step === 3 && (
             <div className="pf-fields">
               <div className="pf-field pf-field--wide" ref={suggestionsRef}>
-                <label>Address *</label>
+                <label>Address <span className="pf-required">*</span></label>
                 <div className="pf-address-wrapper">
                   <input name="address" placeholder="Start typing address..." value={formData.address} onChange={handleAddressChange} required />
                   {showSuggestions && addressSuggestions.length > 0 && (

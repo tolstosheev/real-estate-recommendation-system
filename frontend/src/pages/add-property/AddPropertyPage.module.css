@@ -91,6 +91,11 @@
   box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.3);
 }
 
+.formGroup label.required::after {
+  content: ' *';
+  color: #e53e3e;
+}
+
 .form textarea {
   grid-column: 1 / -1;
   min-height: 100px;
