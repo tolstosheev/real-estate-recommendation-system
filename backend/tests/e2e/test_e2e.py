@@ -74,8 +74,8 @@ async def test_user_journey_recommendation_shift(client: AsyncClient):
     cheap_in_initial = [t for t in initial_titles if "Cheap" in t]
     assert len(cheap_in_initial) > 0, f"No cheap properties in initial recommendations: {initial_titles}"
 
-    # Like luxury properties
-    for prop_id in luxury_props:
+    # Like some luxury properties (leave some unliked so they can be recommended)
+    for prop_id in luxury_props[:3]:
         await client.post(
             "/api/interactions/interact", json={"property_id": prop_id, "interaction_type": "like"}, headers=headers
         )

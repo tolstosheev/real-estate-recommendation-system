@@ -23,7 +23,7 @@ const PropertyDetails: React.FC = () => {
     }
     try {
       if (property?.is_liked_by_me) {
-        await api.post('/api/interactions/', {
+        await api.post('/api/interactions/interact', {
           property_id: id,
           interaction_type: 'like',
         });
@@ -33,7 +33,7 @@ const PropertyDetails: React.FC = () => {
           likes_count: prev.likes_count - 1,
         } : null);
       } else {
-        await api.post('/api/interactions/', {
+        await api.post('/api/interactions/interact', {
           property_id: id,
           interaction_type: 'like',
         });
@@ -56,7 +56,7 @@ const PropertyDetails: React.FC = () => {
 
         if (isAuthenticated) {
           try {
-            await api.post('/api/interactions/', {
+            await api.post('/api/interactions/interact', {
               property_id: id,
               interaction_type: 'view'
             });

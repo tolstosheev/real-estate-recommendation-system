@@ -13,7 +13,7 @@ router = APIRouter()
 
 
 @router.post(
-    "/", status_code=status.HTTP_201_CREATED, summary="Interact with Property", description="Like or view a property"
+    "/interact", status_code=status.HTTP_201_CREATED, summary="Interact with Property", description="Like or view a property"
 )
 async def interact_with_property(
     interaction_in: InteractionCreate,

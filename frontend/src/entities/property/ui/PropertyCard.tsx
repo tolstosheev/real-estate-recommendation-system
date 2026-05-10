@@ -38,7 +38,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, variant = 'vertic
     const newLikedState = !previousLikedState;
 
     try {
-      await api.post('/api/interactions/', {
+      await api.post('/api/interactions/interact', {
         property_id: property.id,
         interaction_type: 'like'
       });
