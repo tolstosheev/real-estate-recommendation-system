@@ -22,8 +22,8 @@ class SimilarityUtils:
     def compute_user_profile_vector(
         explicit_prefs: Optional[List[float]],
         implicit_prefs: Optional[List[float]],
-        explicit_weight: float = 0.1,
-        implicit_weight: float = 0.9,
+        explicit_weight: float = 0.6,
+        implicit_weight: float = 0.4,
     ):
         if explicit_prefs is None and implicit_prefs is None:
             return None
