@@ -103,6 +103,28 @@
   border-color: $color-accent;
 }
 
+.map-cluster {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: calc-rem(44);
+  height: calc-rem(44);
+  padding: 0 calc-rem(8);
+  border-radius: 50%;
+  background-color: $color-primary;
+  color: $color-white;
+  font-size: calc-rem(14);
+  font-weight: 800;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  transition: transform 0.15s;
+
+  &:hover {
+    transform: scale(1.1);
+  }
+}
+
 @keyframes spin {
   to { transform: rotate(360deg); }
 }

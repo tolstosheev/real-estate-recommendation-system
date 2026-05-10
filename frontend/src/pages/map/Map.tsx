@@ -40,8 +40,8 @@ const defaultMapFilters: MapFilters = {
 };
 
 const MAP_PAGE_SIZE = 100;
+const ALL_PROPERTIES_LIMIT = 10000;
 const ZOOM_THRESHOLD = 13;
-const DEFAULT_BOUNDS: [number, number, number, number] = [55.96, 37.92, 55.55, 37.32];
 
 const isWithinBounds = (p: Property, bounds: [number, number, number, number]) => {
   const [north, east, south, west] = bounds;
@@ -49,12 +49,58 @@ const isWithinBounds = (p: Property, bounds: [number, number, number, number]) =
   return p.lat >= south && p.lat <= north && p.lon >= west && p.lon <= east;
 };
 
+const CLUSTER_MAX_ZOOM = 14;
+const CLUSTER_BASE_CELL = 200;
+const MAX_VISIBLE = 10000;
+
+interface ClusteredItem {
+  coordinates: [number, number];
+  count: number;
+  property: Property | null;
+}
+
+function clusterProperties(properties: Property[], zoom: number): ClusteredItem[] {
+  if (zoom >= CLUSTER_MAX_ZOOM || !properties.length) {
+    return properties.map(p => ({ coordinates: [p.lon, p.lat], count: 1, property: p }));
+  }
+
+  const cellSize = CLUSTER_BASE_CELL / Math.pow(2, zoom);
+  const grid = new Map<string, { sumLat: number; sumLon: number; count: number; property: Property | null }>();
+
+  for (const p of properties) {
+    const gx = Math.floor(p.lon / cellSize);
+    const gy = Math.floor(p.lat / cellSize);
+    const key = `${gx}:${gy}`;
+
+    if (!grid.has(key)) {
+      grid.set(key, { sumLat: p.lat, sumLon: p.lon, count: 1, property: p });
+    } else {
+      const c = grid.get(key)!;
+      c.sumLat += p.lat;
+      c.sumLon += p.lon;
+      c.count++;
+      c.property = null;
+    }
+  }
+
+  return Array.from(grid.values()).map(c => ({
+    coordinates: [c.sumLon / c.count, c.sumLat / c.count],
+    count: c.count,
+    property: c.property,
+  }));
+}
+
 const MapPage: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAppSelector((state) => state.auth);
 
   const handleMarkerClick = (propertyId: string) => {
     navigate(`/property/${propertyId}`);
+  };
+
+  const handleClusterZoom = (coords: [number, number]) => {
+    setMapCenter(coords);
+    setCommandedZoom(trackedZoom + 2);
   };
 
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
@@ -68,7 +114,7 @@ const MapPage: React.FC = () => {
     if (prop) {
       setSelectedPropertyId(propertyId);
       setMapCenter([prop.lon, prop.lat]);
-      setCommandedZoom(15);
+      setCommandedZoom(20);
     }
   };
 
@@ -105,6 +151,19 @@ const MapPage: React.FC = () => {
   useEffect(() => {
     if (!hasInitialFetch.current) {
       hasInitialFetch.current = true;
+
+      if ('geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            setMapCenter([position.coords.longitude, position.coords.latitude]);
+            setCommandedZoom(12);
+            setTrackedZoom(12);
+          },
+          () => {},
+          { timeout: 5000, enableHighAccuracy: false }
+        );
+      }
+
       setCurrentBounds(null);
       fetchProperties(null, appliedFiltersRef.current);
     }
@@ -169,9 +228,19 @@ const MapPage: React.FC = () => {
     return merged;
   }, [filteredAiRecs, properties]);
 
+  const clusteredMarkers = useMemo(() => {
+    let visible = displayProperties;
+
+    if (visible.length > MAX_VISIBLE) {
+      visible = visible.slice(0, MAX_VISIBLE);
+    }
+
+    return clusterProperties(visible, trackedZoom);
+  }, [displayProperties, trackedZoom]);
+
   const buildParams = (f: MapFilters, bounds: [number, number, number, number] | null, offset: number) => {
     const params: Record<string, unknown> = {
-      limit: MAP_PAGE_SIZE,
+      limit: bounds ? MAP_PAGE_SIZE : ALL_PROPERTIES_LIMIT,
       offset,
     };
 
@@ -257,20 +326,26 @@ const MapPage: React.FC = () => {
     setAppliedFilters(draftFilters);
     setFiltersOpen(false);
     setOpenSections(new Set());
-    const hasCityFilter = draftFilters.cities.length > 0;
-    if (hasCityFilter) {
-      setCurrentBounds(null);
-      const data = await fetchProperties(null, draftFilters);
-      const first = data[0];
-      if (first) {
+
+    setCurrentBounds(null);
+    const data = await fetchProperties(null, draftFilters);
+
+    if (data.length > 0) {
+      const lats = data.map(p => p.lat);
+      const lons = data.map(p => p.lon);
+      const minLat = Math.min(...lats);
+      const maxLat = Math.max(...lats);
+      const minLon = Math.min(...lons);
+      const maxLon = Math.max(...lons);
+
+      if (draftFilters.cities.length > 0) {
+        const first = data[0];
         setMapCenter([first.lon, first.lat]);
-        setCommandedZoom(12);
-        setTrackedZoom(12);
+      } else {
+        setMapCenter([(minLon + maxLon) / 2, (minLat + maxLat) / 2]);
       }
-    } else {
-      const bounds = currentBounds || DEFAULT_BOUNDS;
-      setCurrentBounds(bounds);
-      fetchProperties(bounds, draftFilters);
+      setCommandedZoom(11);
+      setTrackedZoom(11);
     }
   };
 
@@ -476,23 +551,37 @@ const MapPage: React.FC = () => {
 
       <main className="map-map-container">
         <YandexMap center={mapCenter} zoom={commandedZoom} onBoundsChange={handleBoundsChange} onZoomChange={handleZoomChange}>
-          {displayProperties.map(prop => (
-            <YMapMarker
-              key={prop.id}
-              coordinates={[prop.lon, prop.lat]}
-              onClick={() => handleMarkerClick(prop.id)}
-              isSelected={prop.id === selectedPropertyId}
-            >
-              {isZoomedOut && prop.id !== selectedPropertyId ? (
-                <div className="map-marker-pin" />
-              ) : (
-                <div className={`map-marker-label ${prop.id === selectedPropertyId ? 'map-marker-label--selected' : ''}`}>
-                  <div className="map-marker-label__price">{Number(prop.price).toLocaleString()} ₽</div>
-                  <div className="map-marker-label__address">{prop.address}</div>
-                </div>
-              )}
-            </YMapMarker>
-          ))}
+          {clusteredMarkers.map((item, index) => {
+            if (item.count === 1 && item.property) {
+              const p = item.property;
+              return (
+                <YMapMarker
+                  key={p.id}
+                  coordinates={item.coordinates}
+                  onClick={() => handleMarkerClick(p.id)}
+                  isSelected={p.id === selectedPropertyId}
+                >
+                  {isZoomedOut && p.id !== selectedPropertyId ? (
+                    <div className="map-marker-pin" />
+                  ) : (
+                    <div className={`map-marker-label ${p.id === selectedPropertyId ? 'map-marker-label--selected' : ''}`}>
+                      <div className="map-marker-label__price">{Number(p.price).toLocaleString()} ₽</div>
+                      <div className="map-marker-label__address">{p.address}</div>
+                    </div>
+                  )}
+                </YMapMarker>
+              );
+            }
+            return (
+              <YMapMarker
+                key={`cluster-${index}`}
+                coordinates={item.coordinates}
+                onClick={() => handleClusterZoom(item.coordinates)}
+              >
+                <div className="map-cluster">{item.count}</div>
+              </YMapMarker>
+            );
+          })}
         </YandexMap>
 
         <Modal isOpen={filtersOpen} onClose={() => setFiltersOpen(false)} title="Filters">
