@@ -13,8 +13,8 @@ class UserPreferenceBase(BaseModel):
     property_types: Optional[List[str]] = Field(None, json_schema_extra={"example": ["Apartment", "House"]})
     property_purposes: Optional[List[str]] = Field(None, json_schema_extra={"example": ["sale"]})
     cities: Optional[List[str]] = Field(None, json_schema_extra={"example": ["Москва", "Санкт-Петербург"]})
-    material: Optional[str] = Field(None, json_schema_extra={"example": "Brick"})
-    repair_type: Optional[str] = Field(None, json_schema_extra={"example": "Euro"})
+    material: Optional[List[str]] = Field(None, json_schema_extra={"example": ["Brick", "Monolith"]})
+    repair_type: Optional[List[str]] = Field(None, json_schema_extra={"example": ["Euro", "Design"]})
     min_build_year: Optional[int] = Field(None, json_schema_extra={"example": 2000})
     max_build_year: Optional[int] = Field(None, json_schema_extra={"example": 2023})
 

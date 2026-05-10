@@ -70,8 +70,8 @@ class UserPreference(Base):
     cities = Column(ARRAY(String))
     tags = Column(ARRAY(String))
     priority_weight = Column(JSON)
-    material = Column(String)
-    repair_type = Column(String)
+    material = Column(ARRAY(String))
+    repair_type = Column(ARRAY(String))
     min_build_year = Column(Integer)
     max_build_year = Column(Integer)
 

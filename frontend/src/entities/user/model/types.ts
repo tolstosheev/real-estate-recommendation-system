@@ -15,8 +15,8 @@ export interface UserPreferenceBase {
   property_types?: string[];
   property_purposes?: string[];
   cities?: string[];
-  material?: string;
-  repair_type?: string;
+  material?: string[];
+  repair_type?: string[];
   min_build_year?: number;
   max_build_year?: number;
 }
