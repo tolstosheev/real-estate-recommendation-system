@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '@app/store/hooks';
 import { logout, setCredentials } from '@entities/user/model/slice';
@@ -29,6 +29,7 @@ const Profile: React.FC = () => {
   const [loadingProps, setLoadingProps] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
+  const [contactWarning, setContactWarning] = useState('');
   const [meta, setMeta] = useState<{
     cities: string[]; materials: string[]; repair_types: string[]; property_types: string[];
   }>({ cities: [], materials: [], repair_types: [], property_types: [] });
@@ -44,10 +45,7 @@ const Profile: React.FC = () => {
   const [prefSuccess, setPrefSuccess] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [wizardMode, setWizardMode] = useState(false);
-
-  const hasSavedPrefs = useMemo(() => {
-    return Object.values(prefs).some(v => v !== undefined && v !== null && v !== '');
-  }, [prefs]);
+  const [hasLoadedPrefs, setHasLoadedPrefs] = useState(false);
 
   const userLoadedRef = React.useRef(false);
 
@@ -79,19 +77,20 @@ const Profile: React.FC = () => {
     preferencesService.getPreferences()
       .then((data) => {
         setPrefs({
-          min_price: data.min_price ? Number(data.min_price) : undefined,
-          max_price: data.max_price ? Number(data.max_price) : undefined,
-          min_area: data.min_area ? Number(data.min_area) : undefined,
-          max_area: data.max_area ? Number(data.max_area) : undefined,
-          preferred_rooms: data.preferred_rooms || undefined,
-          property_types: data.property_types || undefined,
-          property_purposes: data.property_purposes || undefined,
-          cities: data.cities || undefined,
-          material: data.material || undefined,
-          repair_type: data.repair_type || undefined,
-          min_build_year: data.min_build_year || undefined,
-          max_build_year: data.max_build_year || undefined,
+          min_price: data.min_price != null ? Number(data.min_price) : undefined,
+          max_price: data.max_price != null ? Number(data.max_price) : undefined,
+          min_area: data.min_area != null ? Number(data.min_area) : undefined,
+          max_area: data.max_area != null ? Number(data.max_area) : undefined,
+          preferred_rooms: data.preferred_rooms?.length ? data.preferred_rooms : undefined,
+          property_types: data.property_types?.length ? data.property_types : undefined,
+          property_purposes: data.property_purposes?.length ? data.property_purposes : undefined,
+          cities: data.cities?.length ? data.cities : undefined,
+          material: data.material?.length ? data.material : undefined,
+          repair_type: data.repair_type?.length ? data.repair_type : undefined,
+          min_build_year: data.min_build_year ?? undefined,
+          max_build_year: data.max_build_year ?? undefined,
         });
+        setHasLoadedPrefs(true);
       })
       .catch(() => {});
   }, [user]);
@@ -118,6 +117,11 @@ const Profile: React.FC = () => {
   };
 
   const handleAddProperty = () => {
+    if (!user?.phone_number && !user?.telegram_handle) {
+      setContactWarning('Please add phone number or Telegram in your Profile tab before adding a property');
+      return;
+    }
+    setContactWarning('');
     setEditingProperty(null);
     setIsModalOpen(true);
   };
@@ -244,7 +248,7 @@ const Profile: React.FC = () => {
             step={100000}
             value={[prefs.min_price ?? 0, prefs.max_price ?? 50000000]}
             onChange={([min, max]) => {
-              updatePref('min_price', min || undefined);
+              updatePref('min_price', min > 0 ? min : undefined);
               updatePref('max_price', max < 50000000 ? max : undefined);
             }}
             formatLabel={(v) => `${(v / 1000000).toFixed(1)}M ₽`}
@@ -257,7 +261,7 @@ const Profile: React.FC = () => {
             step={5}
             value={[prefs.min_area ?? 0, prefs.max_area ?? 300]}
             onChange={([min, max]) => {
-              updatePref('min_area', min || undefined);
+              updatePref('min_area', min > 0 ? min : undefined);
               updatePref('max_area', max < 300 ? max : undefined);
             }}
             formatLabel={(v) => `${v} m²`}
@@ -272,18 +276,18 @@ const Profile: React.FC = () => {
               { label: '4+', value: '4' },
             ]}
             selected={(prefs.preferred_rooms || []).map(String)}
-            onChange={(v) => updatePref('preferred_rooms', v.map(Number))}
+            onChange={(v) => updatePref('preferred_rooms', v.length ? v.map(Number) : undefined)}
           />
 
           <RangeSlider
             label="Build year"
             min={1960}
-            max={2025}
+            max={2026}
             step={1}
-            value={[prefs.min_build_year ?? 1960, prefs.max_build_year ?? 2025]}
+            value={[prefs.min_build_year ?? 1960, prefs.max_build_year ?? 2026]}
             onChange={([min, max]) => {
               updatePref('min_build_year', min > 1960 ? min : undefined);
-              updatePref('max_build_year', max < 2025 ? max : undefined);
+              updatePref('max_build_year', max < 2026 ? max : undefined);
             }}
           />
         </div>
@@ -308,8 +312,8 @@ const Profile: React.FC = () => {
             <CheckboxGroup
               label="Material"
               options={meta.materials.map(m => ({ label: m, value: m }))}
-              selected={prefs.material ? [prefs.material] : []}
-              onChange={(v) => updatePref('material', v.length ? v[0] : undefined)}
+              selected={prefs.material || []}
+              onChange={(v) => updatePref('material', v.length ? v : null)}
             />
           )}
 
@@ -317,8 +321,8 @@ const Profile: React.FC = () => {
             <CheckboxGroup
               label="Repair type"
               options={meta.repair_types.map(r => ({ label: r, value: r }))}
-              selected={prefs.repair_type ? [prefs.repair_type] : []}
-              onChange={(v) => updatePref('repair_type', v.length ? v[0] : undefined)}
+              selected={prefs.repair_type || []}
+              onChange={(v) => updatePref('repair_type', v.length ? v : null)}
             />
           )}
         </div>
@@ -343,7 +347,7 @@ const Profile: React.FC = () => {
           <button className={`profile-tab ${activeTab === 'preferences' ? 'profile-tab--active' : ''}`}
             onClick={() => { setActiveTab('preferences'); setWizardMode(false); setWizardStep(0); }}>AI Preferences</button>
           <button className={`profile-tab ${activeTab === 'my-properties' ? 'profile-tab--active' : ''}`}
-            onClick={() => setActiveTab('my-properties')}>My Properties</button>
+            onClick={() => { setActiveTab('my-properties'); setContactWarning(''); }}>My Properties</button>
         </div>
 
         {activeTab === 'profile' && (
@@ -364,7 +368,7 @@ const Profile: React.FC = () => {
           </form>
         )}
 
-        {activeTab === 'preferences' && !wizardMode && hasSavedPrefs && (
+        {activeTab === 'preferences' && !wizardMode && hasLoadedPrefs && (
           <div className="profile-section prefs-summary">
             <div className="prefs-summary__header">
               <h2 className="profile-section__title">AI Preferences</h2>
@@ -388,8 +392,11 @@ const Profile: React.FC = () => {
                 <div className="prefs-summary__item">
                   <span className="prefs-summary__label">Price</span>
                   <span className="prefs-summary__value">
-                    {prefs.min_price ? `${(Number(prefs.min_price) / 1000000).toFixed(1)}M` : '0'} –
-                    {prefs.max_price ? `${(Number(prefs.max_price) / 1000000).toFixed(1)}M` : '∞'} ₽
+                    {prefs.min_price && prefs.max_price
+                      ? `${(Number(prefs.min_price) / 1000000).toFixed(1)}M – ${(Number(prefs.max_price) / 1000000).toFixed(1)}M`
+                      : prefs.min_price
+                        ? `from ${(Number(prefs.min_price) / 1000000).toFixed(1)}M`
+                        : `up to ${(Number(prefs.max_price) / 1000000).toFixed(1)}M`} ₽
                   </span>
                 </div>
               )}
@@ -397,8 +404,11 @@ const Profile: React.FC = () => {
                 <div className="prefs-summary__item">
                   <span className="prefs-summary__label">Area</span>
                   <span className="prefs-summary__value">
-                    {prefs.min_area ? `${prefs.min_area}` : '0'} –
-                    {prefs.max_area ? `${prefs.max_area}` : '∞'} m²
+                    {prefs.min_area && prefs.max_area
+                      ? `${prefs.min_area} – ${prefs.max_area} m²`
+                      : prefs.min_area
+                        ? `from ${prefs.min_area} m²`
+                        : `up to ${prefs.max_area} m²`}
                   </span>
                 </div>
               )}
@@ -412,7 +422,11 @@ const Profile: React.FC = () => {
                 <div className="prefs-summary__item">
                   <span className="prefs-summary__label">Build Year</span>
                   <span className="prefs-summary__value">
-                    {prefs.min_build_year || 'any'} – {prefs.max_build_year || 'any'}
+                    {prefs.min_build_year && prefs.max_build_year
+                      ? `${prefs.min_build_year} – ${prefs.max_build_year}`
+                      : prefs.min_build_year
+                        ? `from ${prefs.min_build_year}`
+                        : `up to ${prefs.max_build_year}`}
                   </span>
                 </div>
               )}
@@ -422,28 +436,28 @@ const Profile: React.FC = () => {
                   <span className="prefs-summary__value">{prefs.cities.join(', ')}</span>
                 </div>
               )}
-              {prefs.material && (
+              {prefs.material && prefs.material.length > 0 && (
                 <div className="prefs-summary__item">
                   <span className="prefs-summary__label">Material</span>
-                  <span className="prefs-summary__value">{prefs.material}</span>
+                  <span className="prefs-summary__value">{prefs.material.join(', ')}</span>
                 </div>
               )}
-              {prefs.repair_type && (
+              {prefs.repair_type && prefs.repair_type.length > 0 && (
                 <div className="prefs-summary__item">
                   <span className="prefs-summary__label">Repair</span>
-                  <span className="prefs-summary__value">{prefs.repair_type}</span>
+                  <span className="prefs-summary__value">{prefs.repair_type.join(', ')}</span>
                 </div>
               )}
             </div>
           </div>
         )}
 
-        {activeTab === 'preferences' && (wizardMode || !hasSavedPrefs) && (
+        {activeTab === 'preferences' && (wizardMode || !hasLoadedPrefs) && (
           <div className="profile-section preferences-wizard">
             <div className="preferences-wizard__header">
               <div className="preferences-wizard__header-top">
                 <h2 className="profile-section__title">AI Preferences</h2>
-                {hasSavedPrefs && (
+                {hasLoadedPrefs && (
                   <Button variant="secondary" onClick={() => setWizardMode(false)}>Cancel</Button>
                 )}
               </div>
@@ -493,6 +507,7 @@ const Profile: React.FC = () => {
               </h2>
               <Button variant="primary" onClick={handleAddProperty}>Add Property</Button>
             </div>
+            {contactWarning && <div className="profile-section__error">{contactWarning}</div>}
             {loadingProps ? (
               <div className="my-props-loading">Loading...</div>
             ) : myProperties.length === 0 ? (
