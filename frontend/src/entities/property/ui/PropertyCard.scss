@@ -148,6 +148,14 @@
   background: linear-gradient(135deg, #667eea, #764ba2);
 }
 
+.property-card__badge--category {
+  top: auto;
+  bottom: 12px;
+  left: auto;
+  right: 12px;
+  background: rgba(74, 85, 104, 0.85);
+}
+
 .property-card__body {
   padding: 16px 18px 18px;
   display: flex;
