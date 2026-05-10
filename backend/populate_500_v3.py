@@ -264,13 +264,16 @@ async def generate_property(city_name, city_data, user_id, prop_num):
         price = round(random.uniform(50, 500), 2)
 
     title_prefix = random.choice(TITLES.get(property_type, TITLES["Apartment"]))
-    category = random.choice(CATEGORY_OPTIONS)
-    if rooms <= 1:
+    if property_type == "Studio":
         category = "Studio"
-    elif rooms <= 2:
-        category = random.choice(["1-bedroom", "2-bedroom"])
-    elif rooms <= 4:
-        category = random.choice(["2-bedroom", "3-bedroom", "4-bedroom"])
+    elif rooms == 1:
+        category = "1-bedroom"
+    elif rooms == 2:
+        category = "2-bedroom"
+    elif rooms == 3:
+        category = "3-bedroom"
+    elif rooms == 4:
+        category = "4-bedroom"
     else:
         category = "5+ bedroom"
 
