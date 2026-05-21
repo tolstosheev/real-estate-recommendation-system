@@ -130,6 +130,7 @@ const renderCatalog = (store = createStore(false)) => render(
 
 describe('Catalog Page', () => {
   beforeEach(() => {
+    window.history.pushState({}, '', '/');
     mockApi.reset();
     vi.clearAllMocks();
     observerCallback = () => {};
@@ -239,8 +240,9 @@ describe('Catalog Page', () => {
       expect(screen.getByText('Property 1')).toBeDefined();
     });
 
-    const applyBtn = screen.getByText('Apply Filters');
-    fireEvent.click(applyBtn);
+    fireEvent.click(screen.getByTestId('range-change-Price'));
+
+    fireEvent.click(screen.getByText('Apply Filters'));
 
     await waitFor(() => {
       expect(callCount).toBeGreaterThanOrEqual(2);
@@ -425,9 +427,11 @@ describe('Catalog Page', () => {
   });
 
   it('renders sidebar with filters and tabs', async () => {
+    const authStore = createStore(true);
     mockApi.onGet('/api/properties/').reply(200, []);
+    mockApi.onGet('/api/recommendations').reply(200, []);
 
-    renderCatalog();
+    renderCatalog(authStore);
 
     expect(await screen.findByText('Filters')).toBeDefined();
     expect(screen.getByText('All')).toBeDefined();

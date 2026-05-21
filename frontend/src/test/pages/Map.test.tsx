@@ -120,6 +120,8 @@ const baseProperty = (id: string, overrides: Partial<Property> = {}): Property =
 });
 
 beforeEach(() => {
+  window.history.pushState({}, '', '/');
+  sessionStorage.clear();
   mock.reset();
   vi.clearAllMocks();
   Object.defineProperty(navigator, 'geolocation', {
@@ -431,18 +433,18 @@ describe('Map Page', () => {
       });
     });
 
-    it('resets draft filters to defaults', async () => {
+    it('resets and applies filters immediately, closing the modal', async () => {
       mock.onGet('/api/properties/').reply(200, []);
       mock.onGet('/api/properties/meta').reply(200, { cities: [], materials: [], repair_types: [], property_types: [] });
       renderMap();
       fireEvent.click(await screen.findByText(/Filters/));
       await screen.findByTestId('modal');
-      fireEvent.click(screen.getByText('Reset'));
       mock.onGet('/api/properties/').reply(200, [baseProperty('reset-1', { title: 'After Reset' })]);
-      fireEvent.click(screen.getByText('Apply Filters'));
+      fireEvent.click(screen.getByText('Reset'));
       await waitFor(() => {
         expect(screen.queryByTestId('modal')).toBeNull();
       });
+      expect(screen.getByText('After Reset')).toBeDefined();
     });
   });
 

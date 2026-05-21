@@ -20,6 +20,7 @@ const mockCreateProperty = vi.hoisted(() => vi.fn());
 vi.mock('@shared/api/properties.service', () => ({
   propertyService: {
     createProperty: (...args: unknown[]) => mockCreateProperty(...args),
+    getMeta: vi.fn().mockResolvedValue({ metro: [] }),
   },
 }));
 
@@ -115,7 +116,7 @@ describe('AddPropertyPage', () => {
     fireEvent.click(screen.getByText('Next'));
     fireEvent.click(screen.getByText('Next'));
     expect(screen.getByPlaceholderText('Start typing address...')).toBeInTheDocument();
-    expect(screen.getByTestId('image-uploader')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Metro Station')).toBeInTheDocument();
   });
 
   it('goes back to previous step on Back click', () => {
@@ -168,6 +169,9 @@ describe('AddPropertyPage', () => {
     expect(getSelectByName('is_new')).toHaveValue('secondary');
     expect(getSelectByName('balcony')).toHaveValue('yes');
     expect(getSelectByName('parking')).toHaveValue('no');
+    expect(screen.getByTestId('image-uploader')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('40.5')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('12.0')).toBeInTheDocument();
   });
 
   it('fills step 2 fields and navigates to step 3', () => {
@@ -331,9 +335,9 @@ describe('AddPropertyPage', () => {
     fireEvent.change(screen.getByPlaceholderText('Modern Apartment'), { target: { value: 'Test Property' } });
     fireEvent.change(screen.getByPlaceholderText('5000000'), { target: { value: '5000000' } });
     fireEvent.click(screen.getByText('Next'));
+    fireEvent.click(screen.getByTestId('image-uploader'));
     fireEvent.click(screen.getByText('Next'));
     fireEvent.change(screen.getByPlaceholderText('Start typing address...'), { target: { value: 'Test Address' } });
-    fireEvent.click(screen.getByTestId('image-uploader'));
     fireEvent.click(screen.getByText('Submit Property'));
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith('/');
@@ -381,6 +385,8 @@ describe('AddPropertyPage', () => {
     fireEvent.change(getSelectByName('is_new'), { target: { value: 'new' } });
     fireEvent.change(getSelectByName('parking'), { target: { value: 'paid' } });
     fireEvent.change(getSelectByName('balcony'), { target: { value: 'no' } });
+    fireEvent.change(screen.getByPlaceholderText('40.5'), { target: { value: '50.0' } });
+    fireEvent.change(screen.getByPlaceholderText('12.0'), { target: { value: '15.0' } });
     fireEvent.click(screen.getByText('Next'));
 
     const addressInput = screen.getByPlaceholderText('Start typing address...');
@@ -393,10 +399,7 @@ describe('AddPropertyPage', () => {
       expect(addressInput).toHaveValue('Moscow, Red Square, Russia');
     });
 
-    fireEvent.change(screen.getByPlaceholderText('District'), { target: { value: 'Central' } });
     fireEvent.change(screen.getByPlaceholderText('Metro Station'), { target: { value: 'Okhotny Ryad' } });
-    fireEvent.change(screen.getByPlaceholderText('40.5'), { target: { value: '50.0' } });
-    fireEvent.change(screen.getByPlaceholderText('12.0'), { target: { value: '15.0' } });
     fireEvent.click(screen.getByText('Submit Property'));
 
     await waitFor(() => {
@@ -420,12 +423,70 @@ describe('AddPropertyPage', () => {
       balcony: 'no',
       parking: 'paid',
       address: 'Moscow, Red Square, Russia',
-      district: 'Central',
       metro: 'Okhotny Ryad',
       lat: 55.7558,
       lon: 37.6173,
       sq_living: 50.0,
       sq_kitchen: 15.0,
     }));
+  });
+
+  describe('Validation', () => {
+    it('rejects area less than living + kitchen', async () => {
+      renderAddProperty();
+      fireEvent.change(screen.getByPlaceholderText('Modern Apartment'), { target: { value: 'Test' } });
+      fireEvent.change(screen.getByPlaceholderText('5000000'), { target: { value: '5000000' } });
+      fireEvent.change(screen.getByPlaceholderText('65.5'), { target: { value: '50' } });
+      fireEvent.click(screen.getByText('Next'));
+      fireEvent.change(screen.getByPlaceholderText('5'), { target: { value: '3' } });
+      fireEvent.change(screen.getByPlaceholderText('40.5'), { target: { value: '40' } });
+      fireEvent.change(screen.getByPlaceholderText('12.0'), { target: { value: '20' } });
+      fireEvent.click(screen.getByText('Next'));
+      await waitFor(() => {
+        const input = screen.getByPlaceholderText('Start typing address...') as HTMLInputElement;
+        fireEvent.change(input, { target: { value: 'Addr' } });
+        expect(input.value).toBe('Addr');
+      });
+      fireEvent.click(screen.getByText('Submit Property'));
+      await waitFor(() => {
+        expect(screen.getByText(/total area must be at least/i)).toBeInTheDocument();
+      });
+    });
+
+    it('rejects floor exceeding total floors', async () => {
+      renderAddProperty();
+      fireEvent.change(screen.getByPlaceholderText('Modern Apartment'), { target: { value: 'Test' } });
+      fireEvent.change(screen.getByPlaceholderText('5000000'), { target: { value: '5000000' } });
+      fireEvent.click(screen.getByText('Next'));
+      fireEvent.change(screen.getByPlaceholderText('5'), { target: { value: '10' } });
+      fireEvent.change(screen.getByPlaceholderText('10'), { target: { value: '5' } });
+      fireEvent.click(screen.getByText('Next'));
+      await waitFor(() => {
+        const input = screen.getByPlaceholderText('Start typing address...') as HTMLInputElement;
+        fireEvent.change(input, { target: { value: 'Addr' } });
+        expect(input.value).toBe('Addr');
+      });
+      fireEvent.click(screen.getByText('Submit Property'));
+      await waitFor(() => {
+        expect(screen.getByText(/floor cannot exceed/i)).toBeInTheDocument();
+      });
+    });
+
+    it('rejects negative or zero price', async () => {
+      renderAddProperty();
+      fireEvent.change(screen.getByPlaceholderText('Modern Apartment'), { target: { value: 'Test' } });
+      fireEvent.change(screen.getByPlaceholderText('5000000'), { target: { value: '0' } });
+      fireEvent.click(screen.getByText('Next'));
+      fireEvent.click(screen.getByText('Next'));
+      await waitFor(() => {
+        const input = screen.getByPlaceholderText('Start typing address...') as HTMLInputElement;
+        fireEvent.change(input, { target: { value: 'Addr' } });
+        expect(input.value).toBe('Addr');
+      });
+      fireEvent.click(screen.getByText('Submit Property'));
+      await waitFor(() => {
+        expect(screen.getByText(/Price must be greater than 0/i)).toBeInTheDocument();
+      });
+    });
   });
 });

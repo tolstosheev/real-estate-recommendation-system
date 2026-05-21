@@ -16,6 +16,7 @@ vi.mock('@shared/api/properties.service', () => ({
   propertyService: {
     createProperty: mocks.mockCreateProperty,
     updateProperty: mocks.mockUpdateProperty,
+    getMeta: vi.fn().mockResolvedValue({ metro: [] }),
   },
 }));
 
@@ -172,9 +173,8 @@ describe('PropertyFormModal', () => {
       expect(screen.getByDisplayValue('Brick')).toBeInTheDocument();
     });
 
-    it('pre-fills images on step 3', () => {
+    it('pre-fills images on step 2', () => {
       renderModal({ property: editProperty });
-      fireEvent.click(screen.getByText('Next'));
       fireEvent.click(screen.getByText('Next'));
       const images = screen.getAllByRole('img');
       expect(images.some(img => (img as HTMLImageElement).src.includes('https://img.jpg'))).toBe(true);
@@ -270,6 +270,9 @@ describe('PropertyFormModal', () => {
       expect(screen.getByText('Building Type')).toBeInTheDocument();
       expect(screen.getByText('Balcony')).toBeInTheDocument();
       expect(screen.getByText('Parking')).toBeInTheDocument();
+      expect(screen.getByText('Images')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('40.5')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('12.0')).toBeInTheDocument();
     });
   });
 
@@ -279,11 +282,7 @@ describe('PropertyFormModal', () => {
       fireEvent.click(screen.getByText('Next'));
       fireEvent.click(screen.getByText('Next'));
       expect(screen.getByPlaceholderText('Start typing address...')).toBeInTheDocument();
-      expect(screen.getByPlaceholderText('District')).toBeInTheDocument();
       expect(screen.getByPlaceholderText('Metro Station')).toBeInTheDocument();
-      expect(screen.getByText('Images')).toBeInTheDocument();
-      expect(screen.getByPlaceholderText('40.5')).toBeInTheDocument();
-      expect(screen.getByPlaceholderText('12.0')).toBeInTheDocument();
     });
   });
 
@@ -418,6 +417,50 @@ describe('PropertyFormModal', () => {
     });
   });
 
+  describe('Field validation', () => {
+    it('rejects area less than living + kitchen', async () => {
+      renderModal();
+      fireEvent.change(screen.getByPlaceholderText('Modern Apartment'), { target: { value: 'Test' } });
+      fireEvent.change(screen.getByPlaceholderText('5000000'), { target: { value: '5000000' } });
+      fireEvent.change(screen.getByPlaceholderText('65.5'), { target: { value: '50' } });
+      fireEvent.click(screen.getByText('Next'));
+      fireEvent.change(screen.getByPlaceholderText('5'), { target: { value: '3' } });
+      fireEvent.change(screen.getByPlaceholderText('40.5'), { target: { value: '40' } });
+      fireEvent.change(screen.getByPlaceholderText('12.0'), { target: { value: '20' } });
+      fireEvent.click(screen.getByText('Next'));
+      await waitFor(() => {
+        const input = screen.getByPlaceholderText('Start typing address...') as HTMLInputElement;
+        fireEvent.change(input, { target: { value: 'Addr' } });
+        expect(input.value).toBe('Addr');
+      });
+      const form = document.querySelector('form')!;
+      fireEvent.submit(form);
+      await waitFor(() => {
+        expect(screen.getByText(/total area must be at least/i)).toBeInTheDocument();
+      });
+    });
+
+    it('rejects floor exceeding total floors', async () => {
+      renderModal();
+      fireEvent.change(screen.getByPlaceholderText('Modern Apartment'), { target: { value: 'Test' } });
+      fireEvent.change(screen.getByPlaceholderText('5000000'), { target: { value: '5000000' } });
+      fireEvent.click(screen.getByText('Next'));
+      fireEvent.change(screen.getByPlaceholderText('5'), { target: { value: '10' } });
+      fireEvent.change(screen.getByPlaceholderText('10'), { target: { value: '5' } });
+      fireEvent.click(screen.getByText('Next'));
+      await waitFor(() => {
+        const input = screen.getByPlaceholderText('Start typing address...') as HTMLInputElement;
+        fireEvent.change(input, { target: { value: 'Addr' } });
+        expect(input.value).toBe('Addr');
+      });
+      const form = document.querySelector('form')!;
+      fireEvent.submit(form);
+      await waitFor(() => {
+        expect(screen.getByText(/floor cannot exceed/i)).toBeInTheDocument();
+      });
+    });
+  });
+
   describe('Form submission - Create', () => {
     it('calls createProperty with correct payload', async () => {
       mocks.mockCreateProperty.mockResolvedValue({});
@@ -451,17 +494,15 @@ describe('PropertyFormModal', () => {
       fireEvent.click(screen.getByText('Next'));
       fireEvent.change(screen.getByPlaceholderText('5'), { target: { value: '3' } });
       fireEvent.change(screen.getByPlaceholderText('2015'), { target: { value: '2020' } });
+      fireEvent.change(screen.getByTestId('image-uploader-input'), { target: { value: 'https://img.jpg' } });
       fireEvent.click(screen.getByText('Next'));
       fireEvent.change(screen.getByPlaceholderText('Start typing address...'), { target: { value: 'Addr' } });
-      fireEvent.change(screen.getByPlaceholderText('District'), { target: { value: 'Central' } });
-      fireEvent.change(screen.getByTestId('image-uploader-input'), { target: { value: 'https://img.jpg' } });
       fireEvent.click(screen.getByText('Create Property'));
       await waitFor(() => {
         expect(mocks.mockCreateProperty).toHaveBeenCalledWith(
           expect.objectContaining({
             title: 'Test', price: 3000000, address: 'Addr',
             description: 'Nice place', floor: 3, build_year: 2020,
-            district: 'Central',
             images: ['https://img.jpg'],
           })
         );

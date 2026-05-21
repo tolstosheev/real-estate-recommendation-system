@@ -230,9 +230,9 @@ describe('PropertyCard', () => {
   });
 
   describe('Like button', () => {
-    it('does not render like button when isAuthenticated is false', () => {
+    it('renders like button even when isAuthenticated is false', () => {
       const { container } = renderCard({}, { showActions: true, isAuthenticated: false });
-      expect(container.querySelector('.property-card__like-btn')).toBeNull();
+      expect(container.querySelector('.property-card__like-btn')).not.toBeNull();
     });
 
     it('does not render like button when showActions is false', () => {
@@ -303,9 +303,9 @@ describe('PropertyCard', () => {
       });
     });
 
-    it('does not render like button when not authenticated', () => {
+    it('does not call api.post when not authenticated', () => {
       const { container } = renderCard({}, { showActions: true, isAuthenticated: false });
-      expect(container.querySelector('.property-card__like-btn')).toBeNull();
+      fireEvent.click(container.querySelector('.property-card__like-btn')!);
       expect(vi.mocked(api.post)).not.toHaveBeenCalled();
     });
 

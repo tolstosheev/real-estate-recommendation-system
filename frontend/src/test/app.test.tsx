@@ -23,6 +23,7 @@ const createMockStore = (isAuthenticated = false) => {
 };
 
 test('redirects unauthenticated user to onboarding', () => {
+  window.history.pushState({}, '', '/profile');
   const store = createMockStore(false);
   render(
     <Provider store={store}>

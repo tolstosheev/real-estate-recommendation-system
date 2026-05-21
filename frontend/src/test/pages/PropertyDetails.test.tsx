@@ -313,12 +313,12 @@ describe('PropertyDetails Page', () => {
   });
 
   describe('Like / unlike toggle', () => {
-    it('redirects unauthenticated user to /auth on like click', async () => {
+    it('redirects unauthenticated user to /login on like click', async () => {
       mock.onGet('/api/properties/1').reply(200, baseProperty);
       renderPropertyDetails(
         createStore(false),
         '1',
-        <Route path="/auth" element={<div data-testid="auth-page">Auth</div>} />,
+        <Route path="/login" element={<div data-testid="auth-page">Auth</div>} />,
       );
       await waitFor(() => {
         expect(screen.getByText('Modern Apartment')).toBeDefined();
