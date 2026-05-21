@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppSelector } from '@app/store/hooks';
 import YandexMap from '@shared/ui/Map';
 import YMapMarker from '@shared/ui/Map/YMapMarker';
@@ -11,20 +11,11 @@ import { recommendationsService } from '@shared/api/recommendations.service';
 import api from '@shared/api/api';
 import RangeSlider from '@shared/ui/RangeSlider/RangeSlider';
 import CheckboxGroup from '@shared/ui/CheckboxGroup/CheckboxGroup';
+import { parseFilters, filtersToSearchParams } from '@shared/utils/filterParams';
+import type { FilterValues } from '@shared/utils/filterParams';
 import './Map.scss';
 
-interface MapFilters {
-  priceRange: [number, number];
-  areaRange: [number, number];
-  buildYearRange: [number, number];
-  rooms: number[];
-  propertyTypes: string[];
-  propertyPurposes: string[];
-  cities: string[];
-  materials: string[];
-  repairTypes: string[];
-  isNew: string[];
-}
+type MapFilters = FilterValues;
 
 const defaultMapFilters: MapFilters = {
   priceRange: [0, 50000000],
@@ -42,6 +33,7 @@ const defaultMapFilters: MapFilters = {
 const MAP_PAGE_SIZE = 100;
 const ALL_PROPERTIES_LIMIT = 10000;
 const ZOOM_THRESHOLD = 13;
+const SESSION_KEY = 'nestai_map_position';
 
 const isWithinBounds = (p: Property, bounds: [number, number, number, number]) => {
   const [north, east, south, west] = bounds;
@@ -165,9 +157,38 @@ const MapPage: React.FC = () => {
   }, [navigate]);
 
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
-  const [mapCenter, setMapCenter] = useState<[number, number]>([37.6173, 55.7558]);
-  const [commandedZoom, setCommandedZoom] = useState(11);
-  const [trackedZoom, setTrackedZoom] = useState(11);
+  const [mapCenter, setMapCenter] = useState<[number, number]>(() => {
+    try {
+      const saved = sessionStorage.getItem(SESSION_KEY);
+      if (saved) {
+        const { lon, lat } = JSON.parse(saved);
+        if (typeof lon === 'number' && typeof lat === 'number' && isFinite(lon) && isFinite(lat)) return [lon, lat];
+      }
+    } catch {}
+    return [37.6173, 55.7558];
+  });
+  const [commandedZoom, setCommandedZoom] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem(SESSION_KEY);
+      if (saved) {
+        const { zoom } = JSON.parse(saved);
+        if (typeof zoom === 'number' && isFinite(zoom)) return zoom;
+      }
+    } catch {}
+    return 11;
+  });
+  const [trackedZoom, setTrackedZoom] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem(SESSION_KEY);
+      if (saved) {
+        const { zoom } = JSON.parse(saved);
+        if (typeof zoom === 'number' && isFinite(zoom)) return zoom;
+      }
+    } catch {}
+    return 11;
+  });
+  const trackedZoomRef = useRef(trackedZoom);
+  const isFirstPositionSaveRef = useRef(true);
   const [clusterZoom, setClusterZoom] = useState(11);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
@@ -201,20 +222,27 @@ const MapPage: React.FC = () => {
   }>({
     cities: [], materials: [], repair_types: [], property_types: [], city_centers: {},
   });
-  const [draftFilters, setDraftFilters] = useState<MapFilters>(defaultMapFilters);
-  const [appliedFilters, setAppliedFilters] = useState<MapFilters>(defaultMapFilters);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [draftFilters, setDraftFilters] = useState<MapFilters>(() =>
+    parseFilters(new URLSearchParams(window.location.search), defaultMapFilters)
+  );
   const [openSections, setOpenSections] = useState<Set<string>>(new Set());
   const boundsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasInitialFetch = useRef(false);
-  const appliedFiltersRef = useRef(appliedFilters);
-  appliedFiltersRef.current = appliedFilters;
   const suppressBoundsFetchRef = useRef(true);
+
+  const urlFilters = useMemo(() => parseFilters(searchParams, defaultMapFilters), [searchParams]);
+  const urlFiltersRef = useRef(urlFilters);
+  urlFiltersRef.current = urlFilters;
 
   useEffect(() => {
     if (!hasInitialFetch.current) {
       hasInitialFetch.current = true;
 
-      if ('geolocation' in navigator) {
+      let hasSavedPosition = false;
+      try { hasSavedPosition = !!sessionStorage.getItem(SESSION_KEY); } catch {}
+
+      if (!hasSavedPosition && 'geolocation' in navigator) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
             setMapCenter([position.coords.longitude, position.coords.latitude]);
@@ -227,9 +255,20 @@ const MapPage: React.FC = () => {
       }
 
       setCurrentBounds(null);
-      fetchProperties(null, appliedFiltersRef.current);
+      fetchProperties(null, urlFiltersRef.current);
     }
   }, []);
+
+  // URL change → re-fetch (skip initial mount)
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    fetchProperties(null, urlFilters);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   useEffect(() => {
     propertyService.getMeta().then(data => {
@@ -251,6 +290,8 @@ const MapPage: React.FC = () => {
     }
   }, [isAuthenticated, recVersion]);
 
+  useEffect(() => { trackedZoomRef.current = trackedZoom; }, [trackedZoom]);
+
   const clusterZoomTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -262,11 +303,25 @@ const MapPage: React.FC = () => {
     }, 150);
   }, [trackedZoom]);
 
+  useEffect(() => {
+    if (isFirstPositionSaveRef.current) {
+      isFirstPositionSaveRef.current = false;
+      return;
+    }
+    try {
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify({
+        lon: mapCenter[0],
+        lat: mapCenter[1],
+        zoom: commandedZoom,
+      }));
+    } catch {}
+  }, [mapCenter, commandedZoom]);
+
   const filteredAiRecs = useMemo(() => {
     if (!aiRecs.length) return [];
     return aiRecs.filter(p => {
       if (currentBounds && !isWithinBounds(p, currentBounds)) return false;
-      const af = appliedFilters;
+      const af = urlFilters;
       if (af.cities.length && (!p.city || !af.cities.includes(p.city))) return false;
       if (af.propertyTypes.length && (!p.property_type || !af.propertyTypes.includes(p.property_type))) return false;
       if (af.propertyPurposes.length && (!p.property_purpose || !af.propertyPurposes.includes(p.property_purpose))) return false;
@@ -282,7 +337,7 @@ const MapPage: React.FC = () => {
       if (af.buildYearRange[1] < 2025 && (!p.build_year || p.build_year > af.buildYearRange[1])) return false;
       return true;
     });
-  }, [aiRecs, appliedFilters, currentBounds]);
+  }, [aiRecs, urlFilters, currentBounds]);
 
   const displayProperties = useMemo(() => {
     if (!filteredAiRecs.length) return properties;
@@ -374,7 +429,16 @@ const MapPage: React.FC = () => {
     boundsTimeoutRef.current = setTimeout(() => {
       setCurrentBounds(bounds);
       if (shouldFetch) {
-        fetchProperties(bounds, appliedFiltersRef.current);
+        const centerLat = (bounds[0] + bounds[2]) / 2;
+        const centerLon = (bounds[1] + bounds[3]) / 2;
+        try {
+          sessionStorage.setItem(SESSION_KEY, JSON.stringify({
+            lon: centerLon,
+            lat: centerLat,
+            zoom: trackedZoomRef.current,
+          }));
+        } catch {}
+        fetchProperties(bounds, urlFiltersRef.current);
       }
     }, 200);
   }, [fetchProperties]);
@@ -403,7 +467,7 @@ const MapPage: React.FC = () => {
       clearTimeout(boundsTimeoutRef.current);
       boundsTimeoutRef.current = null;
     }
-    setAppliedFilters(draftFilters);
+    setSearchParams(filtersToSearchParams(draftFilters, '', defaultMapFilters));
     setFiltersOpen(false);
     setOpenSections(new Set());
 
@@ -429,13 +493,26 @@ const MapPage: React.FC = () => {
     });
   };
 
-  const resetFilters = () => {
+  const resetFilters = async () => {
     setDraftFilters(defaultMapFilters);
+    setSearchParams(filtersToSearchParams(defaultMapFilters, '', defaultMapFilters));
+    setFiltersOpen(false);
+    setOpenSections(new Set());
+    setCurrentBounds(null);
+    const data = await fetchProperties(null, defaultMapFilters);
+    if (data.length > 0) {
+      const firstCity = data[0].city;
+      if (firstCity && meta.city_centers[firstCity]) {
+        setMapCenter(meta.city_centers[firstCity]);
+        setCommandedZoom(12);
+        setTrackedZoom(12);
+      }
+    }
   };
 
   const activeFilterCount = useMemo(() => {
     let count = 0;
-    const f = appliedFilters;
+    const f = urlFilters;
     if (f.priceRange[0] > 0 || f.priceRange[1] < 50000000) count++;
     if (f.areaRange[0] > 0 || f.areaRange[1] < 300) count++;
     if (f.buildYearRange[0] > 1960 || f.buildYearRange[1] < 2025) count++;
@@ -447,7 +524,7 @@ const MapPage: React.FC = () => {
     if (f.repairTypes.length) count++;
     if (f.isNew.length) count++;
     return count;
-  }, [appliedFilters]);
+  }, [urlFilters]);
 
   const renderFilterContent = () => (
     <>
