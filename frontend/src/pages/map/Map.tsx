@@ -51,7 +51,7 @@ const isWithinBounds = (p: Property, bounds: [number, number, number, number]) =
 
 const CLUSTER_MAX_ZOOM = 14;
 const CLUSTER_BASE_CELL = 200;
-const MAX_VISIBLE = 10000;
+const MAX_VISIBLE = 2000;
 
 interface ClusteredItem {
   coordinates: [number, number];
@@ -90,24 +90,91 @@ function clusterProperties(properties: Property[], zoom: number): ClusteredItem[
   }));
 }
 
+interface MarkerItemProps {
+  coordinates: [number, number];
+  isSelected: boolean;
+  isZoomedOut: boolean;
+  propertyId: string;
+  price: number;
+  address: string;
+  onMarkerClick: (id: string) => void;
+}
+
+const MarkerItem = React.memo(function MarkerItem({
+  coordinates, isSelected, isZoomedOut, propertyId, price, address, onMarkerClick,
+}: MarkerItemProps) {
+  const handleClick = useCallback(() => onMarkerClick(propertyId), [onMarkerClick, propertyId]);
+  return (
+    <YMapMarker
+      coordinates={coordinates}
+      onClick={handleClick}
+      isSelected={isSelected}
+    >
+      {isZoomedOut && !isSelected ? (
+        <div className="map-marker-pin" />
+      ) : (
+        <div className={`map-marker-label ${isSelected ? 'map-marker-label--selected' : ''}`}>
+          <div className="map-marker-label__price">{price.toLocaleString()} ₽</div>
+          <div className="map-marker-label__address">{address}</div>
+        </div>
+      )}
+    </YMapMarker>
+  );
+}, (prev, next) => {
+  return prev.propertyId === next.propertyId
+    && prev.isSelected === next.isSelected
+    && prev.isZoomedOut === next.isZoomedOut
+    && prev.coordinates[0] === next.coordinates[0]
+    && prev.coordinates[1] === next.coordinates[1]
+    && prev.price === next.price
+    && prev.address === next.address
+    && prev.onMarkerClick === next.onMarkerClick;
+});
+
+interface ClusterItemProps {
+  coordinates: [number, number];
+  count: number;
+  onClusterZoom: (coords: [number, number]) => void;
+}
+
+const ClusterItem = React.memo(function ClusterItem({
+  coordinates, count, onClusterZoom,
+}: ClusterItemProps) {
+  const handleClick = useCallback(() => onClusterZoom(coordinates), [onClusterZoom, coordinates[0], coordinates[1]]);
+  return (
+    <YMapMarker
+      coordinates={coordinates}
+      onClick={handleClick}
+    >
+      <div className="map-cluster">{count}</div>
+    </YMapMarker>
+  );
+}, (prev, next) => {
+  return prev.count === next.count
+    && prev.coordinates[0] === next.coordinates[0]
+    && prev.coordinates[1] === next.coordinates[1]
+    && prev.onClusterZoom === next.onClusterZoom;
+});
+
 const MapPage: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAppSelector((state) => state.auth);
 
-  const handleMarkerClick = (propertyId: string) => {
+  const handleMarkerClick = useCallback((propertyId: string) => {
     navigate(`/property/${propertyId}`);
-  };
-
-  const handleClusterZoom = (coords: [number, number]) => {
-    setMapCenter(coords);
-    setCommandedZoom(trackedZoom + 2);
-  };
+  }, [navigate]);
 
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
   const [mapCenter, setMapCenter] = useState<[number, number]>([37.6173, 55.7558]);
   const [commandedZoom, setCommandedZoom] = useState(11);
   const [trackedZoom, setTrackedZoom] = useState(11);
+  const [clusterZoom, setClusterZoom] = useState(11);
   const [filtersOpen, setFiltersOpen] = useState(false);
+
+  const handleClusterZoom = useCallback((coords: [number, number]) => {
+    setMapCenter(coords);
+    setCommandedZoom(trackedZoom + 2);
+  }, [trackedZoom]);
 
   const handleCardClick = (propertyId: string) => {
     const prop = displayProperties.find(p => p.id === propertyId);
@@ -118,26 +185,21 @@ const MapPage: React.FC = () => {
     }
   };
 
-  const handleLikeToggle = (propertyId: string, isLiked: boolean) => {
-    setProperties(prev =>
-      prev.map(p => p.id === propertyId ? {
-        ...p,
-        is_liked_by_me: isLiked,
-        likes_count: isLiked ? p.likes_count + 1 : Math.max(0, p.likes_count - 1)
-      } : p)
-    );
-    setRecVersion(v => v + 1);
-  };
-
   const isZoomedOut = trackedZoom < ZOOM_THRESHOLD;
   const [properties, setProperties] = useState<Property[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasData, setHasData] = useState(false);
   const [currentBounds, setCurrentBounds] = useState<[number, number, number, number] | null>(null);
   const [aiRecs, setAiRecs] = useState<Property[]>([]);
-  const [recVersion, setRecVersion] = useState(0);
-  const [meta, setMeta] = useState<{ cities: string[]; materials: string[]; repair_types: string[]; property_types: string[] }>({
-    cities: [], materials: [], repair_types: [], property_types: []
+  const [recVersion] = useState(0);
+  const [meta, setMeta] = useState<{
+    cities: string[];
+    materials: string[];
+    repair_types: string[];
+    property_types: string[];
+    city_centers: Record<string, [number, number]>;
+  }>({
+    cities: [], materials: [], repair_types: [], property_types: [], city_centers: {},
   });
   const [draftFilters, setDraftFilters] = useState<MapFilters>(defaultMapFilters);
   const [appliedFilters, setAppliedFilters] = useState<MapFilters>(defaultMapFilters);
@@ -176,6 +238,7 @@ const MapPage: React.FC = () => {
         materials: data.materials || [],
         repair_types: data.repair_types || [],
         property_types: data.property_types || [],
+        city_centers: data.city_centers || {},
       });
     }).catch(() => {});
   }, []);
@@ -187,6 +250,17 @@ const MapPage: React.FC = () => {
       setAiRecs([]);
     }
   }, [isAuthenticated, recVersion]);
+
+  const clusterZoomTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (clusterZoomTimeoutRef.current) {
+      clearTimeout(clusterZoomTimeoutRef.current);
+    }
+    clusterZoomTimeoutRef.current = setTimeout(() => {
+      setClusterZoom(trackedZoom);
+    }, 150);
+  }, [trackedZoom]);
 
   const filteredAiRecs = useMemo(() => {
     if (!aiRecs.length) return [];
@@ -231,12 +305,16 @@ const MapPage: React.FC = () => {
   const clusteredMarkers = useMemo(() => {
     let visible = displayProperties;
 
+    if (currentBounds) {
+      visible = visible.filter(p => isWithinBounds(p, currentBounds));
+    }
+
     if (visible.length > MAX_VISIBLE) {
       visible = visible.slice(0, MAX_VISIBLE);
     }
 
-    return clusterProperties(visible, trackedZoom);
-  }, [displayProperties, trackedZoom]);
+    return clusterProperties(visible, clusterZoom);
+  }, [displayProperties, currentBounds, clusterZoom]);
 
   const buildParams = (f: MapFilters, bounds: [number, number, number, number] | null, offset: number) => {
     const params: Record<string, unknown> = {
@@ -287,18 +365,17 @@ const MapPage: React.FC = () => {
 
 
   const handleBoundsChange = useCallback((bounds: [number, number, number, number]) => {
-    setCurrentBounds(bounds);
-
-    if (suppressBoundsFetchRef.current) {
-      suppressBoundsFetchRef.current = false;
-      return;
-    }
-
     if (boundsTimeoutRef.current) {
       clearTimeout(boundsTimeoutRef.current);
     }
+    const shouldFetch = !suppressBoundsFetchRef.current;
+    suppressBoundsFetchRef.current = false;
+
     boundsTimeoutRef.current = setTimeout(() => {
-      fetchProperties(bounds, appliedFiltersRef.current);
+      setCurrentBounds(bounds);
+      if (shouldFetch) {
+        fetchProperties(bounds, appliedFiltersRef.current);
+      }
     }, 200);
   }, [fetchProperties]);
 
@@ -310,6 +387,9 @@ const MapPage: React.FC = () => {
     return () => {
       if (boundsTimeoutRef.current) {
         clearTimeout(boundsTimeoutRef.current);
+      }
+      if (clusterZoomTimeoutRef.current) {
+        clearTimeout(clusterZoomTimeoutRef.current);
       }
     };
   }, []);
@@ -331,21 +411,12 @@ const MapPage: React.FC = () => {
     const data = await fetchProperties(null, draftFilters);
 
     if (data.length > 0) {
-      const lats = data.map(p => p.lat);
-      const lons = data.map(p => p.lon);
-      const minLat = Math.min(...lats);
-      const maxLat = Math.max(...lats);
-      const minLon = Math.min(...lons);
-      const maxLon = Math.max(...lons);
-
-      if (draftFilters.cities.length > 0) {
-        const first = data[0];
-        setMapCenter([first.lon, first.lat]);
-      } else {
-        setMapCenter([(minLon + maxLon) / 2, (minLat + maxLat) / 2]);
+      const firstCity = data[0].city;
+      if (firstCity && meta.city_centers[firstCity]) {
+        setMapCenter(meta.city_centers[firstCity]);
+        setCommandedZoom(12);
+        setTrackedZoom(12);
       }
-      setCommandedZoom(11);
-      setTrackedZoom(11);
     }
   };
 
@@ -540,10 +611,9 @@ const MapPage: React.FC = () => {
               <PropertyCard
                 property={prop}
                 variant="horizontal"
-                showActions={true}
+                showActions={false}
                 isAuthenticated={isAuthenticated}
                 onClick={handleCardClick}
-                onLikeToggle={handleLikeToggle}
               />
             </div>
           ))}
@@ -557,31 +627,25 @@ const MapPage: React.FC = () => {
             if (item.count === 1 && item.property) {
               const p = item.property;
               return (
-                <YMapMarker
+                <MarkerItem
                   key={p.id}
+                  propertyId={p.id}
                   coordinates={item.coordinates}
-                  onClick={() => handleMarkerClick(p.id)}
                   isSelected={p.id === selectedPropertyId}
-                >
-                  {isZoomedOut && p.id !== selectedPropertyId ? (
-                    <div className="map-marker-pin" />
-                  ) : (
-                    <div className={`map-marker-label ${p.id === selectedPropertyId ? 'map-marker-label--selected' : ''}`}>
-                      <div className="map-marker-label__price">{Number(p.price).toLocaleString()} ₽</div>
-                      <div className="map-marker-label__address">{p.address}</div>
-                    </div>
-                  )}
-                </YMapMarker>
+                  isZoomedOut={isZoomedOut}
+                  price={Number(p.price)}
+                  address={p.address}
+                  onMarkerClick={handleMarkerClick}
+                />
               );
             }
             return (
-              <YMapMarker
+              <ClusterItem
                 key={`cluster-${index}`}
                 coordinates={item.coordinates}
-                onClick={() => handleClusterZoom(item.coordinates)}
-              >
-                <div className="map-cluster">{item.count}</div>
-              </YMapMarker>
+                count={item.count}
+                onClusterZoom={handleClusterZoom}
+              />
             );
           })}
         </YandexMap>
