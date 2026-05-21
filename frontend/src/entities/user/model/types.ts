@@ -1,4 +1,4 @@
-export type { User, UserPreferenceCreate, UserPreferenceOut } from '@shared/api/types';
+export type { User } from '@shared/api/types';
 
 export interface UserPreferenceBase {
   min_price?: number;

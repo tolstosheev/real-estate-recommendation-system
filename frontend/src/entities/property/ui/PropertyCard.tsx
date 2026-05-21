@@ -137,7 +137,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, variant = 'vertic
 
         <div className="property-card__body">
           <div className="property-card__price">
-            {Number(property.price).toLocaleString()} ₽
+            {Number(property.price).toLocaleString('ru-RU')} ₽
           </div>
         <h3 className="property-card__title">{property.title}</h3>
         <p className="property-card__address">

@@ -180,8 +180,8 @@ const Profile: React.FC = () => {
     try {
       const updatedUser = await authService.updateProfile({
         full_name: profileDraft.full_name.trim(),
-        phone_number: profileDraft.phone_number || undefined,
-        telegram_handle: profileDraft.telegram_handle || undefined,
+        phone_number: profileDraft.phone_number || null,
+        telegram_handle: profileDraft.telegram_handle || null,
       });
       dispatch(setCredentials({ user: updatedUser, token: localStorage.getItem('accessToken') || '' }));
       setProfileSuccess('Profile updated successfully');
@@ -320,7 +320,7 @@ const Profile: React.FC = () => {
               label="Material"
               options={meta.materials.map(m => ({ label: m, value: m }))}
               selected={prefs.material || []}
-              onChange={(v) => updatePref('material', v.length ? v : null)}
+              onChange={(v) => updatePref('material', v.length ? v : undefined)}
             />
           )}
 
@@ -329,7 +329,7 @@ const Profile: React.FC = () => {
               label="Repair type"
               options={meta.repair_types.map(r => ({ label: r, value: r }))}
               selected={prefs.repair_type || []}
-              onChange={(v) => updatePref('repair_type', v.length ? v : null)}
+              onChange={(v) => updatePref('repair_type', v.length ? v : undefined)}
             />
           )}
         </div>

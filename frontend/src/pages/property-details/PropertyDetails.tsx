@@ -143,7 +143,7 @@ const PropertyDetails: React.FC = () => {
               </div>
               <div className="content-header__right">
                 <div className="content-price">
-                  {Number(property.price).toLocaleString()} ₽
+                   {Number(property.price).toLocaleString('ru-RU')} ₽
                 </div>
                 <button
                   className={`like-button ${property.is_liked_by_me ? 'like-button--active' : ''}`}

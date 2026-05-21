@@ -1,0 +1,137 @@
+name: CI
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+    branches: [develop, main]
+
+env:
+  SECRET_KEY: ci-secret-key-not-for-production
+  YANDEX_API_KEY: test-key
+  PYTHONPATH: backend
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgis/postgis:15-3.3
+        env:
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: nestai_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      minio:
+        image: minio/minio:latest
+        env:
+          MINIO_ROOT_USER: minioadmin
+          MINIO_ROOT_PASSWORD: minioadmin
+        ports:
+          - 9000:9000
+        options: >-
+          --health-cmd "curl -f http://localhost:9000/minio/health/live || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpq-dev gdal-bin
+
+      - name: Install Python deps
+        run: |
+          cd backend
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Create test bucket in MinIO
+        run: |
+          pip install minio
+          python -c "
+          from minio import Minio
+          client = Minio('localhost:9000', access_key='minioadmin', secret_key='minioadmin', secure=False)
+          if not client.bucket_exists('nestai-images-test'):
+              client.make_bucket('nestai-images-test')
+          "
+
+      - name: Run tests with coverage
+        run: |
+          cd backend
+          pytest --cov=app --cov-report=term-missing --cov-report=html:coverage_html --cov-fail-under=90 -v
+        env:
+          TEST_DATABASE_URL: postgresql+asyncpg://user:password@localhost:5432/nestai_test
+          REDIS_URL: redis://localhost:6379/0
+          S3_ENDPOINT: http://localhost:9000
+          S3_ACCESS_KEY: minioadmin
+          S3_SECRET_KEY: minioadmin
+          S3_BUCKET: nestai-images-test
+          SECRET_KEY: ci-secret-key
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-coverage
+          path: backend/coverage_html/
+
+  frontend-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Lint
+        run: npx eslint src --ext .ts,.tsx || true
+
+      - name: Run tests with coverage
+        run: npx vitest --coverage --coverage.thresholds.lines=90
+        env:
+          VITE_YANDEX_MAPS_API_KEY: test-key
+          VITE_YANDEX_GEOCODER_API_KEY: test-key
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: frontend-coverage
+          path: frontend/coverage/

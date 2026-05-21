@@ -22,8 +22,8 @@ interface RegisterData {
 
 interface UpdateProfileData {
   full_name?: string;
-  phone_number?: string;
-  telegram_handle?: string;
+  phone_number?: string | null;
+  telegram_handle?: string | null;
 }
 
 export const authService = {
