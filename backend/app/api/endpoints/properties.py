@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import distinct, select
+from sqlalchemy import distinct, select, func
 from app.core.db import get_db
 from app.services.property_service import PropertyService
 from app.schemas.property import PropertyCreate, PropertyUpdate, PropertyOut
@@ -26,6 +26,15 @@ async def get_properties_meta(db: AsyncSession = Depends(get_db)):
     property_types = (await db.execute(select(distinct(Property.property_type)).where(Property.property_type.isnot(None)))).scalars().all()
     cities = (await db.execute(select(distinct(Property.city)).where(Property.city.isnot(None)).order_by(Property.city))).scalars().all()
 
+    city_centers_raw = (await db.execute(
+        select(
+            Property.city,
+            func.avg(func.ST_Y(Property.location)).label("lat"),
+            func.avg(func.ST_X(Property.location)).label("lon"),
+        ).where(Property.city.isnot(None)).group_by(Property.city)
+    )).all()
+    city_centers = {row.city: [float(row.lon), float(row.lat)] for row in city_centers_raw}
+
     return {
         "districts": [d for d in districts if d],
         "metro": [m for m in metro if m],
@@ -33,6 +42,7 @@ async def get_properties_meta(db: AsyncSession = Depends(get_db)):
         "repair_types": [r for r in repair_types if r],
         "property_types": [p for p in property_types if p],
         "cities": [c for c in cities if c],
+        "city_centers": city_centers,
     }
 
 
