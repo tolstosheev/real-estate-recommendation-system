@@ -3,7 +3,7 @@ from app.repositories.interactions_repository import InteractionRepository
 from app.repositories.property_repository import PropertyRepository
 from app.core.redis import RedisClient
 from typing import List
-from app.models.models import Property
+from app.models import Property
 
 
 class InteractionService:

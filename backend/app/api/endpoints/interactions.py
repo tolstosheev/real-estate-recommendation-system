@@ -6,7 +6,7 @@ from app.services.interactions_service import InteractionService
 from app.schemas.interactions import InteractionCreate
 from app.schemas.property import PropertyOut
 from app.core.security import get_current_user
-from app.models.models import User
+from app.models import User
 from typing import List
 
 router = APIRouter()

@@ -7,7 +7,7 @@ from app.core.redis import RedisClient
 import numpy as np
 import json
 from typing import List, Optional, Set
-from app.models.models import Property
+from app.models import Property
 
 
 class RecommendationService:

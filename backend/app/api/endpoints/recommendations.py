@@ -4,7 +4,7 @@ from app.core.db import get_db
 from app.services.recommendation_service import RecommendationService
 from app.schemas.property import PropertyOut
 from app.core.security import get_current_user
-from app.models.models import User
+from app.models import User
 from app.repositories.interactions_repository import InteractionRepository
 from typing import List
 

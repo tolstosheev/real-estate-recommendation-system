@@ -2,7 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import update, delete, func, cast
 from geoalchemy2 import Geography
-from app.models.models import Property
+from app.models import Property
 from typing import List, Optional
 
 

@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 from unittest.mock import AsyncMock, MagicMock, patch
 from app.services.recommendation_service import RecommendationService
-from app.models.models import Property
+from app.models import Property
 
 
 @pytest.fixture

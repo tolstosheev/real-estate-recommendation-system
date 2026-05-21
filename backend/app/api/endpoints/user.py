@@ -8,7 +8,7 @@ from app.services.auth_service import AuthService
 from app.schemas.auth import UserOut, UserUpdate
 from app.schemas.property import PropertyOut
 from app.core.security import get_current_user, get_current_user_optional
-from app.models.models import User, Property
+from app.models import User, Property
 from app.core.redis import RedisClient
 from sqlalchemy import select
 from typing import List

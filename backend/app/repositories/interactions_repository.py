@@ -2,7 +2,7 @@ from typing import List, Set
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import delete
-from app.models.models import Interaction, Property
+from app.models import Interaction, Property
 
 
 class InteractionRepository:

@@ -4,7 +4,7 @@ import jwt
 import bcrypt
 from app.repositories.user_repository import UserRepository
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.models.models import User
+from app.models import User
 from app.core.config import settings
 
 class AuthService:

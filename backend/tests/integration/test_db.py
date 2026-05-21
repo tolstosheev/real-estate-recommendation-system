@@ -1,7 +1,7 @@
 import pytest
 import uuid
 from sqlalchemy.future import select
-from app.models.models import Property, User
+from app.models import Property, User
 
 
 @pytest.mark.asyncio

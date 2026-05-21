@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import update
-from app.models.models import UserPreference
+from app.models import UserPreference
 
 
 class UserPreferenceRepository:

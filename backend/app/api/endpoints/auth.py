@@ -6,7 +6,7 @@ from app.services.auth_service import AuthService
 from app.schemas.auth import UserCreate, UserUpdate, Token, UserOut
 from app.schemas.auth_login import UserLogin
 from app.core.redis import RedisClient
-from app.models.models import Property
+from app.models import Property
 from sqlalchemy import select
 
 router = APIRouter()

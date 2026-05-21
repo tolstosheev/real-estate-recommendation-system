@@ -1,6 +1,6 @@
 import asyncio
 from app.core.db import engine
-from app.models.models import Base
+from app.models import Base
 
 async def create_tables():
     async with engine.begin() as conn:

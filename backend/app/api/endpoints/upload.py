@@ -1,7 +1,7 @@
 import logging
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Response
 from app.core.security import get_current_user
-from app.models.models import User
+from app.models import User
 from app.services.image_service import ImageService
 
 logger = logging.getLogger(__name__)

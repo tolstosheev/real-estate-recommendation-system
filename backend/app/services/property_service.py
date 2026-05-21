@@ -5,7 +5,7 @@ from app.repositories.user_repository import UserRepository
 from app.services.geocoding_service import GeocodingService
 from app.core.redis import RedisClient
 from app.core.category import compute_category
-from app.models.models import Property, Interaction
+from app.models import Property, Interaction
 from typing import List, Optional
 import json
 import hashlib
