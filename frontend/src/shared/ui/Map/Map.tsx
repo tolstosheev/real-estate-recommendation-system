@@ -12,11 +12,23 @@ interface MapProps {
 
 type YMapsComponents = Awaited<ReturnType<typeof getYmapsComponents>>;
 
+interface LatLonProvider {
+  getLat?: () => number;
+  getLon?: () => number;
+  getLng?: () => number;
+}
+
+interface BoundsProvider {
+  getNorthEast?: () => { lat: number; lon: number } | { getLat: () => number; getLon: () => number };
+  getSouthWest?: () => { lat: number; lon: number } | { getLat: () => number; getLon: () => number };
+}
+
 function extractLat(v: unknown): number | undefined {
   if (!v || typeof v !== 'object') return undefined;
   const o = v as Record<string, unknown>;
   if (typeof o.lat === 'number') return o.lat;
-  if (typeof (o as any).getLat === 'function') return (o as any).getLat();
+  const provider = o as LatLonProvider;
+  if (typeof provider.getLat === 'function') return provider.getLat();
   return undefined;
 }
 
@@ -26,8 +38,9 @@ function extractLon(v: unknown): number | undefined {
   if (typeof o.lon === 'number') return o.lon;
   if (typeof o.lng === 'number') return o.lng;
   if (typeof o.longitude === 'number') return o.longitude;
-  if (typeof (o as any).getLon === 'function') return (o as any).getLon();
-  if (typeof (o as any).getLng === 'function') return (o as any).getLng();
+  const provider = o as LatLonProvider;
+  if (typeof provider.getLon === 'function') return provider.getLon();
+  if (typeof provider.getLng === 'function') return provider.getLng();
   return undefined;
 }
 
@@ -64,9 +77,10 @@ const YandexMap: React.FC<MapProps> = ({ center = [37.6173, 55.7558], zoom = 11,
       sw = tryNE(o.southWest);
     }
 
-    if ((!ne || !sw) && typeof (o as any).getNorthEast === 'function') {
-      ne = tryNE((o as any).getNorthEast());
-      sw = tryNE((o as any).getSouthWest());
+    const boundsProvider = o as BoundsProvider;
+    if ((!ne || !sw) && typeof boundsProvider.getNorthEast === 'function') {
+      ne = tryNE(boundsProvider.getNorthEast());
+      sw = tryNE(boundsProvider.getSouthWest());
     }
 
     if (ne && sw) {

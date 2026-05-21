@@ -1,7 +1,7 @@
 def compute_category(property_type: str, rooms: int) -> str:
     """
     Compute property category based on property_type and rooms count.
-    
+
     Logic:
     - Special types (Studio, Penthouse, Loft, Duplex) return the type itself.
     - For other types, rooms 1-5 return "{rooms}-bedroom".

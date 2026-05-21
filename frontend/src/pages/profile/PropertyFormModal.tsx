@@ -1,15 +1,16 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import Modal from '@shared/ui/Modal';
 import Button from '@shared/ui/Button';
 import { propertyService } from '@shared/api/properties.service';
-import { geocodeAddress, type GeocoderResult } from '@shared/api/geocoder.service';
 import { ImageUploader } from '@features/property/upload-images';
 import {
   PROPERTY_TYPES, PROPERTY_PURPOSES, MATERIALS, REPAIR_TYPES, ROOM_TYPES,
   NEW_BUILDING_OPTIONS, BALCONY_OPTIONS, PARKING_OPTIONS, EMPTY_FORM, validatePropertyForm,
+  useAddressAutocomplete,
 } from '@features/property/propertyForm';
 import { useAppSelector } from '@app/store/hooks';
 import type { Property } from '@shared/api/types';
+import type { GeocoderResult } from '@shared/api/geocoder.service';
 import './PropertyFormModal.scss';
 
 interface PropertyFormModalProps {
@@ -29,11 +30,9 @@ const PropertyFormModal: React.FC<PropertyFormModalProps> = ({ isOpen, onClose, 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const [addressSuggestions, setAddressSuggestions] = useState<GeocoderResult[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const suggestionsRef = useRef<HTMLDivElement>(null);
   const [metroOptions, setMetroOptions] = useState<string[]>([]);
-  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const { addressSuggestions, showSuggestions, suggestionsRef, handleAddressChange, selectAddressSuggestion } = useAddressAutocomplete();
 
   useEffect(() => {
     propertyService.getMeta().then(data => {
@@ -79,63 +78,28 @@ const PropertyFormModal: React.FC<PropertyFormModalProps> = ({ isOpen, onClose, 
     }
   }, [isOpen, property]);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node)) {
-        setShowSuggestions(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-    };
-  }, []);
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setFormData(prev => ({ ...prev, address: value }));
-
-    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-
-    if (value.length < 3) {
-      setAddressSuggestions([]);
-      setShowSuggestions(false);
-      return;
-    }
-
-    debounceTimerRef.current = setTimeout(async () => {
-      try {
-        const result = await geocodeAddress(value);
-        if (result) {
-          setAddressSuggestions([result]);
-          setShowSuggestions(true);
-        }
-      } catch {
-        setAddressSuggestions([]);
-      }
-    }, 300);
+  const handleAddressChangeEvent = (e: React.ChangeEvent<HTMLInputElement>) => {
+    handleAddressChange(e.target.value, (address) => {
+      setFormData(prev => ({ ...prev, address }));
+    });
   };
 
-  const selectAddressSuggestion = (result: GeocoderResult) => {
-    setFormData(prev => ({
-      ...prev,
-      address: result.formattedAddress || result.address,
-      lat: result.lat.toString(),
-      lon: result.lon.toString(),
-      district: result.district || prev.district,
-      metro: result.metro || prev.metro,
-    }));
-    setShowSuggestions(false);
-    setAddressSuggestions([]);
+  const handleSelectSuggestion = (result: GeocoderResult) => {
+    selectAddressSuggestion(result, (selected) => {
+      setFormData(prev => ({
+        ...prev,
+        address: selected.formattedAddress || selected.address,
+        lat: selected.lat.toString(),
+        lon: selected.lon.toString(),
+        district: selected.district || prev.district,
+        metro: selected.metro || prev.metro,
+      }));
+    });
   };
 
   const buildPayload = () => ({
@@ -328,11 +292,11 @@ const PropertyFormModal: React.FC<PropertyFormModalProps> = ({ isOpen, onClose, 
               <div className="pf-field pf-field--wide" ref={suggestionsRef}>
                 <label>Address <span className="pf-required">*</span></label>
                 <div className="pf-address-wrapper">
-                  <input name="address" placeholder="Start typing address..." value={formData.address} onChange={handleAddressChange} required />
+                  <input name="address" placeholder="Start typing address..." value={formData.address} onChange={handleAddressChangeEvent} required />
                   {showSuggestions && addressSuggestions.length > 0 && (
                     <div className="pf-suggestions">
                       {addressSuggestions.map((s, i) => (
-                        <div key={i} className="pf-suggestion-item" onClick={() => selectAddressSuggestion(s)}>
+                        <div key={i} className="pf-suggestion-item" onClick={() => handleSelectSuggestion(s)}>
                           {s.formattedAddress || s.address}
                         </div>
                       ))}

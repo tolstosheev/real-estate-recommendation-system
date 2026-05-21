@@ -46,7 +46,7 @@ async def test_update_user_profile_unauthorized(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_get_user_by_id(client: AsyncClient, auth_headers):
     headers, user_id = auth_headers
-    res = await client.get(f"/user/{user_id}")
+    res = await client.get(f"/user/{user_id}", headers=headers)
     assert res.status_code == 200
     data = res.json()
     assert "email" in data
@@ -54,8 +54,9 @@ async def test_get_user_by_id(client: AsyncClient, auth_headers):
 
 
 @pytest.mark.asyncio
-async def test_get_user_not_found(client: AsyncClient):
-    res = await client.get("/user/00000000-0000-0000-0000-000000000000")
+async def test_get_user_not_found(client: AsyncClient, auth_headers):
+    headers, _ = auth_headers
+    res = await client.get("/user/00000000-0000-0000-0000-000000000000", headers=headers)
     assert res.status_code == 404
 
 

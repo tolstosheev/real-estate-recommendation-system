@@ -1,7 +1,7 @@
-from app.models.user import User, UserPreference
-from app.models.property import Property
 from app.models.interaction import Interaction
-from app.models.reference import Material, RepairType, District, MetroStation
+from app.models.property import Property
+from app.models.reference import District, Material, MetroStation, RepairType
+from app.models.user import User, UserPreference
 
 __all__ = [
     "User",

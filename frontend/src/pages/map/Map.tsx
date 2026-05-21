@@ -2,17 +2,17 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppSelector } from '@app/store/hooks';
 import YandexMap from '@shared/ui/Map';
-import YMapMarker from '@shared/ui/Map/YMapMarker';
 import PropertyCard from '@entities/property/ui/PropertyCard';
 import Modal from '@shared/ui/Modal';
 import type { Property } from '@shared/api/types';
 import { propertyService } from '@shared/api/properties.service';
 import { recommendationsService } from '@shared/api/recommendations.service';
 import api from '@shared/api/api';
-import RangeSlider from '@shared/ui/RangeSlider';
-import CheckboxGroup from '@shared/ui/CheckboxGroup';
+import FilterPanel from '@widgets/FilterPanel';
 import { parseFilters, filtersToSearchParams } from '@shared/utils/filterParams';
 import type { FilterValues } from '@shared/utils/filterParams';
+import { MarkerItem, ClusterItem } from './ui';
+import { isWithinBounds, clusterProperties, MAX_VISIBLE } from './utils';
 import './Map.scss';
 
 type MapFilters = FilterValues;
@@ -35,118 +35,29 @@ const ALL_PROPERTIES_LIMIT = 10000;
 const ZOOM_THRESHOLD = 13;
 const SESSION_KEY = 'nestai_map_position';
 
-const isWithinBounds = (p: Property, bounds: [number, number, number, number]) => {
-  const [north, east, south, west] = bounds;
-  if (p.lat == null || p.lon == null) return false;
-  return p.lat >= south && p.lat <= north && p.lon >= west && p.lon <= east;
-};
-
-const CLUSTER_MAX_ZOOM = 14;
-const CLUSTER_BASE_CELL = 200;
-const MAX_VISIBLE = 2000;
-
-interface ClusteredItem {
-  coordinates: [number, number];
-  count: number;
-  property: Property | null;
-}
-
-function clusterProperties(properties: Property[], zoom: number): ClusteredItem[] {
-  if (zoom >= CLUSTER_MAX_ZOOM || !properties.length) {
-    return properties.map(p => ({ coordinates: [p.lon, p.lat], count: 1, property: p }));
-  }
-
-  const cellSize = CLUSTER_BASE_CELL / Math.pow(2, zoom);
-  const grid = new Map<string, { sumLat: number; sumLon: number; count: number; property: Property | null }>();
-
-  for (const p of properties) {
-    const gx = Math.floor(p.lon / cellSize);
-    const gy = Math.floor(p.lat / cellSize);
-    const key = `${gx}:${gy}`;
-
-    if (!grid.has(key)) {
-      grid.set(key, { sumLat: p.lat, sumLon: p.lon, count: 1, property: p });
-    } else {
-      const c = grid.get(key)!;
-      c.sumLat += p.lat;
-      c.sumLon += p.lon;
-      c.count++;
-      c.property = null;
+function loadSavedPosition(): { lon: number; lat: number; zoom: number } | null {
+  try {
+    const saved = sessionStorage.getItem(SESSION_KEY);
+    if (saved) {
+      const data = JSON.parse(saved);
+      if (typeof data.lon === 'number' && typeof data.lat === 'number' && typeof data.zoom === 'number'
+        && isFinite(data.lon) && isFinite(data.lat) && isFinite(data.zoom)) {
+        return data;
+      }
     }
+  } catch {
+    // ignore session storage errors
   }
-
-  return Array.from(grid.values()).map(c => ({
-    coordinates: [c.sumLon / c.count, c.sumLat / c.count],
-    count: c.count,
-    property: c.property,
-  }));
+  return null;
 }
 
-interface MarkerItemProps {
-  coordinates: [number, number];
-  isSelected: boolean;
-  isZoomedOut: boolean;
-  propertyId: string;
-  price: number;
-  address: string;
-  onMarkerClick: (id: string) => void;
+function savePosition(lon: number, lat: number, zoom: number): void {
+  try {
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify({ lon, lat, zoom }));
+  } catch {
+    // ignore session storage errors
+  }
 }
-
-const MarkerItem = React.memo(function MarkerItem({
-  coordinates, isSelected, isZoomedOut, propertyId, price, address, onMarkerClick,
-}: MarkerItemProps) {
-  const handleClick = useCallback(() => onMarkerClick(propertyId), [onMarkerClick, propertyId]);
-  return (
-    <YMapMarker
-      coordinates={coordinates}
-      onClick={handleClick}
-      isSelected={isSelected}
-    >
-      {isZoomedOut && !isSelected ? (
-        <div className="map-marker-pin" />
-      ) : (
-        <div className={`map-marker-label ${isSelected ? 'map-marker-label--selected' : ''}`}>
-          <div className="map-marker-label__price">{price.toLocaleString()} ₽</div>
-          <div className="map-marker-label__address">{address}</div>
-        </div>
-      )}
-    </YMapMarker>
-  );
-}, (prev, next) => {
-  return prev.propertyId === next.propertyId
-    && prev.isSelected === next.isSelected
-    && prev.isZoomedOut === next.isZoomedOut
-    && prev.coordinates[0] === next.coordinates[0]
-    && prev.coordinates[1] === next.coordinates[1]
-    && prev.price === next.price
-    && prev.address === next.address
-    && prev.onMarkerClick === next.onMarkerClick;
-});
-
-interface ClusterItemProps {
-  coordinates: [number, number];
-  count: number;
-  onClusterZoom: (coords: [number, number]) => void;
-}
-
-const ClusterItem = React.memo(function ClusterItem({
-  coordinates, count, onClusterZoom,
-}: ClusterItemProps) {
-  const handleClick = useCallback(() => onClusterZoom(coordinates), [onClusterZoom, coordinates[0], coordinates[1]]);
-  return (
-    <YMapMarker
-      coordinates={coordinates}
-      onClick={handleClick}
-    >
-      <div className="map-cluster">{count}</div>
-    </YMapMarker>
-  );
-}, (prev, next) => {
-  return prev.count === next.count
-    && prev.coordinates[0] === next.coordinates[0]
-    && prev.coordinates[1] === next.coordinates[1]
-    && prev.onClusterZoom === next.onClusterZoom;
-});
 
 const MapPage: React.FC = () => {
   const navigate = useNavigate();
@@ -158,34 +69,17 @@ const MapPage: React.FC = () => {
 
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
   const [mapCenter, setMapCenter] = useState<[number, number]>(() => {
-    try {
-      const saved = sessionStorage.getItem(SESSION_KEY);
-      if (saved) {
-        const { lon, lat } = JSON.parse(saved);
-        if (typeof lon === 'number' && typeof lat === 'number' && isFinite(lon) && isFinite(lat)) return [lon, lat];
-      }
-    } catch {}
+    const saved = loadSavedPosition();
+    if (saved) return [saved.lon, saved.lat];
     return [37.6173, 55.7558];
   });
   const [commandedZoom, setCommandedZoom] = useState(() => {
-    try {
-      const saved = sessionStorage.getItem(SESSION_KEY);
-      if (saved) {
-        const { zoom } = JSON.parse(saved);
-        if (typeof zoom === 'number' && isFinite(zoom)) return zoom;
-      }
-    } catch {}
-    return 11;
+    const saved = loadSavedPosition();
+    return saved?.zoom ?? 11;
   });
   const [trackedZoom, setTrackedZoom] = useState(() => {
-    try {
-      const saved = sessionStorage.getItem(SESSION_KEY);
-      if (saved) {
-        const { zoom } = JSON.parse(saved);
-        if (typeof zoom === 'number' && isFinite(zoom)) return zoom;
-      }
-    } catch {}
-    return 11;
+    const saved = loadSavedPosition();
+    return saved?.zoom ?? 11;
   });
   const trackedZoomRef = useRef(trackedZoom);
   const isFirstPositionSaveRef = useRef(true);
@@ -212,7 +106,6 @@ const MapPage: React.FC = () => {
   const [hasData, setHasData] = useState(false);
   const [currentBounds, setCurrentBounds] = useState<[number, number, number, number] | null>(null);
   const [aiRecs, setAiRecs] = useState<Property[]>([]);
-  const [recVersion] = useState(0);
   const [meta, setMeta] = useState<{
     cities: string[];
     materials: string[];
@@ -226,7 +119,6 @@ const MapPage: React.FC = () => {
   const [draftFilters, setDraftFilters] = useState<MapFilters>(() =>
     parseFilters(new URLSearchParams(window.location.search), defaultMapFilters)
   );
-  const [openSections, setOpenSections] = useState<Set<string>>(new Set());
   const boundsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasInitialFetch = useRef(false);
   const suppressBoundsFetchRef = useRef(true);
@@ -239,8 +131,7 @@ const MapPage: React.FC = () => {
     if (!hasInitialFetch.current) {
       hasInitialFetch.current = true;
 
-      let hasSavedPosition = false;
-      try { hasSavedPosition = !!sessionStorage.getItem(SESSION_KEY); } catch {}
+      const hasSavedPosition = loadSavedPosition() !== null;
 
       if (!hasSavedPosition && 'geolocation' in navigator) {
         navigator.geolocation.getCurrentPosition(
@@ -249,7 +140,7 @@ const MapPage: React.FC = () => {
             setCommandedZoom(12);
             setTrackedZoom(12);
           },
-          () => {},
+          () => { /* geolocation error, keep defaults */ },
           { timeout: 5000, enableHighAccuracy: false }
         );
       }
@@ -257,6 +148,8 @@ const MapPage: React.FC = () => {
       setCurrentBounds(null);
       fetchProperties(null, urlFiltersRef.current);
     }
+  // mount-only fetch; deps change would cause duplicate requests
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // URL change → re-fetch (skip initial mount)
@@ -279,16 +172,16 @@ const MapPage: React.FC = () => {
         property_types: data.property_types || [],
         city_centers: data.city_centers || {},
       });
-    }).catch(() => {});
+    }).catch(() => { /* meta fetch is optional */ });
   }, []);
 
   useEffect(() => {
     if (isAuthenticated) {
-      recommendationsService.getRecommendations().then(setAiRecs).catch(() => {});
+      recommendationsService.getRecommendations().then(setAiRecs).catch(() => { /* recs fetch is optional */ });
     } else {
       setAiRecs([]);
     }
-  }, [isAuthenticated, recVersion]);
+  }, [isAuthenticated]);
 
   useEffect(() => { trackedZoomRef.current = trackedZoom; }, [trackedZoom]);
 
@@ -308,13 +201,7 @@ const MapPage: React.FC = () => {
       isFirstPositionSaveRef.current = false;
       return;
     }
-    try {
-      sessionStorage.setItem(SESSION_KEY, JSON.stringify({
-        lon: mapCenter[0],
-        lat: mapCenter[1],
-        zoom: commandedZoom,
-      }));
-    } catch {}
+    savePosition(mapCenter[0], mapCenter[1], commandedZoom);
   }, [mapCenter, commandedZoom]);
 
   const filteredAiRecs = useMemo(() => {
@@ -431,13 +318,7 @@ const MapPage: React.FC = () => {
       if (shouldFetch) {
         const centerLat = (bounds[0] + bounds[2]) / 2;
         const centerLon = (bounds[1] + bounds[3]) / 2;
-        try {
-          sessionStorage.setItem(SESSION_KEY, JSON.stringify({
-            lon: centerLon,
-            lat: centerLat,
-            zoom: trackedZoomRef.current,
-          }));
-        } catch {}
+        savePosition(centerLon, centerLat, trackedZoomRef.current);
         fetchProperties(bounds, urlFiltersRef.current);
       }
     }, 200);
@@ -469,7 +350,6 @@ const MapPage: React.FC = () => {
     }
     setSearchParams(filtersToSearchParams(draftFilters, '', defaultMapFilters));
     setFiltersOpen(false);
-    setOpenSections(new Set());
 
     setCurrentBounds(null);
     const data = await fetchProperties(null, draftFilters);
@@ -484,20 +364,10 @@ const MapPage: React.FC = () => {
     }
   };
 
-  const toggleSection = (section: string) => {
-    setOpenSections(prev => {
-      const next = new Set(prev);
-      if (next.has(section)) next.delete(section);
-      else next.add(section);
-      return next;
-    });
-  };
-
   const resetFilters = async () => {
     setDraftFilters(defaultMapFilters);
     setSearchParams(filtersToSearchParams(defaultMapFilters, '', defaultMapFilters));
     setFiltersOpen(false);
-    setOpenSections(new Set());
     setCurrentBounds(null);
     const data = await fetchProperties(null, defaultMapFilters);
     if (data.length > 0) {
@@ -525,136 +395,6 @@ const MapPage: React.FC = () => {
     if (f.isNew.length) count++;
     return count;
   }, [urlFilters]);
-
-  const renderFilterContent = () => (
-    <>
-      <div className="filter-section filter-section--open">
-        <div className="filter-section__header" onClick={() => toggleSection('main')}>
-          <span>Main</span>
-          <span className="filter-section__arrow">{openSections.has('main') ? '▼' : '▶'}</span>
-        </div>
-        <div className="filter-section__body">
-
-          <RangeSlider
-            label="Price"
-            min={0}
-            max={50000000}
-            step={100000}
-            value={draftFilters.priceRange}
-            onChange={(v) => handleDraftChange('priceRange', v)}
-            formatLabel={(v) => `${(v / 1000000).toFixed(1)}M ₽`}
-          />
-
-          <CheckboxGroup
-            label="Rooms"
-            options={[
-              { label: '1', value: '1' },
-              { label: '2', value: '2' },
-              { label: '3', value: '3' },
-              { label: '4+', value: '4' },
-            ]}
-            selected={draftFilters.rooms.map(String)}
-            onChange={(v) => handleDraftChange('rooms', v.map(Number))}
-          />
-
-          <CheckboxGroup
-            label="Property type"
-            options={meta.property_types.map(t => ({ label: t, value: t }))}
-            selected={draftFilters.propertyTypes}
-            onChange={(v) => handleDraftChange('propertyTypes', v)}
-          />
-
-          <CheckboxGroup
-            label="Purpose"
-            options={[
-              { label: 'Sale', value: 'sale' },
-              { label: 'Rent', value: 'rent' },
-              { label: 'Daily rent', value: 'daily_rent' },
-            ]}
-            selected={draftFilters.propertyPurposes}
-            onChange={(v) => handleDraftChange('propertyPurposes', v)}
-          />
-
-        </div>
-      </div>
-
-      <div className={`filter-section ${openSections.has('location') ? 'filter-section--open' : ''}`}>
-        <div className="filter-section__header" onClick={() => toggleSection('location')}>
-          <span>Location</span>
-          <span className="filter-section__arrow">{openSections.has('location') ? '▼' : '▶'}</span>
-        </div>
-        <div className="filter-section__body">
-
-          <CheckboxGroup
-            label="City"
-            options={meta.cities.map(c => ({ label: c, value: c }))}
-            selected={draftFilters.cities}
-            onChange={(v) => handleDraftChange('cities', v)}
-          />
-
-        </div>
-      </div>
-
-      <div className={`filter-section ${openSections.has('details') ? 'filter-section--open' : ''}`}>
-        <div className="filter-section__header" onClick={() => toggleSection('details')}>
-          <span>Details</span>
-          <span className="filter-section__arrow">{openSections.has('details') ? '▼' : '▶'}</span>
-        </div>
-        <div className="filter-section__body">
-
-          <RangeSlider
-            label="Area (m²)"
-            min={0}
-            max={300}
-            step={5}
-            value={draftFilters.areaRange}
-            onChange={(v) => handleDraftChange('areaRange', v)}
-            formatLabel={(v) => `${v} m²`}
-          />
-
-          <RangeSlider
-            label="Build year"
-            min={1960}
-            max={2025}
-            step={1}
-            value={draftFilters.buildYearRange}
-            onChange={(v) => handleDraftChange('buildYearRange', v)}
-          />
-
-          <CheckboxGroup
-            label="Material"
-            options={meta.materials.map(m => ({ label: m, value: m }))}
-            selected={draftFilters.materials}
-            onChange={(v) => handleDraftChange('materials', v)}
-          />
-
-          <CheckboxGroup
-            label="Repair type"
-            options={meta.repair_types.map(r => ({ label: r, value: r }))}
-            selected={draftFilters.repairTypes}
-            onChange={(v) => handleDraftChange('repairTypes', v)}
-          />
-
-          <CheckboxGroup
-            label="Building type"
-            options={[
-              { label: 'New building', value: 'new building' },
-              { label: 'Secondary', value: 'secondary' },
-              { label: 'Under construction', value: 'under construction' },
-            ]}
-            selected={draftFilters.isNew}
-            onChange={(v) => handleDraftChange('isNew', v)}
-          />
-
-        </div>
-      </div>
-
-      <div className="map-filters-modal__actions">
-        <button className="map-filters__reset-btn" onClick={resetFilters}>Reset</button>
-        <button className="map-filters__apply-btn" onClick={applyFilters}>Apply Filters</button>
-      </div>
-    </>
-  );
 
   return (
     <div className="map-page">
@@ -728,7 +468,13 @@ const MapPage: React.FC = () => {
         </YandexMap>
 
         <Modal isOpen={filtersOpen} onClose={() => setFiltersOpen(false)} title="Filters">
-          {renderFilterContent()}
+          <FilterPanel
+            filters={draftFilters}
+            meta={{ cities: meta.cities, materials: meta.materials, repair_types: meta.repair_types, property_types: meta.property_types }}
+            onFilterChange={handleDraftChange}
+            onApply={applyFilters}
+            onReset={resetFilters}
+          />
         </Modal>
       </main>
     </div>

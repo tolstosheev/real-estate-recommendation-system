@@ -1,11 +1,11 @@
 import asyncio
 import random
 import uuid
-from datetime import datetime, timezone
-from decimal import Decimal
+from datetime import UTC, datetime
+
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import text
 
 CITIES = {
     # International
@@ -315,7 +315,7 @@ async def generate_property(city_name, city_data, user_id, prop_num):
         "parking": random.choice(["yes", "no", "underground", "guest"]),
         "views_count": random.randint(0, 1500),
         "likes_count": random.randint(0, 300),
-        "created_at": datetime.now(timezone.utc),
+        "created_at": datetime.now(UTC),
     }
 
 
@@ -362,20 +362,18 @@ async def populate():
     properties = []
     prop_num = 0
 
-    geocode_errors = 0
-
     print(f"\nGenerating {TOTAL_PROPERTIES} properties...")
 
     for city_name, city_data in CITIES.items():
         print(f"\n  {city_name}, {city_data['country']} ({PROPERTIES_PER_CITY} props)...", end=" ")
 
-        for i in range(PROPERTIES_PER_CITY):
+        for _i in range(PROPERTIES_PER_CITY):
             user_id = random.choice(user_ids)
             prop = await generate_property(city_name, city_data, user_id, prop_num)
             properties.append(prop)
             prop_num += 1
 
-        print(f"done")
+        print("done")
 
     random.shuffle(properties)
 
@@ -411,7 +409,7 @@ async def populate():
     print(f"  Total properties: {TOTAL_PROPERTIES}")
     print(f"  Cities: {len(CITIES)}")
     print(f"  Users: {len(USERS)}")
-    print(f"  Users IDs:")
+    print("  Users IDs:")
     for uid in user_ids:
         print(f"    {uid}")
     print(f"{'=' * 60}")

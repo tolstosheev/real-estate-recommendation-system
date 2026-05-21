@@ -1,6 +1,7 @@
-from pydantic import BaseModel, ConfigDict, Field
-from uuid import UUID
 from typing import Literal
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class InteractionCreate(BaseModel):

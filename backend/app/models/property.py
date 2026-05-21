@@ -1,8 +1,10 @@
 import uuid
-from sqlalchemy import Column, String, Numeric, Integer, ForeignKey, DateTime, ARRAY
-from sqlalchemy.dialects.postgresql import UUID
+
 from geoalchemy2 import Geometry
+from sqlalchemy import ARRAY, Column, DateTime, ForeignKey, Integer, Numeric, String
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
+
 from app.core.db import Base
 
 

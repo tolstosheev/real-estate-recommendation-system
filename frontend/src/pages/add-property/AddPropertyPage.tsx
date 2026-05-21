@@ -1,12 +1,13 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '@app/store/hooks';
 import { propertyService } from '@shared/api/properties.service';
-import { geocodeAddress, type GeocoderResult } from '@shared/api/geocoder.service';
+import type { GeocoderResult } from '@shared/api/geocoder.service';
 import { ImageUploader } from '@features/property/upload-images';
 import {
   PROPERTY_TYPES, PROPERTY_PURPOSES, MATERIALS, REPAIR_TYPES, ROOM_TYPES,
   NEW_BUILDING_OPTIONS, BALCONY_OPTIONS, PARKING_OPTIONS, validatePropertyForm,
+  useAddressAutocomplete,
 } from '@features/property/propertyForm';
 import type { Property } from '@shared/api/types';
 import styles from './AddPropertyPage.module.css';
@@ -45,11 +46,9 @@ export const AddPropertyPage: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   
-  const [addressSuggestions, setAddressSuggestions] = useState<GeocoderResult[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const suggestionsRef = useRef<HTMLDivElement>(null);
   const [metroOptions, setMetroOptions] = useState<string[]>([]);
-  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const { addressSuggestions, showSuggestions, suggestionsRef, handleAddressChange, selectAddressSuggestion } = useAddressAutocomplete();
 
   useEffect(() => {
     propertyService.getMeta().then(data => {
@@ -62,58 +61,23 @@ export const AddPropertyPage: React.FC = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node)) {
-        setShowSuggestions(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-    };
-  }, []);
-
-  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setFormData(prev => ({ ...prev, address: value }));
-
-    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-
-    if (value.length < 3) {
-      setAddressSuggestions([]);
-      setShowSuggestions(false);
-      return;
-    }
-
-    debounceTimerRef.current = setTimeout(async () => {
-      try {
-        const result = await geocodeAddress(value);
-        if (result) {
-          setAddressSuggestions([result]);
-          setShowSuggestions(true);
-        }
-      } catch {
-        setAddressSuggestions([]);
-      }
-    }, 300);
+  const handleAddressChangeEvent = (e: React.ChangeEvent<HTMLInputElement>) => {
+    handleAddressChange(e.target.value, (address) => {
+      setFormData(prev => ({ ...prev, address }));
+    });
   };
 
-  const selectAddressSuggestion = (result: GeocoderResult) => {
-    setFormData(prev => ({
-      ...prev,
-      address: result.formattedAddress || result.address,
-      lat: result.lat.toString(),
-      lon: result.lon.toString(),
-      district: result.district || prev.district,
-      metro: result.metro || prev.metro,
-    }));
-    setShowSuggestions(false);
-    setAddressSuggestions([]);
+  const handleSelectSuggestion = (result: GeocoderResult) => {
+    selectAddressSuggestion(result, (selected) => {
+      setFormData(prev => ({
+        ...prev,
+        address: selected.formattedAddress || selected.address,
+        lat: selected.lat.toString(),
+        lon: selected.lon.toString(),
+        district: selected.district || prev.district,
+        metro: selected.metro || prev.metro,
+      }));
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -291,11 +255,11 @@ export const AddPropertyPage: React.FC = () => {
             <div className={styles.formGroup} ref={suggestionsRef}>
               <label className={styles.required}>Address</label>
               <div className={styles.addressWrapper}>
-                <input name="address" placeholder="Start typing address..." value={formData.address} onChange={handleAddressChange} required />
+                <input name="address" placeholder="Start typing address..." value={formData.address} onChange={handleAddressChangeEvent} required />
                 {showSuggestions && addressSuggestions.length > 0 && (
                   <div className={styles.suggestions}>
                     {addressSuggestions.map((s, i) => (
-                      <div key={i} className={styles.suggestionItem} onClick={() => selectAddressSuggestion(s)}>
+                      <div key={i} className={styles.suggestionItem} onClick={() => handleSelectSuggestion(s)}>
                         {s.formattedAddress || s.address}
                       </div>
                     ))}

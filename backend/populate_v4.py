@@ -1,11 +1,12 @@
 import asyncio
 import random
 import uuid
-from datetime import datetime, timezone, timedelta
-from decimal import Decimal
+from datetime import UTC, datetime, timedelta
+
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import text
+
 from app.core.category import compute_category
 
 CITIES = {
@@ -315,7 +316,7 @@ async def generate_property(city_name: str, city_data: dict, user_id: str, prop_
     sq_living = round(area * random.uniform(0.5, 0.8), 1)
     sq_kitchen = round(random.uniform(6, 20), 1)
 
-    created_at = datetime.now(timezone.utc) - timedelta(days=random.randint(0, 730))
+    created_at = datetime.now(UTC) - timedelta(days=random.randint(0, 730))
 
     return {
         "id": str(uuid.uuid4()),
@@ -394,7 +395,7 @@ async def populate():
 
     for city_name, city_data in CITIES.items():
         print(f"\n  {city_name} ({PROPERTIES_PER_CITY} props)...", end=" ")
-        for i in range(PROPERTIES_PER_CITY):
+        for _i in range(PROPERTIES_PER_CITY):
             user_id = random.choice(agent_ids) if random.random() > 0.4 else random.choice(owner_ids)
             prop = await generate_property(city_name, city_data, user_id, prop_num)
             properties.append(prop)
@@ -433,7 +434,7 @@ async def populate():
     print(f"  Total properties: {total}")
     print(f"  Cities: {len(CITIES)}")
     print(f"  Users: {len(USERS)}")
-    print(f"  User IDs:")
+    print("  User IDs:")
     for uid in user_ids:
         print(f"    {uid}")
     print(f"{'=' * 60}")
