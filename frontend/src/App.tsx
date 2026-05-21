@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Outlet, Navigate } from 'react-router-dom';
-import { useAppSelector } from '@app/store/hooks';
+import { useAppSelector, useAppDispatch } from '@app/store/hooks';
+import { logout } from '@entities/user/model/slice';
 import Login from '@pages/auth/login';
 import Register from '@pages/auth/register';
 import Onboarding from '@pages/onboarding';
@@ -13,9 +14,16 @@ import { AddPropertyPage } from '@pages/add-property/AddPropertyPage';
 import Header from '@shared/ui/Header';
 
 const Layout: React.FC = () => {
+  const { isAuthenticated, user } = useAppSelector((state) => state.auth);
+  const dispatch = useAppDispatch();
+
+  const handleLogout = () => {
+    dispatch(logout());
+  };
+
   return (
     <div className="app-layout">
-      <Header />
+      <Header isAuthenticated={isAuthenticated} user={user} onLogout={handleLogout} />
       <main className="app-layout__main">
         <Outlet />
       </main>

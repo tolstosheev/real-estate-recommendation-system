@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { preferencesService } from '@shared/api/preferences.service';
-import type { UserPreferenceCreate, UserPreferenceOut } from '@entities/user/model/types';
+import type { UserPreferenceCreate, UserPreferenceOut } from '@shared/api/types';
 
 interface PreferencesState {
   preferences: UserPreferenceOut | null;

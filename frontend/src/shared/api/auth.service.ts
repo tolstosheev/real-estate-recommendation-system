@@ -1,5 +1,5 @@
 import api from './api';
-import type { User } from '@entities/user/model/types';
+import type { User } from './types';
 
 interface AuthResponse {
   access_token: string;

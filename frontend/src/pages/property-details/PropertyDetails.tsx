@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAppSelector } from '@app/store/hooks';
 import YandexMap from '@shared/ui/Map';
 import YMapMarker from '@shared/ui/Map/YMapMarker';
-import type { Property } from '@entities/property/model/types';
+import type { Property } from '@shared/api/types';
 import api from '@shared/api/api';
 import './PropertyDetails.scss';
 
@@ -77,6 +77,14 @@ const PropertyDetails: React.FC = () => {
   if (isLoading) return <div className="page-loading"><div className="loader"></div></div>;
   if (!property) return <div className="page-empty">Property not found.</div>;
 
+  const getFullImageUrl = (url: string): string => {
+    if (!url) return url;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+    const separator = url.startsWith('/') ? '' : '/';
+    return `${baseUrl}${separator}${url}`;
+  };
+
   const validImages = (property.images || []).filter(url => url && url.length > 0);
   const displayImages = validImages.filter((_, i) => !imgErrors[i]);
 
@@ -86,7 +94,7 @@ const PropertyDetails: React.FC = () => {
         <section className="details-hero">
           <div className="hero-main-photo">
             <img
-              src={displayImages[activePhoto]}
+              src={getFullImageUrl(displayImages[activePhoto])}
               alt={`${property.title} - photo ${activePhoto + 1}`}
               onError={() => setImgErrors(prev => ({ ...prev, [activePhoto]: true }))}
             />
@@ -106,7 +114,7 @@ const PropertyDetails: React.FC = () => {
                   onClick={() => setActivePhoto(i)}
                 >
                   <img
-                    src={img}
+                    src={getFullImageUrl(img)}
                     alt=""
                     onError={() => setImgErrors(prev => ({ ...prev, [i]: true }))}
                   />

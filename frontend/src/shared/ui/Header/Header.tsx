@@ -1,17 +1,20 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAppSelector, useAppDispatch } from '@app/store/hooks';
-import { logout } from '@entities/user/model/slice';
+import type { User } from '@shared/api/types';
 import './Header.scss';
 
-const Header: React.FC = () => {
-  const { isAuthenticated, user } = useAppSelector((state) => state.auth);
-  const dispatch = useAppDispatch();
+interface HeaderProps {
+  isAuthenticated: boolean;
+  user: User | null;
+  onLogout: () => void;
+}
+
+const Header: React.FC<HeaderProps> = ({ isAuthenticated, user, onLogout }) => {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleLogout = () => {
-    dispatch(logout());
+    onLogout();
     navigate('/onboarding');
     setIsMenuOpen(false);
   };
@@ -37,7 +40,7 @@ const Header: React.FC = () => {
           <span></span>
         </button>
 
-        <nav className={`header__nav ${isMenuOpen ? 'header__nav--open' : ''}`}>
+        <nav data-testid="header-nav" className={`header__nav ${isMenuOpen ? 'header__nav--open' : ''}`}>
           <Link to="/" className="header__nav-link" onClick={closeMenu}>Home</Link>
           <Link to="/map" className="header__nav-link" onClick={closeMenu}>Map</Link>
           <Link to="/catalog" className="header__nav-link" onClick={closeMenu}>Catalog</Link>

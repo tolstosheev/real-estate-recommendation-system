@@ -1,5 +1,5 @@
 import api from './api';
-import type { PropertyRecommendation } from '@entities/property/model/types';
+import type { PropertyRecommendation } from './types';
 
 interface RecommendationResponse extends Omit<PropertyRecommendation, 'is_ai_recommendation'> {
   is_ai_recommendation?: boolean;

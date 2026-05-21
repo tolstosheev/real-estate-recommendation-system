@@ -1,5 +1,5 @@
 import api from '@shared/api/api';
-import type { UserPreferenceCreate, UserPreferenceOut } from '@entities/user/model/types';
+import type { UserPreferenceCreate, UserPreferenceOut } from '@shared/api/types';
 
 export const preferencesService = {
   async getPreferences(): Promise<UserPreferenceOut> {

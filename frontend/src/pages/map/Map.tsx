@@ -5,7 +5,7 @@ import YandexMap from '@shared/ui/Map';
 import YMapMarker from '@shared/ui/Map/YMapMarker';
 import PropertyCard from '@entities/property/ui/PropertyCard';
 import Modal from '@shared/ui/Modal';
-import type { Property } from '@entities/property/model/types';
+import type { Property } from '@shared/api/types';
 import { propertyService } from '@shared/api/properties.service';
 import { recommendationsService } from '@shared/api/recommendations.service';
 import api from '@shared/api/api';
@@ -540,6 +540,8 @@ const MapPage: React.FC = () => {
               <PropertyCard
                 property={prop}
                 variant="horizontal"
+                showActions={true}
+                isAuthenticated={isAuthenticated}
                 onClick={handleCardClick}
                 onLikeToggle={handleLikeToggle}
               />

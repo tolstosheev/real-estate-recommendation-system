@@ -2,8 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '@app/store/hooks';
 import { logout, setCredentials } from '@entities/user/model/slice';
-import type { UserPreferenceCreate } from '@entities/user/model/types';
-import type { Property } from '@entities/property/model/types';
+import type { UserPreferenceCreate, Property } from '@shared/api/types';
 import { preferencesService } from '@shared/api/preferences.service';
 import { authService } from '@shared/api/auth.service';
 import { propertyService } from '@shared/api/properties.service';
@@ -151,6 +150,14 @@ const Profile: React.FC = () => {
     if (price >= 1000000) return `${(price / 1000000).toFixed(1)}M ₽`;
     if (price >= 1000) return `${(price / 1000).toFixed(0)}K ₽`;
     return `${price} ₽`;
+  };
+
+  const getFullImageUrl = (url: string): string => {
+    if (!url) return url;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+    const separator = url.startsWith('/') ? '' : '/';
+    return `${baseUrl}${separator}${url}`;
   };
 
   const getFirstImage = (prop: Property) => {
@@ -525,7 +532,7 @@ const Profile: React.FC = () => {
                     <div key={prop.id} className="mp-card">
                       <div className="mp-card__image" onClick={() => navigate(`/property/${prop.id}`)}>
                         {img ? (
-                          <img src={img} alt={prop.title} />
+                          <img src={getFullImageUrl(img)} alt={prop.title} />
                         ) : (
                           <div className="mp-card__placeholder">🏠</div>
                         )}

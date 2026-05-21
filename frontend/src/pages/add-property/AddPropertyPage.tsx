@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '@app/store/hooks';
 import { propertyService } from '@shared/api/properties.service';
 import { geocodeAddress, type GeocoderResult } from '@shared/api/geocoder.service';
-import type { Property } from '@entities/property/model/types';
+import { ImageUploader } from '@features/property/upload-images/ui/ImageUploader';
+import type { Property } from '@shared/api/types';
 import styles from './AddPropertyPage.module.css';
 
 const MATERIALS = ['Panel', 'Brick', 'Monolith', 'Brick-Monolith', 'Wood', 'Block'];
@@ -49,7 +50,7 @@ export const AddPropertyPage: React.FC = () => {
     metro: '',
     lat: '',
     lon: '',
-    images: '',
+    images: [] as string[],
     sq_living: '',
     sq_kitchen: '',
     build_year: '',
@@ -145,7 +146,7 @@ export const AddPropertyPage: React.FC = () => {
         total_floors: formData.total_floors ? parseInt(formData.total_floors) : null,
         lat: formData.lat ? parseFloat(formData.lat) : 0,
         lon: formData.lon ? parseFloat(formData.lon) : 0,
-        images: formData.images ? formData.images.split(',').map(s => s.trim()) : [],
+        images: formData.images,
         sq_living: formData.sq_living ? parseFloat(formData.sq_living) : null,
         sq_kitchen: formData.sq_kitchen ? parseFloat(formData.sq_kitchen) : null,
         build_year: formData.build_year ? parseInt(formData.build_year) : null,
@@ -303,9 +304,12 @@ export const AddPropertyPage: React.FC = () => {
               <label>Longitude</label>
               <input name="lon" type="number" step="any" placeholder="Longitude" value={formData.lon} onChange={handleChange} />
             </div>
-            <div className={styles.formGroup}>
-              <label>Images (URLs comma separated)</label>
-              <input name="images" placeholder="https://..." value={formData.images} onChange={handleChange} />
+            <div className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
+              <label>Images</label>
+              <ImageUploader
+                images={formData.images}
+                onChange={(urls) => setFormData(prev => ({ ...prev, images: urls }))}
+              />
             </div>
             <div className={styles.formGroup}>
               <label>Living Area (m²)</label>

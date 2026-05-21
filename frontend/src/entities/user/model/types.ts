@@ -1,10 +1,4 @@
-export interface User {
-  id: string;
-  email: string;
-  full_name: string;
-  phone_number?: string | null;
-  telegram_handle?: string | null;
-}
+export type { User, UserPreferenceCreate, UserPreferenceOut } from '@shared/api/types';
 
 export interface UserPreferenceBase {
   min_price?: number;

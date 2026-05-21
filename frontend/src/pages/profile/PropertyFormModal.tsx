@@ -4,7 +4,7 @@ import Button from '@shared/ui/Button';
 import { propertyService } from '@shared/api/properties.service';
 import { geocodeAddress, type GeocoderResult } from '@shared/api/geocoder.service';
 import { useAppSelector } from '@app/store/hooks';
-import type { Property } from '@entities/property/model/types';
+import type { Property } from '@shared/api/types';
 import './PropertyFormModal.scss';
 
 const PROPERTY_TYPES = ['Apartment', 'Studio', 'House', 'Townhouse'];

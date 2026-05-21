@@ -1,5 +1,5 @@
 import api from './api';
-import type { Property } from '@entities/property/model/types';
+import type { Property } from './types';
 
 export const propertyService = {
   async getProperties(params: Record<string, unknown> = {}): Promise<Property[]> {
@@ -41,6 +41,15 @@ export const propertyService = {
   }> {
     const response = await api.get('/api/properties/meta');
     return response.data;
+  },
+
+  async uploadImages(files: File[]): Promise<string[]> {
+    const formData = new FormData();
+    files.forEach((file) => formData.append('files', file));
+    const response = await api.post('/api/upload/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data.urls;
   },
 
   async getPropertiesInBox(bounds: [number, number, number, number], filters: Record<string, unknown> = {}): Promise<Property[]> {

@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import cn from 'classnames';
-import type { Property } from '@entities/property/model/types';
+import type { Property } from '@shared/api/types';
 import api from '@shared/api/api';
-import { useAppSelector } from '@app/store/hooks';
 import './PropertyCard.scss';
 
 interface PropertyCardProps {
   property: Property;
   variant?: 'horizontal' | 'vertical';
   showActions?: boolean;
+  isAuthenticated?: boolean;
   onClick?: (propertyId: string) => void;
   onLikeToggle?: (propertyId: string, isLiked: boolean) => void;
 }
@@ -24,9 +24,8 @@ const getFullImageUrl = (url: string): string => {
   return `${baseUrl}${separator}${url}`;
 };
 
-const PropertyCard: React.FC<PropertyCardProps> = ({ property, variant = 'vertical', showActions = false, onClick, onLikeToggle }) => {
+const PropertyCard: React.FC<PropertyCardProps> = ({ property, variant = 'vertical', showActions = false, isAuthenticated = false, onClick, onLikeToggle }) => {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAppSelector((state) => state.auth);
   const [imgError, setImgError] = useState(false);
   const [likeBtnHovered, setLikeBtnHovered] = useState(false);
 

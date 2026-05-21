@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import './Catalog.scss'
 import { useAppSelector } from '@app/store/hooks';
 import PropertyCard from '@entities/property/ui/PropertyCard';
-import type { Property } from '@entities/property/model/types';
+import type { Property } from '@shared/api/types';
 import { propertyService } from '@shared/api/properties.service';
 import { recommendationsService } from '@shared/api/recommendations.service';
 import api from '@shared/api/api';
@@ -429,6 +429,7 @@ const Catalog: React.FC = () => {
                key={`${activeTab}-${prop.id}-${index}`} 
                property={prop} 
                showActions={true} 
+               isAuthenticated={isAuthenticated}
                onLikeToggle={(propertyId, isLiked) => handleLikeToggle(propertyId, isLiked)}
              />
           ))}

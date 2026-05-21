@@ -3,7 +3,7 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination, Navigation } from 'swiper/modules';
 import { recommendationsService } from '@shared/api/recommendations.service';
 import PropertyCard from '@entities/property/ui';
-import type { PropertyRecommendation } from '@entities/property/model/types';
+import type { PropertyRecommendation } from '@shared/api/types';
 import './Home.scss';
 
 import 'swiper/css';
