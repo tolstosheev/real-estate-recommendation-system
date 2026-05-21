@@ -40,5 +40,26 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
+    coverage: {
+      provider: 'istanbul',
+      reporter: ['text', 'text-summary', 'html', 'lcov'],
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: [
+        'src/test/**',
+        'src/env.d.ts',
+        'src/main.tsx',
+        'src/**/*.test.{ts,tsx}',
+        'src/**/*.spec.{ts,tsx}',
+        'src/shared/api/ymaps3.ts',
+        'src/shared/api/yandex-maps-config.ts',
+        'src/shared/ui/Map/**',
+      ],
+      thresholds: {
+        lines: 90,
+        functions: 85,
+        branches: 80,
+        statements: 90,
+      },
+    },
   },
 })

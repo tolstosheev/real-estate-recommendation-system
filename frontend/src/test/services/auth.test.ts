@@ -77,4 +77,15 @@ describe('authService', () => {
 
     await expect(authService.getCurrentUser()).rejects.toThrow();
   });
+
+  it('should update profile successfully', async () => {
+    const updateData = { full_name: 'Updated User', phone_number: '+79991234567' };
+    const updatedUser = { id: 'user-1', email: 'test@test.com', full_name: 'Updated User', phone_number: '+79991234567' };
+    mock.onPut('/auth/me').reply(200, updatedUser);
+
+    const result = await authService.updateProfile(updateData);
+
+    expect(result.full_name).toBe('Updated User');
+    expect(result.phone_number).toBe('+79991234567');
+  });
 });
