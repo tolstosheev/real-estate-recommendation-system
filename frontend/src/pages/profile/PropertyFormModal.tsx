@@ -3,33 +3,14 @@ import Modal from '@shared/ui/Modal';
 import Button from '@shared/ui/Button';
 import { propertyService } from '@shared/api/properties.service';
 import { geocodeAddress, type GeocoderResult } from '@shared/api/geocoder.service';
-import { ImageUploader } from '@features/property/upload-images/ui/ImageUploader';
+import { ImageUploader } from '@features/property/upload-images';
+import {
+  PROPERTY_TYPES, PROPERTY_PURPOSES, MATERIALS, REPAIR_TYPES, ROOM_TYPES,
+  NEW_BUILDING_OPTIONS, BALCONY_OPTIONS, PARKING_OPTIONS, EMPTY_FORM, validatePropertyForm,
+} from '@features/property/propertyForm';
 import { useAppSelector } from '@app/store/hooks';
 import type { Property } from '@shared/api/types';
 import './PropertyFormModal.scss';
-
-const PROPERTY_TYPES = ['Apartment', 'Studio', 'House', 'Townhouse'];
-const PROPERTY_PURPOSES = [
-  { value: 'sale', label: 'Sale' },
-  { value: 'rent', label: 'Rent' },
-  { value: 'daily_rent', label: 'Daily Rent' },
-];
-const MATERIALS = ['Panel', 'Brick', 'Monolith', 'Brick-Monolith', 'Wood', 'Block'];
-const REPAIR_TYPES = ['Cosmetic', 'Euro', 'Design', 'Rough'];
-const ROOM_TYPES = ['Adjacent', 'Separated', 'Both'];
-const NEW_BUILDING_OPTIONS = [
-  { value: 'new', label: 'New Building' },
-  { value: 'secondary', label: 'Secondary' },
-];
-const BALCONY_OPTIONS = [
-  { value: 'yes', label: 'Has Balcony' },
-  { value: 'no', label: 'No Balcony' },
-];
-const PARKING_OPTIONS = [
-  { value: 'yes', label: 'Has Parking' },
-  { value: 'no', label: 'No Parking' },
-  { value: 'paid', label: 'Paid Parking' },
-];
 
 interface PropertyFormModalProps {
   isOpen: boolean;
@@ -38,40 +19,13 @@ interface PropertyFormModalProps {
   property?: Property | null;
 }
 
-const emptyForm = {
-  title: '',
-  description: '',
-  price: '',
-  rooms: '',
-  area: '',
-  floor: '',
-  total_floors: '',
-  property_type: 'Apartment',
-  property_purpose: 'sale',
-  address: '',
-  district: '',
-  metro: '',
-  lat: '',
-  lon: '',
-  images: [] as string[],
-  sq_living: '',
-  sq_kitchen: '',
-  build_year: '',
-  material: 'Brick',
-  repair_type: 'Cosmetic',
-  room_type: 'Separated',
-  is_new: 'secondary',
-  balcony: 'yes',
-  parking: 'no',
-};
-
-type FormData = typeof emptyForm;
+type FormData = typeof EMPTY_FORM;
 
 const PropertyFormModal: React.FC<PropertyFormModalProps> = ({ isOpen, onClose, onSuccess, property }) => {
   const isEdit = !!property;
   const { user } = useAppSelector((state) => state.auth);
   const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState<FormData>(emptyForm);
+  const [formData, setFormData] = useState<FormData>(EMPTY_FORM);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -117,7 +71,7 @@ const PropertyFormModal: React.FC<PropertyFormModalProps> = ({ isOpen, onClose, 
           parking: property.parking || 'no',
         });
       } else {
-        setFormData(emptyForm);
+        setFormData(EMPTY_FORM);
       }
       setStep(1);
       setError('');
@@ -222,43 +176,9 @@ const PropertyFormModal: React.FC<PropertyFormModalProps> = ({ isOpen, onClose, 
       return;
     }
 
-    const missing: string[] = [];
-    if (!formData.title.trim()) missing.push('Title');
-    if (!formData.price.trim()) missing.push('Price');
-    if (!formData.address.trim()) missing.push('Address');
-    if (missing.length) {
-      setError(`Please fill required fields: ${missing.join(', ')}`);
-      setLoading(false);
-      return;
-    }
-
-    const valErrors: string[] = [];
-    const price = parseFloat(formData.price);
-    if (price <= 0) valErrors.push('Price must be greater than 0');
-
-    const area = formData.area ? parseFloat(formData.area) : null;
-    const sq_living = formData.sq_living ? parseFloat(formData.sq_living) : null;
-    const sq_kitchen = formData.sq_kitchen ? parseFloat(formData.sq_kitchen) : null;
-    if (area != null && sq_living != null && sq_kitchen != null && area < sq_living + sq_kitchen) {
-      valErrors.push('Total area must be at least living area + kitchen area');
-    }
-
-    const rooms = formData.rooms ? parseInt(formData.rooms) : null;
-    if (rooms != null && rooms <= 0) valErrors.push('Number of rooms must be greater than 0');
-
-    const floor = formData.floor ? parseInt(formData.floor) : null;
-    const total_floors = formData.total_floors ? parseInt(formData.total_floors) : null;
-    if (floor != null && total_floors != null && floor > total_floors) {
-      valErrors.push('Floor cannot exceed total floors');
-    }
-
-    const build_year = formData.build_year ? parseInt(formData.build_year) : null;
-    if (build_year != null && (build_year < 1900 || build_year > new Date().getFullYear() + 1)) {
-      valErrors.push('Build year seems incorrect');
-    }
-
-    if (valErrors.length) {
-      setError(valErrors.join('. '));
+    const validation = validatePropertyForm(formData);
+    if (!validation.valid) {
+      setError(validation.errors.join('. '));
       setLoading(false);
       return;
     }
