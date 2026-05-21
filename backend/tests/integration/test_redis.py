@@ -12,6 +12,7 @@ async def test_redis_connection():
     val = await client.get("test_key")
     assert val == "test_value"
     await client.delete("test_key")
+    await RedisClient.close()
 
 
 @pytest.mark.asyncio

@@ -23,6 +23,13 @@ def test_calculate_cosine_similarity():
     assert utils.calculate_cosine_similarity(vec_a, vec_c) == pytest.approx(0.0)
 
 
+def test_normalize_features_empty():
+    from app.core.similarity import SimilarityUtils
+    result, scaler = SimilarityUtils.normalize_features([])
+    assert len(result) == 0
+    assert scaler is None
+
+
 def test_compute_user_profile_vector():
     utils = SimilarityUtils()
     explicit = [100, 50, 2]
