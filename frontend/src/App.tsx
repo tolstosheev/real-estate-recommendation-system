@@ -10,7 +10,7 @@ import MapPage from '@pages/map';
 import Catalog from '@pages/catalog';
 import PropertyDetails from '@pages/property-details';
 import Profile from '@pages/profile';
-import { AddPropertyPage } from '@pages/add-property/AddPropertyPage';
+import { AddPropertyPage } from '@pages/add-property';
 import Header from '@shared/ui/Header';
 
 const Layout: React.FC = () => {
