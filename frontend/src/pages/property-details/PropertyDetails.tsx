@@ -18,7 +18,7 @@ const PropertyDetails: React.FC = () => {
 
   const handleLikeToggle = useCallback(async () => {
     if (!isAuthenticated) {
-      navigate('/auth');
+      navigate('/login');
       return;
     }
     try {

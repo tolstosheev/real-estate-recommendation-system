@@ -60,12 +60,14 @@ const App: React.FC = () => {
           <Route path="/register" element={<Register />} />
           <Route path="/onboarding" element={<Onboarding />} />
         </Route>
+        <Route element={<Layout />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/map" element={<MapPage />} />
+          <Route path="/catalog" element={<Catalog />} />
+          <Route path="/property/:id" element={<PropertyDetails />} />
+        </Route>
         <Route element={<GuestRoute />}>
           <Route element={<Layout />}>
-            <Route path="/" element={<Home />} />
-            <Route path="/map" element={<MapPage />} />
-            <Route path="/catalog" element={<Catalog />} />
-            <Route path="/property/:id" element={<PropertyDetails />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/add-property" element={<AddPropertyPage />} />
           </Route>

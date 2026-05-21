@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination, Navigation } from 'swiper/modules';
+import { useAppSelector } from '@app/store/hooks';
 import { recommendationsService } from '@shared/api/recommendations.service';
 import PropertyCard from '@entities/property/ui';
 import type { PropertyRecommendation } from '@shared/api/types';
@@ -11,8 +12,9 @@ import 'swiper/css/pagination';
 import 'swiper/css/navigation';
 
 const Home: React.FC = () => {
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
   const [recs, setRecs] = useState<PropertyRecommendation[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
 
   const fetchRecs = useCallback(async () => {
@@ -30,8 +32,12 @@ const Home: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    fetchRecs();
-  }, [fetchRecs]);
+    if (isAuthenticated) {
+      fetchRecs();
+    } else {
+      setHasError(true);
+    }
+  }, [isAuthenticated, fetchRecs]);
 
   return (
     <div className="home-page">

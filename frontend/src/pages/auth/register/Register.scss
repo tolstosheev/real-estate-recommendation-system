@@ -20,3 +20,53 @@
   border-radius: calc-rem(8);
   border: 1px solid #fecaca;
 }
+
+.register-form__divider {
+  display: flex;
+  align-items: center;
+  gap: calc-rem(12);
+  margin: calc-rem(20) 0;
+}
+
+.register-form__divider-line {
+  flex: 1;
+  height: 1px;
+  background-color: $color-gray-200;
+}
+
+.register-form__divider-text {
+  font-size: calc-rem(13);
+  color: $color-gray-400;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.register-form__guest {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc-rem(8);
+  padding: calc-rem(12) calc-rem(24);
+  border-radius: calc-rem(8);
+  font-size: calc-rem(15);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: transparent;
+  color: $color-primary;
+  border: 2px solid $color-primary;
+
+  svg {
+    transition: transform 0.2s;
+  }
+
+  &:hover {
+    background-color: rgba($color-primary, 0.05);
+
+    svg {
+      transform: translateX(calc-rem(3));
+    }
+  }
+}

@@ -31,7 +31,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, variant = 'vertic
 
   const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!isAuthenticated) return;
+    if (!isAuthenticated) { navigate('/login'); return; }
 
     const previousLikedState = property.is_liked_by_me ?? false;
     const newLikedState = !previousLikedState;
@@ -121,7 +121,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, variant = 'vertic
           })}>AI</span>
         )}
 
-        {showActions && isAuthenticated && (
+        {showActions && (
            <button
              className={cn('property-card__like-btn', { 'property-card__like-btn--active': property.is_liked_by_me ?? false })}
              onClick={handleLike}
