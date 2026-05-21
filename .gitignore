@@ -107,6 +107,9 @@ build/
 .vercel
 .netlify
 
+# mypy
+.mypy_cache/
+
 # OS files
 SESSION_CONTEXT.md
 .DS_Store
