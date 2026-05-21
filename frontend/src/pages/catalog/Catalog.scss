@@ -66,8 +66,31 @@
     }
   }
 
+  &__actions {
+    display: flex;
+    gap: calc-rem(8);
+  }
+
+  &__reset-btn {
+    flex: 1;
+    padding: calc-rem(10) calc-rem(16);
+    background-color: transparent;
+    color: $color-gray-600;
+    border: 2px solid $color-gray-300;
+    border-radius: calc-rem(8);
+    font-size: calc-rem(14);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      background-color: $color-gray-100;
+      border-color: $color-gray-400;
+    }
+  }
+
   &__apply-btn {
-    width: 100%;
+    flex: 2;
     padding: calc-rem(10) calc-rem(16);
     background-color: $color-primary;
     color: $color-white;

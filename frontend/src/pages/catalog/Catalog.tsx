@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import './Catalog.scss'
 import { useAppSelector } from '@app/store/hooks';
 import PropertyCard from '@entities/property/ui/PropertyCard';
@@ -8,21 +9,12 @@ import { recommendationsService } from '@shared/api/recommendations.service';
 import api from '@shared/api/api';
 import RangeSlider from '@shared/ui/RangeSlider/RangeSlider';
 import CheckboxGroup from '@shared/ui/CheckboxGroup/CheckboxGroup';
+import { parseFilters, parseSearch, filtersToSearchParams } from '@shared/utils/filterParams';
+import type { FilterValues } from '@shared/utils/filterParams';
 
 type TabType = 'all' | 'viewed' | 'liked';
 
-interface CatalogFilters {
-  priceRange: [number, number];
-  areaRange: [number, number];
-  buildYearRange: [number, number];
-  rooms: number[];
-  propertyTypes: string[];
-  propertyPurposes: string[];
-  cities: string[];
-  materials: string[];
-  repairTypes: string[];
-  isNew: string[];
-}
+type CatalogFilters = FilterValues;
 
 const defaultFilters: CatalogFilters = {
   priceRange: [0, 50000000],
@@ -41,19 +33,25 @@ const CATALOG_PAGE_SIZE = 12;
 
 const Catalog: React.FC = () => {
   const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [properties, setProperties] = useState<Property[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('all');
   const [aiRecs, setAiRecs] = useState<Property[]>([]);
   const [recVersion, setRecVersion] = useState(0);
-  const [draftFilters, setDraftFilters] = useState<CatalogFilters>(defaultFilters);
-  const [appliedFilters, setAppliedFilters] = useState<CatalogFilters>(defaultFilters);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [appliedSearch, setAppliedSearch] = useState('');
+  const [draftFilters, setDraftFilters] = useState<CatalogFilters>(() =>
+    parseFilters(new URLSearchParams(window.location.search), defaultFilters)
+  );
+  const [searchQuery, setSearchQuery] = useState(() =>
+    new URLSearchParams(window.location.search).get('search') || ''
+  );
   const [openSections, setOpenSections] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const loaderRef = useRef<HTMLDivElement>(null);
+
+  const urlFilters = useMemo(() => parseFilters(searchParams, defaultFilters), [searchParams]);
+  const urlSearch = useMemo(() => parseSearch(searchParams), [searchParams]);
 
   const filteredAiRecs = useMemo(() => {
     if (activeTab !== 'all' || !aiRecs.length) return [];
@@ -123,7 +121,7 @@ const Catalog: React.FC = () => {
     return params;
   };
 
-  const fetchProperties = useCallback(async (tab: TabType, pageNum: number, isNewTab = false) => {
+  const fetchProperties = useCallback(async (tab: TabType, pageNum: number, isNewTab = false, filters?: CatalogFilters, search?: string) => {
     setIsLoading(true);
     try {
       let url = '/api/properties/';
@@ -135,7 +133,7 @@ const Catalog: React.FC = () => {
       }
 
       const params = tab === 'all'
-        ? buildParams(appliedFilters, appliedSearch, pageNum)
+        ? buildParams(filters ?? defaultFilters, search ?? '', pageNum)
         : { limit: CATALOG_PAGE_SIZE, offset: (pageNum - 1) * CATALOG_PAGE_SIZE };
 
       const response = await api.get(url, { params });
@@ -157,15 +155,14 @@ const Catalog: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, appliedFilters, appliedSearch]);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     setProperties([]);
     setPage(1);
     setHasMore(true);
-    fetchProperties(activeTab, 1, true);
-  }, [activeTab, fetchProperties]);
+    fetchProperties(activeTab, 1, true, urlFilters, urlSearch);
+  }, [activeTab, fetchProperties, urlFilters, urlSearch]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -186,36 +183,40 @@ const Catalog: React.FC = () => {
 
   useEffect(() => {
     if (page > 1) {
-      fetchProperties(activeTab, page, false);
+      fetchProperties(activeTab, page, false, urlFilters, urlSearch);
     }
-  }, [page, activeTab, fetchProperties]);
+  }, [page, activeTab, fetchProperties, urlFilters, urlSearch]);
 
-  // debounce search
+  // debounce search -> write to URL
   useEffect(() => {
     const timer = setTimeout(() => {
-      setAppliedSearch(searchQuery);
+      setSearchParams(prev => {
+        const next = new URLSearchParams(prev);
+        if (searchQuery) {
+          next.set('search', searchQuery);
+        } else {
+          next.delete('search');
+        }
+        return next;
+      }, { replace: true });
     }, 300);
     return () => clearTimeout(timer);
-  }, [searchQuery]);
-
-  // refetch when appliedSearch or appliedFilters change (triggered by apply)
-  useEffect(() => {
-    if (activeTab === 'all') {
-      setProperties([]);
-      setPage(1);
-      setHasMore(true);
-      fetchProperties(activeTab, 1, true);
-    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appliedSearch, appliedFilters]);
+  }, [searchQuery]);
 
   const handleDraftChange = (key: keyof CatalogFilters, value: unknown) => {
     setDraftFilters(prev => ({ ...prev, [key]: value }));
   };
 
   const applyFilters = () => {
-    setAppliedFilters(draftFilters);
+    setSearchParams(filtersToSearchParams(draftFilters, searchQuery, defaultFilters));
     setOpenSections(new Set());
+  };
+
+  const resetFilters = () => {
+    setDraftFilters(defaultFilters);
+    setSearchQuery('');
+    setSearchParams(filtersToSearchParams(defaultFilters, '', defaultFilters));
   };
 
   const toggleSection = (section: string) => {
@@ -379,9 +380,14 @@ const Catalog: React.FC = () => {
           </div>
 
           {activeTab === 'all' && (
-            <button className="catalog-filters__apply-btn" onClick={applyFilters}>
-              Apply Filters
-            </button>
+            <div className="catalog-filters__actions">
+              <button className="catalog-filters__reset-btn" onClick={resetFilters}>
+                Reset
+              </button>
+              <button className="catalog-filters__apply-btn" onClick={applyFilters}>
+                Apply Filters
+              </button>
+            </div>
           )}
         </div>
 
@@ -393,18 +399,22 @@ const Catalog: React.FC = () => {
           >
             All
           </button>
-          <button
-            className={`catalog-tab ${activeTab === 'viewed' ? 'catalog-tab--active' : ''}`}
-            onClick={() => setActiveTab('viewed')}
-          >
-            Viewed
-          </button>
-          <button
-            className={`catalog-tab ${activeTab === 'liked' ? 'catalog-tab--active' : ''}`}
-            onClick={() => setActiveTab('liked')}
-          >
-            Liked
-          </button>
+          {isAuthenticated && (
+            <button
+              className={`catalog-tab ${activeTab === 'viewed' ? 'catalog-tab--active' : ''}`}
+              onClick={() => setActiveTab('viewed')}
+            >
+              Viewed
+            </button>
+          )}
+          {isAuthenticated && (
+            <button
+              className={`catalog-tab ${activeTab === 'liked' ? 'catalog-tab--active' : ''}`}
+              onClick={() => setActiveTab('liked')}
+            >
+              Liked
+            </button>
+          )}
         </div>
       </aside>
 
