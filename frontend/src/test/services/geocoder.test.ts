@@ -1,15 +1,24 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { geocodeAddress, reverseGeocode } from '@shared/api/geocoder.service';
 
-const YANDEX_GEOCODER_URL = 'https://geocode-maps.yandex.ru/v1/';
+const API_BASE = '/api';
+const YANDEX_URL = 'https://geocode-maps.yandex.ru/v1/';
 
 const mockFetchResponse = (data: unknown) => {
   return vi.mocked(fetch).mockResolvedValueOnce({
+    ok: true,
     json: () => Promise.resolve(data),
   } as Response);
 };
 
-const validGeoResponse = {
+const mockFetchError = (status: number) => {
+  return vi.mocked(fetch).mockResolvedValueOnce({
+    ok: false,
+    status,
+  } as Response);
+};
+
+const yandexApiResponse = {
   response: {
     GeoObjectCollection: {
       featureMember: [
@@ -19,6 +28,7 @@ const validGeoResponse = {
             metaDataProperty: {
               GeocoderMetaData: {
                 text: 'Moscow, Russia',
+                Address: { Components: [] },
               },
             },
           },
@@ -39,77 +49,64 @@ describe('geocoderService', () => {
 
   describe('geocodeAddress', () => {
     it('should return coordinates and address on success', async () => {
-      mockFetchResponse(validGeoResponse);
+      mockFetchResponse(yandexApiResponse);
 
       const result = await geocodeAddress('Moscow');
 
-      expect(result).not.toBeNull();
-      expect(result!.lat).toBe(55.7558);
-      expect(result!.lon).toBe(37.6173);
-      expect(result!.address).toBe('Moscow');
-      expect(result!.formattedAddress).toBe('Moscow, Russia');
+      expect(result).toHaveLength(1);
+      expect(result[0].lat).toBe(55.7558);
+      expect(result[0].lon).toBe(37.6173);
+      expect(result[0].address).toBe('Moscow');
+      expect(result[0].formattedAddress).toBe('Moscow, Russia');
     });
 
-    it('should return null for short address (< 3 chars)', async () => {
+    it('should return empty array for short address (< 3 chars)', async () => {
       const result = await geocodeAddress('ab');
-      expect(result).toBeNull();
+      expect(result).toEqual([]);
     });
 
-    it('should return null for empty string', async () => {
+    it('should return empty array for empty string', async () => {
       const result = await geocodeAddress('');
-      expect(result).toBeNull();
+      expect(result).toEqual([]);
     });
 
-    it('should return null when no geo objects found', async () => {
-      mockFetchResponse({
-        response: {
-          GeoObjectCollection: {
-            featureMember: [],
-          },
-        },
-      });
+    it('should return empty array when API returns 404', async () => {
+      mockFetchError(404);
 
       const result = await geocodeAddress('UnknownPlace');
-      expect(result).toBeNull();
+      expect(result).toEqual([]);
     });
 
-    it('should return null on fetch error', async () => {
+    it('should return empty array on fetch error', async () => {
       vi.mocked(fetch).mockRejectedValueOnce(new Error('Network error'));
 
       const result = await geocodeAddress('Moscow');
-      expect(result).toBeNull();
+      expect(result).toEqual([]);
     });
 
-    it('should call the correct Yandex API URL', async () => {
-      mockFetchResponse(validGeoResponse);
+    it('should call the Yandex Geocoder API URL directly', async () => {
+      mockFetchResponse(yandexApiResponse);
 
       await geocodeAddress('Saint Petersburg');
 
       const callUrl = vi.mocked(fetch).mock.calls[0][0] as string;
-      expect(callUrl).toContain(YANDEX_GEOCODER_URL);
+      expect(callUrl).toContain(YANDEX_URL);
       expect(callUrl).toContain('geocode=Saint+Petersburg');
-      expect(callUrl).toContain('format=json');
-      expect(callUrl).toContain('results=1');
+      expect(callUrl).toContain('apikey=');
     });
   });
 
   describe('reverseGeocode', () => {
     it('should return formatted address on success', async () => {
-      mockFetchResponse(validGeoResponse);
+      mockFetchResponse({ address: 'Moscow, Russia' });
 
       const result = await reverseGeocode(55.7558, 37.6173);
 
       expect(result).toBe('Moscow, Russia');
     });
 
-    it('should return null when no geo objects found', async () => {
-      mockFetchResponse({
-        response: {
-          GeoObjectCollection: {
-            featureMember: [],
-          },
-        },
-      });
+    it('should return null when API returns 404', async () => {
+      mockFetchError(404);
 
       const result = await reverseGeocode(55.7558, 37.6173);
       expect(result).toBeNull();
@@ -122,13 +119,15 @@ describe('geocoderService', () => {
       expect(result).toBeNull();
     });
 
-    it('should call the correct Yandex API URL with coordinates', async () => {
-      mockFetchResponse(validGeoResponse);
+    it('should call the backend proxy API URL with coordinates', async () => {
+      mockFetchResponse({ address: 'Moscow, Russia' });
 
       await reverseGeocode(55.7558, 37.6173);
 
       const callUrl = vi.mocked(fetch).mock.calls[0][0] as string;
-      expect(callUrl).toContain('geocode=37.6173%2C55.7558');
+      expect(callUrl).toContain(`${API_BASE}/geocode/reverse`);
+      expect(callUrl).toContain('lat=55.7558');
+      expect(callUrl).toContain('lon=37.6173');
     });
   });
 });

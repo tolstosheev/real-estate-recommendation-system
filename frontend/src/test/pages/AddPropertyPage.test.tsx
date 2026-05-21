@@ -11,7 +11,7 @@ vi.mock('react-router-dom', async () => {
   return { ...actual, useNavigate: () => mockNavigate };
 });
 
-const mockGeocodeAddress = vi.hoisted(() => vi.fn().mockResolvedValue(null));
+const mockGeocodeAddress = vi.hoisted(() => vi.fn().mockResolvedValue([]));
 vi.mock('@shared/api/geocoder.service', () => ({
   geocodeAddress: mockGeocodeAddress,
 }));
@@ -62,7 +62,7 @@ function getSelectByName(name: string): HTMLSelectElement {
 describe('AddPropertyPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGeocodeAddress.mockResolvedValue(null);
+    mockGeocodeAddress.mockResolvedValue([]);
   });
 
   it('renders the form with stepper', () => {
@@ -196,12 +196,14 @@ describe('AddPropertyPage', () => {
   });
 
   it('shows address suggestions when geocodeAddress succeeds', async () => {
-    mockGeocodeAddress.mockResolvedValue({
+    mockGeocodeAddress.mockResolvedValue([{
       lat: 55.7558,
       lon: 37.6173,
       address: 'Moscow, Red Square',
       formattedAddress: 'Moscow, Red Square, Russia',
-    });
+      district: null,
+      metro: null,
+    }]);
     renderAddProperty();
     fireEvent.click(screen.getByText('Next'));
     fireEvent.click(screen.getByText('Next'));
@@ -212,12 +214,14 @@ describe('AddPropertyPage', () => {
   });
 
   it('selects an address suggestion and updates lat/lon', async () => {
-    mockGeocodeAddress.mockResolvedValue({
+    mockGeocodeAddress.mockResolvedValue([{
       lat: 55.7558,
       lon: 37.6173,
       address: 'Moscow, Red Square',
       formattedAddress: 'Moscow, Red Square, Russia',
-    });
+      district: null,
+      metro: null,
+    }]);
     renderAddProperty();
     fireEvent.click(screen.getByText('Next'));
     fireEvent.click(screen.getByText('Next'));
@@ -233,12 +237,14 @@ describe('AddPropertyPage', () => {
   });
 
   it('hides address suggestions on click outside', async () => {
-    mockGeocodeAddress.mockResolvedValue({
+    mockGeocodeAddress.mockResolvedValue([{
       lat: 55.7558,
       lon: 37.6173,
       address: 'Moscow, Red Square',
       formattedAddress: 'Moscow, Red Square, Russia',
-    });
+      district: null,
+      metro: null,
+    }]);
     renderAddProperty();
     fireEvent.click(screen.getByText('Next'));
     fireEvent.click(screen.getByText('Next'));
@@ -347,7 +353,8 @@ describe('AddPropertyPage', () => {
     }));
   });
 
-  it('does not show suggestions when geocodeAddress returns null', async () => {
+  it('does not show suggestions when geocodeAddress returns empty array', async () => {
+    mockGeocodeAddress.mockResolvedValue([]);
     renderAddProperty();
     fireEvent.click(screen.getByText('Next'));
     fireEvent.click(screen.getByText('Next'));
@@ -359,12 +366,14 @@ describe('AddPropertyPage', () => {
 
   it('fills all fields and submits successfully', async () => {
     mockCreateProperty.mockResolvedValue({ id: '1' });
-    mockGeocodeAddress.mockResolvedValue({
+    mockGeocodeAddress.mockResolvedValue([{
       lat: 55.7558,
       lon: 37.6173,
       address: 'Moscow, Red Square',
       formattedAddress: 'Moscow, Red Square, Russia',
-    });
+      district: null,
+      metro: null,
+    }]);
     renderAddProperty();
 
     fireEvent.change(screen.getByPlaceholderText('Modern Apartment'), { target: { value: 'Luxury Apartment' } });

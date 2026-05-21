@@ -9,7 +9,7 @@ import type { Property } from '@shared/api/types';
 const mocks = vi.hoisted(() => ({
   mockCreateProperty: vi.fn().mockResolvedValue({}),
   mockUpdateProperty: vi.fn().mockResolvedValue({}),
-  mockGeocodeAddress: vi.fn().mockResolvedValue(null),
+  mockGeocodeAddress: vi.fn().mockResolvedValue([]),
 }));
 
 vi.mock('@shared/api/properties.service', () => ({
@@ -288,11 +288,13 @@ describe('PropertyFormModal', () => {
 
   describe('Address suggestions', () => {
     it('shows suggestions when geocodeAddress returns result', async () => {
-      mocks.mockGeocodeAddress.mockResolvedValue({
+      mocks.mockGeocodeAddress.mockResolvedValue([{
         lat: 55.75, lon: 37.62,
         address: 'Moscow, Red Square',
         formattedAddress: 'Moscow, Red Square, 1',
-      });
+        district: null,
+        metro: null,
+      }]);
       renderModal();
       fireEvent.click(screen.getByText('Next'));
       fireEvent.click(screen.getByText('Next'));
@@ -303,11 +305,13 @@ describe('PropertyFormModal', () => {
     });
 
     it('selects suggestion on click', async () => {
-      mocks.mockGeocodeAddress.mockResolvedValue({
+      mocks.mockGeocodeAddress.mockResolvedValue([{
         lat: 55.75, lon: 37.62,
         address: 'Moscow, Red Square',
         formattedAddress: 'Moscow, Red Square, 1',
-      });
+        district: null,
+        metro: null,
+      }]);
       renderModal();
       fireEvent.click(screen.getByText('Next'));
       fireEvent.click(screen.getByText('Next'));
@@ -327,11 +331,13 @@ describe('PropertyFormModal', () => {
     });
 
     it('hides suggestions on outside click', async () => {
-      mocks.mockGeocodeAddress.mockResolvedValue({
+      mocks.mockGeocodeAddress.mockResolvedValue([{
         lat: 55.75, lon: 37.62,
         address: 'Moscow',
         formattedAddress: 'Moscow, Russia',
-      });
+        district: null,
+        metro: null,
+      }]);
       renderModal();
       fireEvent.click(screen.getByText('Next'));
       fireEvent.click(screen.getByText('Next'));
@@ -343,8 +349,8 @@ describe('PropertyFormModal', () => {
       });
     });
 
-    it('handles geocodeAddress returning null', async () => {
-      mocks.mockGeocodeAddress.mockResolvedValue(null);
+    it('handles geocodeAddress returning empty array', async () => {
+      mocks.mockGeocodeAddress.mockResolvedValue([]);
       renderModal();
       fireEvent.click(screen.getByText('Next'));
       fireEvent.click(screen.getByText('Next'));

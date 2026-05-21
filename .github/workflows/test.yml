@@ -81,6 +81,16 @@ jobs:
               client.make_bucket('nestai-images-test')
           "
 
+      - name: Ruff check
+        run: |
+          cd backend
+          ruff check .
+
+      - name: MyPy check
+        run: |
+          cd backend
+          mypy app
+
       - name: Run tests with coverage
         run: |
           cd backend

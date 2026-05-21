@@ -89,8 +89,11 @@ class TestCreateProperty:
 
     @pytest.mark.asyncio
     async def test_create_no_coords_no_address(self, service):
-        with pytest.raises(ValueError, match="Coordinates are required"):
-            await service.create_property({"title": "Test", "price": 100})
+        service.repository.get_by_id = AsyncMock(return_value=(MagicMock(id="p1", user_id="u1"), 0.0, 0.0))
+        result = await service.create_property({"title": "Test", "price": 100})
+        assert result is not None
+        assert result.lat == 0.0
+        assert result.lon == 0.0
 
     @pytest.mark.parametrize("lat, lon", [
         (100, 0),
@@ -108,10 +111,13 @@ class TestCreateProperty:
     @pytest.mark.asyncio
     async def test_create_geocoder_fails_no_address(self, service):
         service.geocoder.get_coords_from_address = AsyncMock(return_value=None)
-        with pytest.raises(ValueError, match="Coordinates are required"):
-            await service.create_property({
-                "title": "Test", "price": 100, "address": "Unknown Place",
-            })
+        service.repository.get_by_id = AsyncMock(return_value=(MagicMock(id="p1", user_id="u1"), 0.0, 0.0))
+        result = await service.create_property({
+            "title": "Test", "price": 100, "address": "Unknown Place",
+        })
+        assert result is not None
+        assert result.lat == 0.0
+        assert result.lon == 0.0
 
 
 class TestGetPropertyDetails:
