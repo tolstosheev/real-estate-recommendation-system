@@ -1,4 +1,5 @@
-﻿import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+﻿import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
 import { authReducer } from '@entities/user/model/slice';
@@ -21,6 +22,20 @@ vi.mock('@shared/api/properties.service', () => ({
 vi.mock('@shared/api/geocoder.service', () => ({
   geocodeAddress: (...args: any[]) => mocks.mockGeocodeAddress(...args),
 }));
+
+vi.mock('@features/property/upload-images/ui/ImageUploader', () => {
+  return {
+    ImageUploader: ({ images, onChange }: any) => {
+      return React.createElement('div', { 'data-testid': 'image-uploader' }, [
+        ...images.map((url: string, i: number) => React.createElement('img', { key: i, src: url, alt: `Upload ${i + 1}` })),
+        React.createElement('input', {
+          'data-testid': 'image-uploader-input',
+          onChange: (e: any) => onChange([e.target.value]),
+        }),
+      ]);
+    },
+  };
+});
 
 vi.mock('@shared/ui/Modal', () => ({
   default: ({ isOpen, onClose, title, children }: any) =>
@@ -157,11 +172,12 @@ describe('PropertyFormModal', () => {
       expect(screen.getByDisplayValue('Brick')).toBeInTheDocument();
     });
 
-    it('pre-fills images on step 3 as comma-separated', () => {
+    it('pre-fills images on step 3', () => {
       renderModal({ property: editProperty });
       fireEvent.click(screen.getByText('Next'));
       fireEvent.click(screen.getByText('Next'));
-      expect((screen.getByPlaceholderText('https://...') as HTMLInputElement).value).toBe('https://img.jpg');
+      const images = screen.getAllByRole('img');
+      expect(images.some(img => (img as HTMLImageElement).src.includes('https://img.jpg'))).toBe(true);
     });
 
     it('handles minimal/null property gracefully', () => {
@@ -265,9 +281,7 @@ describe('PropertyFormModal', () => {
       expect(screen.getByPlaceholderText('Start typing address...')).toBeInTheDocument();
       expect(screen.getByPlaceholderText('District')).toBeInTheDocument();
       expect(screen.getByPlaceholderText('Metro Station')).toBeInTheDocument();
-      expect(screen.getByPlaceholderText('Latitude')).toBeInTheDocument();
-      expect(screen.getByPlaceholderText('Longitude')).toBeInTheDocument();
-      expect(screen.getByPlaceholderText('https://...')).toBeInTheDocument();
+      expect(screen.getByText('Images')).toBeInTheDocument();
       expect(screen.getByPlaceholderText('40.5')).toBeInTheDocument();
       expect(screen.getByPlaceholderText('12.0')).toBeInTheDocument();
     });
@@ -303,8 +317,6 @@ describe('PropertyFormModal', () => {
       await screen.findByText('Moscow, Red Square, 1');
       fireEvent.click(screen.getByText('Moscow, Red Square, 1'));
       expect((addressInput as HTMLInputElement).value).toBe('Moscow, Red Square, 1');
-      expect((screen.getByPlaceholderText('Latitude') as HTMLInputElement).value).toBe('55.75');
-      expect((screen.getByPlaceholderText('Longitude') as HTMLInputElement).value).toBe('37.62');
     });
 
     it('does not call geocodeAddress for short input', () => {
@@ -442,7 +454,7 @@ describe('PropertyFormModal', () => {
       fireEvent.click(screen.getByText('Next'));
       fireEvent.change(screen.getByPlaceholderText('Start typing address...'), { target: { value: 'Addr' } });
       fireEvent.change(screen.getByPlaceholderText('District'), { target: { value: 'Central' } });
-      fireEvent.change(screen.getByPlaceholderText('https://...'), { target: { value: 'https://img.jpg' } });
+      fireEvent.change(screen.getByTestId('image-uploader-input'), { target: { value: 'https://img.jpg' } });
       fireEvent.click(screen.getByText('Create Property'));
       await waitFor(() => {
         expect(mocks.mockCreateProperty).toHaveBeenCalledWith(

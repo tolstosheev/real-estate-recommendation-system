@@ -1,8 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ImageUploader } from '@features/property/upload-images/ui/ImageUploader';
+import { propertyService } from '@shared/api/properties.service';
 
-global.fetch = vi.fn();
+vi.mock('@shared/api/properties.service', () => ({
+  propertyService: {
+    uploadImages: vi.fn(),
+  },
+}));
 
 function getFileInput() {
   return screen.getByLabelText(/Drop images/i) as HTMLInputElement;
@@ -69,11 +74,8 @@ describe('ImageUploader', () => {
   });
 
   it('uploads files successfully', async () => {
-    const fetchMock = vi.mocked(global.fetch);
-    fetchMock.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ urls: ['uploaded1.jpg', 'uploaded2.jpg'] }),
-    } as Response);
+    const uploadMock = vi.mocked(propertyService.uploadImages);
+    uploadMock.mockResolvedValueOnce(['uploaded1.jpg', 'uploaded2.jpg']);
 
     const onChange = vi.fn();
     const files = [new File([''], 'test.jpg', { type: 'image/jpeg' })] as unknown as FileList;
@@ -88,8 +90,8 @@ describe('ImageUploader', () => {
   });
 
   it('handles upload failure', async () => {
-    const fetchMock = vi.mocked(global.fetch);
-    fetchMock.mockRejectedValueOnce(new Error('Network error'));
+    const uploadMock = vi.mocked(propertyService.uploadImages);
+    uploadMock.mockRejectedValueOnce(new Error('Network Error'));
 
     const files = [new File([''], 'test.jpg', { type: 'image/jpeg' })] as unknown as FileList;
     render(<ImageUploader images={[]} onChange={() => {}} />);
@@ -98,16 +100,13 @@ describe('ImageUploader', () => {
     fireEvent.change(input);
 
     await waitFor(() => {
-      expect(screen.getByText('Network error')).toBeDefined();
+      expect(screen.getByText('Network Error')).toBeDefined();
     });
   });
 
   it('handles upload failure with JSON error response', async () => {
-    const fetchMock = vi.mocked(global.fetch);
-    fetchMock.mockResolvedValueOnce({
-      ok: false,
-      json: async () => ({ detail: 'File too large' }),
-    } as Response);
+    const uploadMock = vi.mocked(propertyService.uploadImages);
+    uploadMock.mockRejectedValueOnce(new Error('File too large'));
 
     const files = [new File([''], 'test.jpg', { type: 'image/jpeg' })] as unknown as FileList;
     render(<ImageUploader images={[]} onChange={() => {}} />);

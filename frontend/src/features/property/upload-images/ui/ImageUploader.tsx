@@ -1,4 +1,5 @@
 import React, { useCallback, useState } from 'react';
+import { propertyService } from '@shared/api/properties.service';
 import styles from './ImageUploader.module.css';
 
 interface ImageUploaderProps {
@@ -41,24 +42,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
 
     setIsUploading(true);
     try {
-      const formData = new FormData();
-      fileArray.forEach((file) => formData.append('files', file));
-
-      const response = await fetch('/api/upload/', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-        },
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.detail || 'Upload failed');
-      }
-
-      const data = await response.json();
-      const newUrls = data.urls as string[];
+      const newUrls = await propertyService.uploadImages(fileArray);
       const allUrls = [...previews, ...newUrls];
       setPreviews(allUrls);
       onChange(allUrls);

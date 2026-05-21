@@ -3,6 +3,7 @@ import Modal from '@shared/ui/Modal';
 import Button from '@shared/ui/Button';
 import { propertyService } from '@shared/api/properties.service';
 import { geocodeAddress, type GeocoderResult } from '@shared/api/geocoder.service';
+import { ImageUploader } from '@features/property/upload-images/ui/ImageUploader';
 import { useAppSelector } from '@app/store/hooks';
 import type { Property } from '@shared/api/types';
 import './PropertyFormModal.scss';
@@ -52,7 +53,7 @@ const emptyForm = {
   metro: '',
   lat: '',
   lon: '',
-  images: '',
+  images: [] as string[],
   sq_living: '',
   sq_kitchen: '',
   build_year: '',
@@ -96,7 +97,7 @@ const PropertyFormModal: React.FC<PropertyFormModalProps> = ({ isOpen, onClose, 
           metro: property.metro || '',
           lat: property.lat ? String(property.lat) : '',
           lon: property.lon ? String(property.lon) : '',
-          images: property.images?.join(', ') || '',
+          images: property.images || [],
           sq_living: property.sq_living ? String(property.sq_living) : '',
           sq_kitchen: property.sq_kitchen ? String(property.sq_kitchen) : '',
           build_year: property.build_year ? String(property.build_year) : '',
@@ -176,7 +177,7 @@ const PropertyFormModal: React.FC<PropertyFormModalProps> = ({ isOpen, onClose, 
     metro: formData.metro || undefined,
     lat: formData.lat ? parseFloat(formData.lat) : 0,
     lon: formData.lon ? parseFloat(formData.lon) : 0,
-    images: formData.images ? formData.images.split(',').map(s => s.trim()).filter(Boolean) : [],
+    images: formData.images,
     sq_living: formData.sq_living ? parseFloat(formData.sq_living) : null,
     sq_kitchen: formData.sq_kitchen ? parseFloat(formData.sq_kitchen) : null,
     build_year: formData.build_year ? parseInt(formData.build_year) : null,
@@ -362,17 +363,9 @@ const PropertyFormModal: React.FC<PropertyFormModalProps> = ({ isOpen, onClose, 
                 <label>Metro</label>
                 <input name="metro" placeholder="Metro Station" value={formData.metro} onChange={handleChange} />
               </div>
-              <div className="pf-field">
-                <label>Latitude</label>
-                <input name="lat" type="number" step="any" placeholder="Latitude" value={formData.lat} onChange={handleChange} />
-              </div>
-              <div className="pf-field">
-                <label>Longitude</label>
-                <input name="lon" type="number" step="any" placeholder="Longitude" value={formData.lon} onChange={handleChange} />
-              </div>
               <div className="pf-field pf-field--wide">
-                <label>Images (URLs, comma separated)</label>
-                <input name="images" placeholder="https://..." value={formData.images} onChange={handleChange} />
+                <label>Images</label>
+                <ImageUploader images={formData.images} onChange={(urls) => setFormData(prev => ({ ...prev, images: urls }))} />
               </div>
               <div className="pf-field">
                 <label>Living Area (m²)</label>
