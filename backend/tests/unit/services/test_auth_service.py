@@ -14,7 +14,7 @@ def service(mock_session):
     import app.core.config as config
     _old_key = config.settings.SECRET_KEY
     _old_alg = config.settings.ALGORITHM
-    config.settings.SECRET_KEY = "test-secret-key-for-testing"
+    config.settings.SECRET_KEY = "test-secret-key-for-testing-32bytes!"
     config.settings.ALGORITHM = "HS256"
     s = AuthService(mock_session)
     s.repository = AsyncMock()
@@ -56,7 +56,7 @@ class TestCreateAccessToken:
     def test_token_contains_sub(self, service):
         import jwt
         token = service.create_access_token({"sub": "test-user"})
-        payload = jwt.decode(token, "test-secret-key-for-testing", algorithms=["HS256"])
+        payload = jwt.decode(token, "test-secret-key-for-testing-32bytes!", algorithms=["HS256"])
         assert payload["sub"] == "test-user"
         assert "exp" in payload
 
