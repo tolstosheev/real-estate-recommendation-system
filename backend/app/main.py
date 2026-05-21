@@ -1,12 +1,14 @@
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
+import logging
 from contextlib import asynccontextmanager
-from app.api.endpoints import properties, auth, user, interactions, recommendations
+
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+
+from app.api.endpoints import auth, geocode, interactions, properties, recommendations, user
 from app.api.endpoints.upload import router as upload_router
 from app.core.db import Base, engine
 from app.services.image_service import ImageService
-import logging
 
 logging.basicConfig(level=logging.INFO, filename="server_errors.log", filemode="a")
 logger = logging.getLogger(__name__)
@@ -51,6 +53,7 @@ app.include_router(user.router, prefix="/user", tags=["User Profile"])
 app.include_router(interactions.router, prefix="/api/interactions", tags=["Interactions"])
 app.include_router(recommendations.router, prefix="/api/recommendations", tags=["Recommendations"])
 app.include_router(upload_router, prefix="/api", tags=["Images"])
+app.include_router(geocode.router, prefix="/api", tags=["Geocoding"])
 
 
 @app.get("/")

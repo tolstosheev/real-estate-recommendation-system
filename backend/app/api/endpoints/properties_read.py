@@ -1,13 +1,14 @@
+
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import distinct, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import distinct, select, func
+
 from app.core.db import get_db
-from app.services.property_service import PropertyService
-from app.schemas.property import PropertyOut
 from app.core.security import get_current_user, get_current_user_optional
-from app.models import User, Property
+from app.models import Property, User
 from app.repositories.interactions_repository import InteractionRepository
-from typing import List, Optional
+from app.schemas.property import PropertyOut
+from app.services.property_service import PropertyService
 
 router = APIRouter()
 
@@ -48,7 +49,7 @@ async def get_properties_meta(db: AsyncSession = Depends(get_db)):
 
 @router.get(
     "/map",
-    response_model=List[PropertyOut],
+    response_model=list[PropertyOut],
     summary="Get Properties in BBox",
     description="Returns properties in bounding box with filters",
 )
@@ -57,21 +58,21 @@ async def get_properties_map(
     max_lat: float = Query(...),
     min_lon: float = Query(...),
     max_lon: float = Query(...),
-    min_price: Optional[float] = None,
-    max_price: Optional[float] = None,
-    rooms: Optional[List[int]] = Query(None),
-    property_type: Optional[List[str]] = Query(None),
-    property_purpose: Optional[List[str]] = Query(None),
-    district: Optional[str] = None,
-    metro: Optional[str] = None,
-    material: Optional[List[str]] = Query(None),
-    repair_type: Optional[List[str]] = Query(None),
-    min_build_year: Optional[int] = None,
-    max_build_year: Optional[int] = None,
-    city: Optional[List[str]] = Query(None),
-    min_area: Optional[float] = None,
-    max_area: Optional[float] = None,
-    is_new: Optional[List[str]] = Query(None),
+    min_price: float | None = None,
+    max_price: float | None = None,
+    rooms: list[int] | None = Query(None),
+    property_type: list[str] | None = Query(None),
+    property_purpose: list[str] | None = Query(None),
+    district: str | None = None,
+    metro: str | None = None,
+    material: list[str] | None = Query(None),
+    repair_type: list[str] | None = Query(None),
+    min_build_year: int | None = None,
+    max_build_year: int | None = None,
+    city: list[str] | None = Query(None),
+    min_area: float | None = None,
+    max_area: float | None = None,
+    is_new: list[str] | None = Query(None),
     limit: int = 50,
     offset: int = 0,
     db: AsyncSession = Depends(get_db),
@@ -102,32 +103,32 @@ async def get_properties_map(
 
 @router.get(
     "/",
-    response_model=List[PropertyOut],
+    response_model=list[PropertyOut],
     summary="List Properties",
     description="List properties with filters and spatial search",
 )
 async def get_properties(
     limit: int = 100,
     offset: int = 0,
-    min_price: Optional[float] = None,
-    max_price: Optional[float] = None,
-    rooms: Optional[List[int]] = Query(None),
-    property_type: Optional[List[str]] = Query(None),
-    property_purpose: Optional[List[str]] = Query(None),
-    district: Optional[str] = None,
-    metro: Optional[str] = None,
-    material: Optional[List[str]] = Query(None),
-    repair_type: Optional[List[str]] = Query(None),
-    min_build_year: Optional[int] = None,
-    max_build_year: Optional[int] = None,
-    city: Optional[List[str]] = Query(None),
-    lat: Optional[float] = None,
-    lon: Optional[float] = None,
-    radius_km: Optional[float] = None,
-    search: Optional[str] = None,
-    min_area: Optional[float] = None,
-    max_area: Optional[float] = None,
-    is_new: Optional[List[str]] = Query(None),
+    min_price: float | None = None,
+    max_price: float | None = None,
+    rooms: list[int] | None = Query(None),
+    property_type: list[str] | None = Query(None),
+    property_purpose: list[str] | None = Query(None),
+    district: str | None = None,
+    metro: str | None = None,
+    material: list[str] | None = Query(None),
+    repair_type: list[str] | None = Query(None),
+    min_build_year: int | None = None,
+    max_build_year: int | None = None,
+    city: list[str] | None = Query(None),
+    lat: float | None = None,
+    lon: float | None = None,
+    radius_km: float | None = None,
+    search: str | None = None,
+    min_area: float | None = None,
+    max_area: float | None = None,
+    is_new: list[str] | None = Query(None),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user_optional),
 ):
@@ -150,7 +151,7 @@ async def get_properties(
 
 @router.get(
     "/my",
-    response_model=List[PropertyOut],
+    response_model=list[PropertyOut],
     summary="Get My Properties",
     description="Get properties created by current user",
 )

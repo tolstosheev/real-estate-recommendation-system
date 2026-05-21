@@ -1,9 +1,10 @@
+
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.redis import RedisClient
+from app.models import Property
 from app.repositories.interactions_repository import InteractionRepository
 from app.repositories.property_repository import PropertyRepository
-from app.core.redis import RedisClient
-from typing import List
-from app.models import Property
 
 
 class InteractionService:
@@ -46,8 +47,8 @@ class InteractionService:
         await RedisClient.clear_user_cache(user_id)
         return {"status": "created", "interaction": interaction}
 
-    async def get_favorites(self, user_id: str, limit: int = 100, offset: int = 0) -> List[Property]:
+    async def get_favorites(self, user_id: str, limit: int = 100, offset: int = 0) -> list[Property]:
         return await self.interaction_repo.get_user_favorites(user_id, limit, offset)
 
-    async def get_view_history(self, user_id: str, limit: int = 100, offset: int = 0) -> List[Property]:
+    async def get_view_history(self, user_id: str, limit: int = 100, offset: int = 0) -> list[Property]:
         return await self.interaction_repo.get_user_view_history(user_id, limit, offset)

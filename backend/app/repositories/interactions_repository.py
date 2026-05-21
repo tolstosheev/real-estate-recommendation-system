@@ -1,7 +1,8 @@
-from typing import List, Set
+
+from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import delete
+
 from app.models import Interaction, Property
 
 
@@ -58,7 +59,7 @@ class InteractionRepository:
         result = await self.session.execute(query)
         return result.first()
 
-    async def batch_check_likes(self, user_id, property_ids: List) -> Set[str]:
+    async def batch_check_likes(self, user_id, property_ids: list) -> set[str]:
         if not property_ids:
             return set()
         query = select(Interaction.property_id).filter(

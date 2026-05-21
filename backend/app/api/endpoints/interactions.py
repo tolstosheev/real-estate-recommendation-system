@@ -1,13 +1,14 @@
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.db import get_db
-from app.services.interactions_service import InteractionService
-from app.schemas.interactions import InteractionCreate
-from app.schemas.property import PropertyOut
 from app.core.security import get_current_user
 from app.models import User
-from typing import List
+from app.schemas.interactions import InteractionCreate
+from app.schemas.property import PropertyOut
+from app.services.interactions_service import InteractionService
 
 router = APIRouter()
 
@@ -24,7 +25,7 @@ async def interact_with_property(
     try:
         result = await service.add_interaction(current_user.id, interaction_in.model_dump())
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
 
     if result["status"] == "removed":
         return JSONResponse(status_code=200, content={"status": "removed"})
@@ -33,7 +34,7 @@ async def interact_with_property(
 
 
 @router.get(
-    "/favorites", response_model=List[PropertyOut], summary="Get My Favorites", description="List liked properties"
+    "/favorites", response_model=list[PropertyOut], summary="Get My Favorites", description="List liked properties"
 )
 async def get_my_favorites(
     current_user: User = Depends(get_current_user),
@@ -89,7 +90,7 @@ async def get_my_favorites(
 
 
 @router.get(
-    "/history", response_model=List[PropertyOut], summary="Get View History", description="List viewed properties"
+    "/history", response_model=list[PropertyOut], summary="Get View History", description="List viewed properties"
 )
 async def get_my_history(
     current_user: User = Depends(get_current_user),

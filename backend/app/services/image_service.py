@@ -1,7 +1,7 @@
+import logging
 import os
 import uuid
-import logging
-from typing import Optional
+
 from fastapi import UploadFile
 from minio import Minio
 from minio.error import S3Error
@@ -15,7 +15,7 @@ MAX_FILES = 10
 
 class ImageService:
     def __init__(self):
-        self._client: Optional[Minio] = None
+        self._client: Minio | None = None
         self.endpoint = os.getenv("S3_ENDPOINT", "http://minio:9000")
         self.access_key = os.getenv("S3_ACCESS_KEY", "minioadmin")
         self.secret_key = os.getenv("S3_SECRET_KEY", "minioadmin")
@@ -104,7 +104,7 @@ class ImageService:
             logger.error(f"Failed to delete {filename}: {e}")
             raise
 
-    async def get_file(self, filename: str) -> Optional[bytes]:
+    async def get_file(self, filename: str) -> bytes | None:
         client = self._get_client()
         try:
             response = client.get_object(self.bucket, filename)

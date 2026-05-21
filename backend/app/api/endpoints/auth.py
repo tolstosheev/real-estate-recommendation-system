@@ -1,13 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.db import get_db
-from app.services.auth_service import AuthService
-from app.schemas.auth import UserCreate, UserUpdate, Token, UserOut
-from app.schemas.auth_login import UserLogin
 from app.core.redis import RedisClient
 from app.models import Property
-from sqlalchemy import select
+from app.schemas.auth import Token, UserCreate, UserOut, UserUpdate
+from app.schemas.auth_login import UserLogin
+from app.services.auth_service import AuthService
 
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
@@ -28,7 +29,7 @@ async def register(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
         )
         return user
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.post(
@@ -47,7 +48,7 @@ async def login(login_data: UserLogin, db: AsyncSession = Depends(get_db)):
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    access_token = service.create_access_token(data={"id": str(user.id)})
+    access_token = service.create_access_token(data={"sub": str(user.id), "id": str(user.id)})
     return {"access_token": access_token, "token_type": "bearer"}
 
 

@@ -1,12 +1,12 @@
+
 import numpy as np
-from typing import List, Optional
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import StandardScaler
 
 
 class SimilarityUtils:
     @staticmethod
-    def normalize_features(features: List[List[float]]):
+    def normalize_features(features: list[list[float]]):
         if not features:
             return np.array([]), None
         scaler = StandardScaler()
@@ -20,8 +20,8 @@ class SimilarityUtils:
 
     @staticmethod
     def compute_user_profile_vector(
-        explicit_prefs: Optional[List[float]],
-        implicit_prefs: Optional[List[float]],
+        explicit_prefs: list[float] | None,
+        implicit_prefs: list[float] | None,
         explicit_weight: float = 0.6,
         implicit_weight: float = 0.4,
     ):

@@ -1,11 +1,13 @@
-from datetime import datetime, timedelta, UTC
-from typing import Optional
-import jwt
+from datetime import UTC, datetime, timedelta
+
 import bcrypt
-from app.repositories.user_repository import UserRepository
+import jwt
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.models import User
+
 from app.core.config import settings
+from app.models import User
+from app.repositories.user_repository import UserRepository
+
 
 class AuthService:
     def __init__(self, session: AsyncSession):
@@ -23,8 +25,8 @@ class AuthService:
         email: str,
         password: str,
         full_name: str,
-        phone_number: Optional[str] = None,
-        telegram_handle: Optional[str] = None,
+        phone_number: str | None = None,
+        telegram_handle: str | None = None,
     ):
         if len(password) < 6:
             raise ValueError("Password must be at least 6 characters")
@@ -44,15 +46,17 @@ class AuthService:
             }
         )
 
-    async def authenticate_user(self, email: str, password: str) -> Optional[User]:
+    async def authenticate_user(self, email: str, password: str) -> User | None:
         user = await self.repository.get_by_email(email)
         if not user or not self.verify_password(password, user.hashed_password):
             return None
 
         return user
 
-    def create_access_token(self, data: dict, expires_delta: Optional[timedelta] = None):
+    def create_access_token(self, data: dict, expires_delta: timedelta | None = None):
         to_encode = data.copy()
+        if "sub" not in to_encode and "id" in to_encode:
+            to_encode["sub"] = to_encode["id"]
         expire = datetime.now(UTC) + (expires_delta or timedelta(minutes=60 * 24))
         to_encode.update({"exp": expire})
         return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
@@ -60,7 +64,7 @@ class AuthService:
     async def get_current_user(self, token):
         try:
             payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-            user_id: str = payload.get("id")
+            user_id: str = payload.get("sub") or payload.get("id")
             if user_id is None:
                 return None
         except jwt.PyJWTError:

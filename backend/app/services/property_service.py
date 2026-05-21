@@ -1,16 +1,16 @@
+import hashlib
+import json
+from decimal import Decimal
+
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, delete
+
+from app.core.category import compute_category
+from app.core.redis import RedisClient
+from app.models import Interaction, Property
 from app.repositories.property_repository import PropertyRepository
 from app.repositories.user_repository import UserRepository
 from app.services.geocoding_service import GeocodingService
-from app.core.redis import RedisClient
-from app.core.category import compute_category
-from app.models import Property, Interaction
-from typing import List, Optional
-import json
-import hashlib
-from decimal import Decimal
-from collections import defaultdict
 
 
 class DecimalEncoder(json.JSONEncoder):
@@ -72,9 +72,7 @@ class PropertyService:
         enriched = []
         user_ids = set()
         for result in results:
-            if hasattr(result, "_mapping"):
-                prop = result[0]
-            elif isinstance(result, (tuple, list)):
+            if hasattr(result, "_mapping") or isinstance(result, (tuple, list)):
                 prop = result[0]
             else:
                 prop = result
@@ -112,18 +110,17 @@ class PropertyService:
         if property_type and rooms is not None:
             property_data["category"] = compute_category(property_type, rooms)
 
-        if "lat" not in property_data or "lon" not in property_data:
+        lat = property_data.get("lat", 0.0)
+        lon = property_data.get("lon", 0.0)
+
+        if lat == 0.0 and lon == 0.0:
             address = property_data.get("address")
             if address:
                 coords = await self.geocoder.get_coords_from_address(address)
                 if coords:
                     property_data["lat"], property_data["lon"] = coords
+                    lat, lon = coords
 
-        if "lat" not in property_data or "lon" not in property_data:
-            raise ValueError("Coordinates are required and could not be determined from the address")
-
-        lat = property_data.get("lat", 0)
-        lon = property_data.get("lon", 0)
         if not (-90 <= lat <= 90) or not (-180 <= lon <= 180):
             raise ValueError("Invalid coordinates")
 
@@ -134,16 +131,16 @@ class PropertyService:
     async def get_properties_in_bbox(
         self, min_lat: float, max_lat: float, min_lon: float, max_lon: float,
         min_price: float = None, max_price: float = None,
-        rooms: Optional[List[int]] = None,
-        property_type: Optional[List[str]] = None,
-        property_purpose: Optional[List[str]] = None,
+        rooms: list[int] | None = None,
+        property_type: list[str] | None = None,
+        property_purpose: list[str] | None = None,
         district: str = None, metro: str = None,
-        material: Optional[List[str]] = None,
-        repair_type: Optional[List[str]] = None,
+        material: list[str] | None = None,
+        repair_type: list[str] | None = None,
         min_build_year: int = None, max_build_year: int = None,
-        city: Optional[List[str]] = None,
+        city: list[str] | None = None,
         min_area: float = None, max_area: float = None,
-        is_new: Optional[List[str]] = None,
+        is_new: list[str] | None = None,
         limit: int = 50, offset: int = 0,
     ):
         results = await self.repository.get_by_bbox(
@@ -227,23 +224,23 @@ class PropertyService:
         offset: int = 0,
         min_price: float = None,
         max_price: float = None,
-        rooms: Optional[List[int]] = None,
-        property_type: Optional[List[str]] = None,
+        rooms: list[int] | None = None,
+        property_type: list[str] | None = None,
         lat: float = None,
         lon: float = None,
         radius_km: float = None,
         district: str = None,
         metro: str = None,
-        material: Optional[List[str]] = None,
-        repair_type: Optional[List[str]] = None,
+        material: list[str] | None = None,
+        repair_type: list[str] | None = None,
         min_build_year: int = None,
         max_build_year: int = None,
-        city: Optional[List[str]] = None,
-        property_purpose: Optional[List[str]] = None,
+        city: list[str] | None = None,
+        property_purpose: list[str] | None = None,
         search: str = None,
         min_area: float = None,
         max_area: float = None,
-        is_new: Optional[List[str]] = None,
+        is_new: list[str] | None = None,
     ):
         results = await self.repository.get_all(
             limit, offset, min_price, max_price, rooms, property_type, lat, lon, radius_km,

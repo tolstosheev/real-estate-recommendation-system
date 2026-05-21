@@ -1,17 +1,18 @@
+
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.db import get_db
-from app.services.preferences_service import UserPreferenceService
-from app.schemas.preferences import UserPreferenceCreate, UserPreferenceOut
-from app.services.property_service import PropertyService
-from app.services.auth_service import AuthService
-from app.schemas.auth import UserOut, UserUpdate
-from app.schemas.property import PropertyOut
-from app.core.security import get_current_user, get_current_user_optional
-from app.models import User, Property
-from app.core.redis import RedisClient
 from sqlalchemy import select
-from typing import List
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.db import get_db
+from app.core.redis import RedisClient
+from app.core.security import get_current_user
+from app.models import Property, User
+from app.schemas.auth import UserOut, UserUpdate
+from app.schemas.preferences import UserPreferenceCreate, UserPreferenceOut
+from app.schemas.property import PropertyOut
+from app.services.auth_service import AuthService
+from app.services.preferences_service import UserPreferenceService
+from app.services.property_service import PropertyService
 
 router = APIRouter()
 
@@ -46,7 +47,7 @@ async def update_my_preferences(
 
 @router.get(
     "/properties",
-    response_model=List[PropertyOut],
+    response_model=list[PropertyOut],
     summary="Get My Properties",
     description="Get properties of the current authenticated user",
 )
@@ -81,6 +82,7 @@ async def update_my_profile(
 )
 async def get_user_by_id(
     user_id: str,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     service = AuthService(db)

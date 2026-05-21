@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.db import get_db
-from app.services.property_service import PropertyService
-from app.schemas.property import PropertyCreate, PropertyUpdate, PropertyOut
 from app.core.security import get_current_user
 from app.models import User
+from app.schemas.property import PropertyCreate, PropertyOut, PropertyUpdate
+from app.services.property_service import PropertyService
 
 router = APIRouter()
 

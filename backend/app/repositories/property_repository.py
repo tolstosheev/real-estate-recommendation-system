@@ -1,9 +1,10 @@
+
+from geoalchemy2 import Geography
+from sqlalchemy import cast, delete, func, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import update, delete, func, cast
-from geoalchemy2 import Geography
+
 from app.models import Property
-from typing import List, Optional
 
 
 class PropertyRepository:
@@ -18,19 +19,19 @@ class PropertyRepository:
         max_lon: float,
         min_price: float = None,
         max_price: float = None,
-        rooms: Optional[List[int]] = None,
-        property_type: Optional[List[str]] = None,
-        property_purpose: Optional[List[str]] = None,
+        rooms: list[int] | None = None,
+        property_type: list[str] | None = None,
+        property_purpose: list[str] | None = None,
         district: str = None,
         metro: str = None,
-        material: Optional[List[str]] = None,
-        repair_type: Optional[List[str]] = None,
+        material: list[str] | None = None,
+        repair_type: list[str] | None = None,
         min_build_year: int = None,
         max_build_year: int = None,
-        city: Optional[List[str]] = None,
+        city: list[str] | None = None,
         min_area: float = None,
         max_area: float = None,
-        is_new: Optional[List[str]] = None,
+        is_new: list[str] | None = None,
         limit: int = 50,
         offset: int = 0,
     ):
@@ -90,23 +91,23 @@ class PropertyRepository:
         offset: int = 0,
         min_price: float = None,
         max_price: float = None,
-        rooms: Optional[List[int]] = None,
-        property_type: Optional[List[str]] = None,
+        rooms: list[int] | None = None,
+        property_type: list[str] | None = None,
         lat: float = None,
         lon: float = None,
         radius_km: float = None,
         district: str = None,
         metro: str = None,
-        material: Optional[List[str]] = None,
-        repair_type: Optional[List[str]] = None,
+        material: list[str] | None = None,
+        repair_type: list[str] | None = None,
         min_build_year: int = None,
         max_build_year: int = None,
-        city: Optional[List[str]] = None,
-        property_purpose: Optional[List[str]] = None,
+        city: list[str] | None = None,
+        property_purpose: list[str] | None = None,
         search: str = None,
         min_area: float = None,
         max_area: float = None,
-        is_new: Optional[List[str]] = None,
+        is_new: list[str] | None = None,
     ):
 
         query = select(Property, func.ST_X(Property.location).label("lon"), func.ST_Y(Property.location).label("lat"))
@@ -164,7 +165,7 @@ class PropertyRepository:
         result = await self.session.execute(query)
         return result.first()
 
-    async def get_by_ids(self, property_ids: List[str]) -> List[Property]:
+    async def get_by_ids(self, property_ids: list[str]) -> list[Property]:
         if not property_ids:
             return []
         query = select(
