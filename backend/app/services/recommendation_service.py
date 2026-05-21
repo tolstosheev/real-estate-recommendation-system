@@ -1,13 +1,14 @@
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.repositories.property_repository import PropertyRepository
-from app.repositories.preferences_repository import UserPreferenceRepository
-from app.repositories.interactions_repository import InteractionRepository
-from app.core.similarity import SimilarityUtils
-from app.core.redis import RedisClient
-import numpy as np
 import json
-from typing import List, Optional, Set
+
+import numpy as np
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.redis import RedisClient
+from app.core.similarity import SimilarityUtils
 from app.models import Property
+from app.repositories.interactions_repository import InteractionRepository
+from app.repositories.preferences_repository import UserPreferenceRepository
+from app.repositories.property_repository import PropertyRepository
 
 
 class RecommendationService:
@@ -37,7 +38,7 @@ class RecommendationService:
         self.utils = SimilarityUtils()
 
     def _get_property_vector(
-        self, prop: Property, lon: float = 0.0, lat: float = 0.0, preferred_city: Optional[str] = None
+        self, prop: Property, lon: float = 0.0, lat: float = 0.0, preferred_city: str | None = None
     ) -> np.ndarray:
         ptype = (prop.property_type or '').lower()
         purpose = (prop.property_purpose or '').lower()
@@ -62,8 +63,8 @@ class RecommendationService:
         ])
 
     async def _build_user_vector(
-        self, user_id: str, preferred_city: Optional[str] = None
-    ) -> Optional[np.ndarray]:
+        self, user_id: str, preferred_city: str | None = None
+    ) -> np.ndarray | None:
         redis = await RedisClient.get_client()
         if redis:
             cache_key = f"user_vec:{user_id}"
@@ -156,7 +157,7 @@ class RecommendationService:
 
         return user_vec
 
-    async def recommend(self, user_id: str, limit: int = 10) -> List[Property]:
+    async def recommend(self, user_id: str, limit: int = 10) -> list[Property]:
         redis = await RedisClient.get_client()
         if redis:
             cache_key = f"user_recs:{user_id}:{limit}"
@@ -205,6 +206,11 @@ class RecommendationService:
             weights[4] = 0.0
         if city_filter_active:
             weights[13] = 0.0
+        
+        if 'property_purpose' in filter_kwargs:
+            weights[10] = 0.0  # sale
+            weights[11] = 0.0  # rent
+            weights[12] = 0.0  # daily_rent
 
         norm_prop_vectors, scaler = self.utils.normalize_features(prop_vectors.tolist())
         norm_user_vec = scaler.transform(user_vec.reshape(1, -1))[0]
@@ -264,8 +270,8 @@ class RecommendationService:
         return filter_kwargs
 
     async def _determine_preferred_city(
-        self, prefs, favs: List[Property], views: List[Property]
-    ) -> Optional[str]:
+        self, prefs, favs: list[Property], views: list[Property]
+    ) -> str | None:
         if prefs and prefs.cities:
             return prefs.cities[0]
 
@@ -280,7 +286,7 @@ class RecommendationService:
         return None
 
     @staticmethod
-    def _extract_interacted_ids(favs: List[Property], views: List[Property]) -> Set[str]:
+    def _extract_interacted_ids(favs: list[Property], views: list[Property]) -> set[str]:
         interacted_ids = set()
         for p in (favs or []) + (views or []):
             interacted_ids.add(str(p.id))
@@ -303,7 +309,7 @@ class RecommendationService:
                     all_rows = rows
 
                 if not all_rows or len(all_rows) < limit:
-                    for key in ('property_type', 'property_purpose'):
+                    for key in ('property_type',):
                         relaxed.pop(key, None)
                     rows = await self.prop_repo.get_all(limit=1000, **relaxed)
                     if len(rows) > len(all_rows):

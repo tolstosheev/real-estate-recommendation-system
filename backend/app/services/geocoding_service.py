@@ -1,7 +1,8 @@
-import httpx
-from app.core.config import settings
-from typing import Tuple, Optional
 import logging
+
+import httpx
+
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -11,7 +12,7 @@ class GeocodingService:
         self.api_key = settings.YANDEX_API_KEY
         self.base_url = "https://geocode-maps.yandex.ru/v1"
 
-    async def get_coords_from_address(self, address: str) -> Optional[Tuple[float, float]]:
+    async def get_coords_from_address(self, address: str) -> tuple[float, float] | None:
         if not self.api_key:
             logger.error("Yandex API Key is not configured.")
             return None
@@ -48,7 +49,7 @@ class GeocodingService:
 
         return None
 
-    async def get_address_from_coords(self, lat: float, lon: float) -> Optional[str]:
+    async def get_address_from_coords(self, lat: float, lon: float) -> str | None:
         if not self.api_key:
             logger.error("Yandex API Key is not configured.")
             return None

@@ -1,5 +1,5 @@
 const YANDEX_GEOCODER_URL = 'https://geocode-maps.yandex.ru/v1/';
-const API_KEY = import.meta.env.VITE_YANDEX_GEOCODER_API_KEY || import.meta.env.VITE_YANDEX_MAPS_API_KEY;
+const API_BASE = '/api';
 
 export interface GeocoderResult {
   lat: number;
@@ -10,11 +10,18 @@ export interface GeocoderResult {
   metro: string | null;
 }
 
-export const geocodeAddress = async (address: string): Promise<GeocoderResult | null> => {
-  if (!address || address.trim().length < 3) return null;
+function getApiKey(): string {
+  return import.meta.env.VITE_YANDEX_GEOCODER_API_KEY || import.meta.env.VITE_YANDEX_MAPS_API_KEY || '';
+}
+
+export const geocodeAddress = async (address: string): Promise<GeocoderResult[]> => {
+  if (!address || address.trim().length < 3) return [];
+
+  const apiKey = getApiKey();
+  if (!apiKey) return [];
 
   const params = new URLSearchParams({
-    apikey: API_KEY || '',
+    apikey: apiKey,
     format: 'json',
     geocode: address,
     results: '10',
@@ -23,56 +30,59 @@ export const geocodeAddress = async (address: string): Promise<GeocoderResult | 
 
   try {
     const response = await fetch(`${YANDEX_GEOCODER_URL}?${params}`);
+    if (!response.ok) return [];
     const data = await response.json();
 
-    const geoObject = data?.response?.GeoObjectCollection?.featureMember?.[0]?.GeoObject;
-    if (!geoObject) return null;
+    const members = data?.response?.GeoObjectCollection?.featureMember ?? [];
+    const results: GeocoderResult[] = [];
 
-    const [lon, lat] = geoObject.Point.pos.split(' ').map(Number);
-    const formattedAddress = geoObject.metaDataProperty?.GeocoderMetaData?.text || address;
+    for (const member of members) {
+      const geo = member.GeoObject;
+      if (!geo) continue;
 
-    const components = geoObject.metaDataProperty?.GeocoderMetaData?.Address?.Components || [];
+      const point = geo.Point?.pos ?? '';
+      const coords = point.split(' ');
+      if (coords.length < 2) continue;
 
-    let district: string | null = null;
-    let metro: string | null = null;
-    let area: string | null = null;
-    for (const c of components) {
-      if (c.kind === 'district') district = c.name;
-      if (c.kind === 'metro') metro = c.name;
-      if (c.kind === 'area') area = c.name;
+      const lon = Number(coords[0]);
+      const lat = Number(coords[1]);
+      const meta = geo.metaDataProperty?.GeocoderMetaData;
+      const formatted = meta?.text ?? '';
+      const components = meta?.Address?.Components ?? [];
+
+      let district: string | null = null;
+      let metro: string | null = null;
+      let area: string | null = null;
+      for (const c of components) {
+        if (c.kind === 'district') district = c.name;
+        else if (c.kind === 'metro') metro = c.name;
+        else if (c.kind === 'area') area = c.name;
+      }
+      if (!district) district = area;
+
+      results.push({
+        lat,
+        lon,
+        address,
+        formattedAddress: formatted || address,
+        district,
+        metro,
+      });
     }
-    if (!district) district = area;
 
-    return {
-      lat,
-      lon,
-      address,
-      formattedAddress,
-      district,
-      metro,
-    };
+    return results;
   } catch (error) {
     console.error('Geocoder error:', error);
-    return null;
+    return [];
   }
 };
 
 export const reverseGeocode = async (lat: number, lon: number): Promise<string | null> => {
-  const params = new URLSearchParams({
-    apikey: API_KEY || '',
-    format: 'json',
-    geocode: `${lon},${lat}`,
-    results: '1',
-  });
-
   try {
-    const response = await fetch(`${YANDEX_GEOCODER_URL}?${params}`);
+    const response = await fetch(`${API_BASE}/geocode/reverse?lat=${lat}&lon=${lon}`);
+    if (!response.ok) return null;
     const data = await response.json();
-
-    const geoObject = data?.response?.GeoObjectCollection?.featureMember?.[0]?.GeoObject;
-    if (!geoObject) return null;
-
-    return geoObject.metaDataProperty?.GeocoderMetaData?.text || null;
+    return data.address;
   } catch (error) {
     console.error('Reverse geocoder error:', error);
     return null;
