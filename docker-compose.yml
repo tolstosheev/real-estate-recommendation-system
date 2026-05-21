@@ -55,7 +55,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://user:password@db:5432/nestai_db
+      - DATABASE_URL=postgresql+asyncpg://user:password@db:5432/nestai_db
       - REDIS_URL=redis://redis:6379/0
       - YANDEX_API_KEY=${YANDEX_API_KEY}
       - S3_ENDPOINT=http://minio:9000
