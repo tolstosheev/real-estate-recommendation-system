@@ -1,0 +1,9 @@
+[project]
+name = "nestai-backend"
+version = "0.1.0"
+description = "nestAI real estate recommendation system backend"
+requires-python = ">=3.12"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
