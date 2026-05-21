@@ -17,3 +17,6 @@ passlib[bcrypt]==1.7.4
 bcrypt==3.2.0
 GeoAlchemy2==0.19.0
 redis==5.0.4
+minio==7.2.7
+pytest-cov==5.0.0
+python-magic==0.4.27

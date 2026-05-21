@@ -1,21 +1,27 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 from app.api.endpoints import properties, auth, user, interactions, recommendations
+from app.api.endpoints.upload import router as upload_router
 from app.core.db import Base, engine
+from app.services.image_service import ImageService
 import logging
 
 logging.basicConfig(level=logging.INFO, filename="server_errors.log", filemode="a")
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="nestAI API")
 
-
-@app.on_event("startup")
-async def startup():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    print("Tables created")
+    image_service = ImageService()
+    await image_service.ensure_bucket()
+    yield
+
+
+app = FastAPI(title="nestAI API", lifespan=lifespan)
 
 
 @app.exception_handler(Exception)
@@ -44,6 +50,7 @@ app.include_router(properties.router, prefix="/api/properties", tags=["Propertie
 app.include_router(user.router, prefix="/user", tags=["User Profile"])
 app.include_router(interactions.router, prefix="/api/interactions", tags=["Interactions"])
 app.include_router(recommendations.router, prefix="/api/recommendations", tags=["Recommendations"])
+app.include_router(upload_router, prefix="/api", tags=["Images"])
 
 
 @app.get("/")
