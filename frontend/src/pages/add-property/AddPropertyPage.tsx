@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '@app/store/hooks';
 import { propertyService } from '@shared/api/properties.service';
@@ -67,6 +67,14 @@ export const AddPropertyPage: React.FC = () => {
   const [addressSuggestions, setAddressSuggestions] = useState<GeocoderResult[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const suggestionsRef = useRef<HTMLDivElement>(null);
+  const [metroOptions, setMetroOptions] = useState<string[]>([]);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    propertyService.getMeta().then(data => {
+      setMetroOptions(data.metro || []);
+    }).catch(() => {});
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -83,9 +91,17 @@ export const AddPropertyPage: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleAddressChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    };
+  }, []);
+
+  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setFormData(prev => ({ ...prev, address: value }));
+
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
 
     if (value.length < 3) {
       setAddressSuggestions([]);
@@ -93,15 +109,17 @@ export const AddPropertyPage: React.FC = () => {
       return;
     }
 
-    try {
-      const result = await geocodeAddress(value);
-      if (result) {
-        setAddressSuggestions([result]);
-        setShowSuggestions(true);
+    debounceTimerRef.current = setTimeout(async () => {
+      try {
+        const result = await geocodeAddress(value);
+        if (result) {
+          setAddressSuggestions([result]);
+          setShowSuggestions(true);
+        }
+      } catch {
+        setAddressSuggestions([]);
       }
-    } catch {
-      setAddressSuggestions([]);
-    }
+    }, 300);
   };
 
   const selectAddressSuggestion = (result: GeocoderResult) => {
@@ -110,6 +128,8 @@ export const AddPropertyPage: React.FC = () => {
       address: result.formattedAddress || result.address,
       lat: result.lat.toString(),
       lon: result.lon.toString(),
+      district: result.district || prev.district,
+      metro: result.metro || prev.metro,
     }));
     setShowSuggestions(false);
     setAddressSuggestions([]);
@@ -136,9 +156,42 @@ export const AddPropertyPage: React.FC = () => {
       return;
     }
 
+    const valErrors: string[] = [];
+    const price = parseFloat(formData.price);
+    if (price <= 0) valErrors.push('Price must be greater than 0');
+
+    const area = formData.area ? parseFloat(formData.area) : null;
+    const sq_living = formData.sq_living ? parseFloat(formData.sq_living) : null;
+    const sq_kitchen = formData.sq_kitchen ? parseFloat(formData.sq_kitchen) : null;
+    if (area != null && sq_living != null && sq_kitchen != null && area < sq_living + sq_kitchen) {
+      valErrors.push('Total area must be at least living area + kitchen area');
+    }
+
+    const rooms = formData.rooms ? parseInt(formData.rooms) : null;
+    if (rooms != null && rooms <= 0) valErrors.push('Number of rooms must be greater than 0');
+
+    const floor = formData.floor ? parseInt(formData.floor) : null;
+    const total_floors = formData.total_floors ? parseInt(formData.total_floors) : null;
+    if (floor != null && total_floors != null && floor > total_floors) {
+      valErrors.push('Floor cannot exceed total floors');
+    }
+
+    const build_year = formData.build_year ? parseInt(formData.build_year) : null;
+    if (build_year != null && (build_year < 1900 || build_year > new Date().getFullYear() + 1)) {
+      valErrors.push('Build year seems incorrect');
+    }
+
+    if (valErrors.length) {
+      setError(valErrors.join('. '));
+      setLoading(false);
+      return;
+    }
+
     try {
       const data: Partial<Property> = {
         ...formData,
+        district: formData.district || undefined,
+        metro: formData.metro || undefined,
         price: parseFloat(formData.price),
         rooms: formData.rooms ? parseInt(formData.rooms) : null,
         area: formData.area ? parseFloat(formData.area) : null,
@@ -264,6 +317,21 @@ export const AddPropertyPage: React.FC = () => {
                 {PARKING_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
               </select>
             </div>
+            <div className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
+              <label>Images</label>
+              <ImageUploader
+                images={formData.images}
+                onChange={(urls) => setFormData(prev => ({ ...prev, images: urls }))}
+              />
+            </div>
+            <div className={styles.formGroup}>
+              <label>Living Area (m²)</label>
+              <input name="sq_living" type="number" step="0.1" placeholder="40.5" value={formData.sq_living} onChange={handleChange} />
+            </div>
+            <div className={styles.formGroup}>
+              <label>Kitchen Area (m²)</label>
+              <input name="sq_kitchen" type="number" step="0.1" placeholder="12.0" value={formData.sq_kitchen} onChange={handleChange} />
+            </div>
             <div className={styles.navBtns}>
               <button type="button" onClick={prevStep}>Back</button>
               <button type="button" onClick={nextStep} className={styles.nextBtn}>Next</button>
@@ -289,12 +357,11 @@ export const AddPropertyPage: React.FC = () => {
               </div>
             </div>
             <div className={styles.formGroup}>
-              <label>District</label>
-              <input name="district" placeholder="District" value={formData.district} onChange={handleChange} />
-            </div>
-            <div className={styles.formGroup}>
               <label>Metro</label>
-              <input name="metro" placeholder="Metro Station" value={formData.metro} onChange={handleChange} />
+              <input name="metro" list="metro-list" placeholder="Metro Station" value={formData.metro} onChange={handleChange} />
+              <datalist id="metro-list">
+                {metroOptions.map(m => <option key={m} value={m} />)}
+              </datalist>
             </div>
             <div className={styles.formGroup}>
               <label>Latitude</label>
@@ -303,21 +370,6 @@ export const AddPropertyPage: React.FC = () => {
             <div className={styles.formGroup}>
               <label>Longitude</label>
               <input name="lon" type="number" step="any" placeholder="Longitude" value={formData.lon} onChange={handleChange} />
-            </div>
-            <div className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
-              <label>Images</label>
-              <ImageUploader
-                images={formData.images}
-                onChange={(urls) => setFormData(prev => ({ ...prev, images: urls }))}
-              />
-            </div>
-            <div className={styles.formGroup}>
-              <label>Living Area (m²)</label>
-              <input name="sq_living" type="number" placeholder="40.5" value={formData.sq_living} onChange={handleChange} />
-            </div>
-            <div className={styles.formGroup}>
-              <label>Kitchen Area (m²)</label>
-              <input name="sq_kitchen" type="number" placeholder="12.0" value={formData.sq_kitchen} onChange={handleChange} />
             </div>
             <div className={styles.navBtns}>
               <button type="button" onClick={prevStep}>Back</button>
