@@ -37,6 +37,13 @@ class RedisClient:
                 await redis.delete(*keys)
 
     @classmethod
+    async def clear_property_cache(cls, property_ids: list[str]):
+        redis = await cls.get_client()
+        if redis and property_ids:
+            keys = [f"prop_details:{pid}" for pid in property_ids]
+            await redis.delete(*keys)
+
+    @classmethod
     async def close(cls):
         if cls._instance:
             try:

@@ -5,6 +5,9 @@ from app.core.db import get_db
 from app.services.auth_service import AuthService
 from app.schemas.auth import UserCreate, UserUpdate, Token, UserOut
 from app.schemas.auth_login import UserLogin
+from app.core.redis import RedisClient
+from app.models.models import Property
+from sqlalchemy import select
 
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
@@ -71,4 +74,6 @@ async def update_me(user_in: UserUpdate, token: str = Depends(oauth2_scheme), db
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authentication credentials")
     updated_user = await service.update_user(str(user.id), user_in.model_dump(exclude_unset=True))
+    prop_ids = await db.scalars(select(Property.id).where(Property.user_id == user.id))
+    await RedisClient.clear_property_cache([str(pid) for pid in prop_ids.all()])
     return updated_user

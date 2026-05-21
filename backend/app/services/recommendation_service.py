@@ -163,8 +163,8 @@ class RecommendationService:
             cached_recs = await redis.get(cache_key)
             if cached_recs:
                 prop_ids = json.loads(cached_recs)
-                props = await self.prop_repo.get_by_ids(prop_ids)
-                return props
+                rows = await self.prop_repo.get_by_ids(prop_ids)
+                return [row[0] for row in rows]
 
         prefs = await self.pref_repo.get_by_user_id(user_id)
 

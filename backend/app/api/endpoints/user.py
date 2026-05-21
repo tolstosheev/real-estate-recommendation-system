@@ -8,7 +8,9 @@ from app.services.auth_service import AuthService
 from app.schemas.auth import UserOut, UserUpdate
 from app.schemas.property import PropertyOut
 from app.core.security import get_current_user, get_current_user_optional
-from app.models.models import User
+from app.models.models import User, Property
+from app.core.redis import RedisClient
+from sqlalchemy import select
 from typing import List
 
 router = APIRouter()
@@ -66,6 +68,8 @@ async def update_my_profile(
     updated_user = await service.update_user(str(current_user.id), user_in.model_dump(exclude_unset=True))
     if not updated_user:
         raise HTTPException(status_code=404, detail="User not found")
+    prop_ids = await db.scalars(select(Property.id).where(Property.user_id == current_user.id))
+    await RedisClient.clear_property_cache([str(pid) for pid in prop_ids.all()])
     return updated_user
 
 

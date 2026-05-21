@@ -37,7 +37,7 @@ class UserRepository:
         if not user:
             return None
         for key, value in user_data.items():
-            if hasattr(user, key) and value is not None:
+            if hasattr(user, key):
                 setattr(user, key, value)
         await self.session.commit()
         await self.session.refresh(user)

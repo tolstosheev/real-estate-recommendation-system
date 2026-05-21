@@ -1,10 +1,11 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import select, func, delete
 from app.repositories.property_repository import PropertyRepository
 from app.repositories.user_repository import UserRepository
 from app.services.geocoding_service import GeocodingService
 from app.core.redis import RedisClient
-from app.models.models import Property
+from app.core.category import compute_category
+from app.models.models import Property, Interaction
 from typing import List, Optional
 import json
 import hashlib
@@ -106,6 +107,11 @@ class PropertyService:
         return enriched
 
     async def create_property(self, property_data: dict):
+        property_type = property_data.get("property_type")
+        rooms = property_data.get("rooms")
+        if property_type and rooms is not None:
+            property_data["category"] = compute_category(property_type, rooms)
+
         if "lat" not in property_data or "lon" not in property_data:
             address = property_data.get("address")
             if address:
@@ -247,7 +253,19 @@ class PropertyService:
         return await self.batch_enrich(results)
 
     async def update_property(self, property_id: str, update_data: dict):
+        if "property_type" in update_data or "rooms" in update_data:
+            existing = await self.repository.get_by_id(property_id)
+            if existing:
+                prop = existing[0]
+                property_type = update_data.get("property_type") or prop.property_type
+                rooms = update_data.get("rooms") or prop.rooms
+                if property_type and rooms is not None:
+                    update_data["category"] = compute_category(property_type, rooms)
+
         result = await self.repository.update(property_id, update_data)
+        redis = await self._get_redis()
+        if redis:
+            await redis.delete(f"prop_details:{property_id}")
         return await self._enrich_property(result)
 
     async def get_user_properties(self, user_id: str):
@@ -258,4 +276,7 @@ class PropertyService:
         return await self.batch_enrich(result.all())
 
     async def delete_property(self, property_id: str):
+        await self.repository.session.execute(
+            delete(Interaction).where(Interaction.property_id == property_id)
+        )
         return await self.repository.delete(property_id)

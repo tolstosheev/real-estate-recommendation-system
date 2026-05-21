@@ -6,6 +6,7 @@ from decimal import Decimal
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import text
+from app.core.category import compute_category
 
 CITIES = {
     "London": {"country": "UK", "center": (51.5074, -0.1278), "price_coef": 1.8,
@@ -294,15 +295,7 @@ async def generate_property(city_name: str, city_data: dict, user_id: str, prop_
 
     title_prefix = random.choice(TITLES_BY_TYPE.get(property_type, TITLES_BY_TYPE["Apartment"]))
 
-    category = "Studio" if property_type == "Studio" else (
-        "Penthouse" if property_type == "Penthouse" else (
-            "Loft" if property_type == "Loft" else (
-                "Duplex" if property_type == "Duplex" else (
-                    f"{rooms}-bedroom" if rooms <= 5 else "5+ bedroom"
-                )
-            )
-        )
-    )
+    category = compute_category(property_type, rooms)
 
     base_desc = random.choice(DESCRIPTIONS)
     extras = [
