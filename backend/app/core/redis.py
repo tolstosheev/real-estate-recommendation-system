@@ -39,5 +39,8 @@ class RedisClient:
     @classmethod
     async def close(cls):
         if cls._instance:
-            await cls._instance.close()
+            try:
+                await cls._instance.aclose()
+            except RuntimeError:
+                pass
             cls._instance = None

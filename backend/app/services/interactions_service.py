@@ -4,7 +4,6 @@ from app.repositories.property_repository import PropertyRepository
 from app.core.redis import RedisClient
 from typing import List
 from app.models.models import Property
-from sqlalchemy import update
 
 
 class InteractionService:

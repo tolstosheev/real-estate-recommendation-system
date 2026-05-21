@@ -9,6 +9,7 @@ from typing import List, Optional
 import json
 import hashlib
 from decimal import Decimal
+from collections import defaultdict
 
 
 class DecimalEncoder(json.JSONEncoder):
@@ -63,6 +64,47 @@ class PropertyService:
 
         return prop
 
+    async def batch_enrich(self, results):
+        if not results:
+            return []
+
+        enriched = []
+        user_ids = set()
+        for result in results:
+            if hasattr(result, "_mapping"):
+                prop = result[0]
+            elif isinstance(result, (tuple, list)):
+                prop = result[0]
+            else:
+                prop = result
+            if prop is not None and prop.user_id:
+                user_ids.add(str(prop.user_id))
+
+        users = await self.user_repo.get_by_ids(list(user_ids)) if user_ids else {}
+
+        for result in results:
+            if hasattr(result, "_mapping"):
+                mapping = result._mapping
+                prop = result[0]
+                lon = mapping.get("lon")
+                lat = mapping.get("lat")
+            elif isinstance(result, (tuple, list)) and len(result) >= 2:
+                prop = result[0]
+                lon, lat = result[1], result[2] if len(result) >= 3 else (None, None)
+            else:
+                prop = result
+                lat, lon = None, None
+
+            if prop is not None:
+                prop.lat = lat
+                prop.lon = lon
+                uid = str(prop.user_id) if prop.user_id else None
+                prop.owner = users.get(uid) if uid else None
+
+            enriched.append(prop)
+
+        return enriched
+
     async def create_property(self, property_data: dict):
         if "lat" not in property_data or "lon" not in property_data:
             address = property_data.get("address")
@@ -83,9 +125,33 @@ class PropertyService:
         result = await self.repository.get_by_id(str(prop.id))
         return await self._enrich_property(result)
 
-    async def get_properties_in_bbox(self, min_lat: float, max_lat: float, min_lon: float, max_lon: float):
-        results = await self.repository.get_by_bbox(min_lat, max_lat, min_lon, max_lon)
-        return [await self._enrich_property(res) for res in results]
+    async def get_properties_in_bbox(
+        self, min_lat: float, max_lat: float, min_lon: float, max_lon: float,
+        min_price: float = None, max_price: float = None,
+        rooms: Optional[List[int]] = None,
+        property_type: Optional[List[str]] = None,
+        property_purpose: Optional[List[str]] = None,
+        district: str = None, metro: str = None,
+        material: Optional[List[str]] = None,
+        repair_type: Optional[List[str]] = None,
+        min_build_year: int = None, max_build_year: int = None,
+        city: Optional[List[str]] = None,
+        min_area: float = None, max_area: float = None,
+        is_new: Optional[List[str]] = None,
+        limit: int = 50, offset: int = 0,
+    ):
+        results = await self.repository.get_by_bbox(
+            min_lat, max_lat, min_lon, max_lon,
+            min_price=min_price, max_price=max_price,
+            rooms=rooms, property_type=property_type,
+            property_purpose=property_purpose,
+            district=district, metro=metro,
+            material=material, repair_type=repair_type,
+            min_build_year=min_build_year, max_build_year=max_build_year,
+            city=city, min_area=min_area, max_area=max_area,
+            is_new=is_new, limit=limit, offset=offset,
+        )
+        return await self.batch_enrich(results)
 
     async def get_property_details(self, property_id: str):
         cache_key = f"prop_details:{property_id}"
@@ -178,7 +244,7 @@ class PropertyService:
             district, metro, material, repair_type, min_build_year, max_build_year, city, property_purpose,
             search, min_area, max_area, is_new,
         )
-        return [await self._enrich_property(res) for res in results]
+        return await self.batch_enrich(results)
 
     async def update_property(self, property_id: str, update_data: dict):
         result = await self.repository.update(property_id, update_data)
@@ -189,7 +255,7 @@ class PropertyService:
             .filter(Property.user_id == user_id) \
             .order_by(Property.created_at.desc())
         result = await self.repository.session.execute(query)
-        return [await self._enrich_property(res) for res in result.all()]
+        return await self.batch_enrich(result.all())
 
     async def delete_property(self, property_id: str):
         return await self.repository.delete(property_id)

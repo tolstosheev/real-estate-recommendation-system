@@ -10,12 +10,67 @@ class PropertyRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_by_bbox(self, min_lat: float, max_lat: float, min_lon: float, max_lon: float):
+    async def get_by_bbox(
+        self,
+        min_lat: float,
+        max_lat: float,
+        min_lon: float,
+        max_lon: float,
+        min_price: float = None,
+        max_price: float = None,
+        rooms: Optional[List[int]] = None,
+        property_type: Optional[List[str]] = None,
+        property_purpose: Optional[List[str]] = None,
+        district: str = None,
+        metro: str = None,
+        material: Optional[List[str]] = None,
+        repair_type: Optional[List[str]] = None,
+        min_build_year: int = None,
+        max_build_year: int = None,
+        city: Optional[List[str]] = None,
+        min_area: float = None,
+        max_area: float = None,
+        is_new: Optional[List[str]] = None,
+        limit: int = 50,
+        offset: int = 0,
+    ):
         bbox = func.ST_MakeEnvelope(min_lon, min_lat, max_lon, max_lat, 4326)
         query = select(
             Property, func.ST_X(Property.location).label("lon"), func.ST_Y(Property.location).label("lat")
         ).filter(func.ST_Intersects(Property.location, bbox))
 
+        if min_price is not None:
+            query = query.filter(Property.price >= min_price)
+        if max_price is not None:
+            query = query.filter(Property.price <= max_price)
+        if rooms:
+            query = query.filter(Property.rooms.in_(rooms))
+        if property_type:
+            query = query.filter(Property.property_type.in_(property_type))
+        if property_purpose:
+            query = query.filter(Property.property_purpose.in_(property_purpose))
+        if district is not None:
+            query = query.filter(Property.district == district)
+        if metro is not None:
+            query = query.filter(Property.metro == metro)
+        if material:
+            query = query.filter(Property.material.in_(material))
+        if repair_type:
+            query = query.filter(Property.repair_type.in_(repair_type))
+        if min_build_year is not None:
+            query = query.filter(Property.build_year >= min_build_year)
+        if max_build_year is not None:
+            query = query.filter(Property.build_year <= max_build_year)
+        if city:
+            query = query.filter(Property.city.in_(city))
+        if min_area is not None:
+            query = query.filter(Property.area >= min_area)
+        if max_area is not None:
+            query = query.filter(Property.area <= max_area)
+        if is_new:
+            query = query.filter(Property.is_new.in_(is_new))
+
+        query = query.offset(offset).limit(limit)
         result = await self.session.execute(query)
         return result.all()
 
@@ -112,9 +167,11 @@ class PropertyRepository:
     async def get_by_ids(self, property_ids: List[str]) -> List[Property]:
         if not property_ids:
             return []
-        query = select(Property).filter(Property.id.in_(property_ids))
+        query = select(
+            Property, func.ST_X(Property.location).label("lon"), func.ST_Y(Property.location).label("lat")
+        ).filter(Property.id.in_(property_ids))
         result = await self.session.execute(query)
-        return result.scalars().all()
+        return result.all()
 
     async def update(self, property_id: str, update_data: dict) -> Property | None:
         if "lat" in update_data and "lon" in update_data:

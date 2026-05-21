@@ -112,17 +112,37 @@ class RecommendationService:
         implicit_vec = None
         if favorites or views:
             weighted_vectors = []
+            all_ids = set()
+            fav_ids = set()
+            view_ids = set()
 
             if favorites:
                 for p in favorites:
-                    res = await self.prop_repo.get_by_id(p.id)
+                    pid = str(p.id)
+                    all_ids.add(pid)
+                    fav_ids.add(pid)
+
+            if views:
+                for p in views:
+                    pid = str(p.id)
+                    all_ids.add(pid)
+                    view_ids.add(pid)
+
+            if all_ids:
+                prop_map = {}
+                rows = await self.prop_repo.get_by_ids(list(all_ids))
+                for row in rows:
+                    pid = str(row[0].id)
+                    prop_map[pid] = row
+
+                for pid in fav_ids:
+                    res = prop_map.get(pid)
                     if res:
                         vec = self._get_property_vector(res[0], res[1], res[2], preferred_city)
                         weighted_vectors.append(vec * 1.0)
 
-            if views:
-                for p in views:
-                    res = await self.prop_repo.get_by_id(p.id)
+                for pid in view_ids:
+                    res = prop_map.get(pid)
                     if res:
                         vec = self._get_property_vector(res[0], res[1], res[2], preferred_city)
                         weighted_vectors.append(vec * 0.2)

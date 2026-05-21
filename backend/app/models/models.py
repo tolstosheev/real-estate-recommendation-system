@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, Numeric, Integer, ForeignKey, DateTime, ARRAY, JSON
+from sqlalchemy import Column, String, Numeric, Integer, ForeignKey, DateTime, ARRAY, JSON, Boolean
 from sqlalchemy.dialects.postgresql import UUID
 from geoalchemy2 import Geometry
 from sqlalchemy.sql import func
@@ -51,8 +51,8 @@ class Property(Base):
     # Удобства
     balcony = Column(String)  # наличие балкона
     parking = Column(String)  # наличие парковки
-    views_count = Column(Integer, default=0)
-    likes_count = Column(Integer, default=0)
+    views_count = Column(Integer, default=0, server_default='0')
+    likes_count = Column(Integer, default=0, server_default='0')
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
@@ -83,5 +83,43 @@ class Interaction(Base):
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     property_id = Column(UUID(as_uuid=True), ForeignKey("properties.id"), nullable=False)
     interaction_type = Column(String)
-    weight = Column(Integer, default=1)
+    weight = Column(Integer, default=1, server_default='1')
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class Material(Base):
+    __tablename__ = "materials"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(50), unique=True, nullable=False)
+    display_name = Column(String(100), nullable=False)
+    is_active = Column(Boolean, default=True)
+
+
+class RepairType(Base):
+    __tablename__ = "repair_types"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(50), unique=True, nullable=False)
+    display_name = Column(String(100), nullable=False)
+    is_active = Column(Boolean, default=True)
+
+
+class District(Base):
+    __tablename__ = "districts"
+
+    id = Column(Integer, primary_key=True)
+    city = Column(String(100), nullable=False)
+    name = Column(String(50), nullable=False)
+    display_name = Column(String(100), nullable=False)
+    is_active = Column(Boolean, default=True)
+
+
+class MetroStation(Base):
+    __tablename__ = "metro_stations"
+
+    id = Column(Integer, primary_key=True)
+    city = Column(String(100), nullable=False)
+    name = Column(String(100), nullable=False)
+    line_color = Column(String(20))
+    is_active = Column(Boolean, default=True)

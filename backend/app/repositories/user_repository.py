@@ -1,6 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from app.models.models import User
+from typing import List
 
 
 class UserRepository:
@@ -21,6 +22,15 @@ class UserRepository:
     async def get_by_id(self, user_id: str) -> User | None:
         result = await self.session.execute(select(User).where(User.id == user_id))
         return result.scalar_one_or_none()
+
+    async def get_by_ids(self, user_ids: List[str]) -> dict[str, User]:
+        if not user_ids:
+            return {}
+        result = await self.session.execute(
+            select(User).where(User.id.in_(user_ids))
+        )
+        users = result.scalars().all()
+        return {str(u.id): u for u in users}
 
     async def update(self, user_id: str, user_data: dict) -> User | None:
         user = await self.get_by_id(user_id)

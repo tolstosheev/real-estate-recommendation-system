@@ -6,8 +6,8 @@ from app.core.db import get_db
 from app.services.auth_service import AuthService
 from app.models.models import User
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
-oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="auth/token", auto_error=False)
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
 
 
 async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):

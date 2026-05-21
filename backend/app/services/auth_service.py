@@ -1,4 +1,3 @@
-import os
 from datetime import datetime, timedelta, UTC
 from typing import Optional
 import jwt
@@ -6,11 +5,7 @@ import bcrypt
 from app.repositories.user_repository import UserRepository
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.models import User
-
-SECRET_KEY = os.getenv("SECRET_KEY", "super-secret-nestai-key-for-dev-extra-long")
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24
-
+from app.core.config import settings
 
 class AuthService:
     def __init__(self, session: AsyncSession):
@@ -31,6 +26,9 @@ class AuthService:
         phone_number: Optional[str] = None,
         telegram_handle: Optional[str] = None,
     ):
+        if len(password) < 6:
+            raise ValueError("Password must be at least 6 characters")
+
         existing_user = await self.repository.get_by_email(email)
         if existing_user:
             raise ValueError("User with this email already exists")
@@ -55,13 +53,13 @@ class AuthService:
 
     def create_access_token(self, data: dict, expires_delta: Optional[timedelta] = None):
         to_encode = data.copy()
-        expire = datetime.now(UTC) + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+        expire = datetime.now(UTC) + (expires_delta or timedelta(minutes=60 * 24))
         to_encode.update({"exp": expire})
-        return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+        return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
     async def get_current_user(self, token):
         try:
-            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
             user_id: str = payload.get("id")
             if user_id is None:
                 return None
