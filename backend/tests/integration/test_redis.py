@@ -17,9 +17,9 @@ async def test_redis_connection():
 
 @pytest.mark.asyncio
 async def test_recommendations_caching(client: AsyncClient):
-    payload = {"email": "cache@example.com", "password": "password123", "full_name": "Cache User"}
+    payload = {"email": "cache@example.com", "password": "Password123", "full_name": "Cache User"}
     await client.post("/auth/register", json=payload)
-    login_data = {"email": "cache@example.com", "password": "password123"}
+    login_data = {"email": "cache@example.com", "password": "Password123"}
     token = (await client.post("/auth/login", json=login_data)).json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 

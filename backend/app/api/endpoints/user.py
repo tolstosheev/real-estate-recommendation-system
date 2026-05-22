@@ -89,4 +89,7 @@ async def get_user_by_id(
     user = await service.repository.get_by_id(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    if str(user.id) != str(current_user.id):
+        user.phone_number = None
+        user.telegram_handle = None
     return user

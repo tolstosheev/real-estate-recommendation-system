@@ -4,9 +4,9 @@ from httpx import AsyncClient
 
 @pytest.mark.asyncio
 async def test_recommendations_cold_start(client: AsyncClient):
-    payload = {"email": "cold@example.com", "password": "password123", "full_name": "Cold User"}
+    payload = {"email": "cold@example.com", "password": "Password123", "full_name": "Cold User"}
     await client.post("/auth/register", json=payload)
-    login_data = {"email": "cold@example.com", "password": "password123"}
+    login_data = {"email": "cold@example.com", "password": "Password123"}
     token_res = await client.post("/auth/login", json=login_data)
     token = token_res.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
@@ -21,9 +21,9 @@ async def test_recommendations_cold_start(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_recommendations_personalized(client: AsyncClient):
-    payload = {"email": "rec@example.com", "password": "password123", "full_name": "Rec User"}
+    payload = {"email": "rec@example.com", "password": "Password123", "full_name": "Rec User"}
     await client.post("/auth/register", json=payload)
-    login_data = {"email": "rec@example.com", "password": "password123"}
+    login_data = {"email": "rec@example.com", "password": "Password123"}
     token_res = await client.post("/auth/login", json=login_data)
     token = token_res.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}

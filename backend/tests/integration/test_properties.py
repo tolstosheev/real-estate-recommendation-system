@@ -4,9 +4,9 @@ from httpx import AsyncClient
 
 @pytest.mark.asyncio
 async def test_property_crud(client: AsyncClient):
-    payload = {"email": "owner@example.com", "password": "password123", "full_name": "Owner", "phone_number": "+79001112233"}
+    payload = {"email": "owner@example.com", "password": "Password123", "full_name": "Owner", "phone_number": "+79001112233"}
     await client.post("/auth/register", json=payload)
-    login_data = {"email": "owner@example.com", "password": "password123"}
+    login_data = {"email": "owner@example.com", "password": "Password123"}
     token_res = await client.post("/auth/login", json=login_data)
     token = token_res.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
@@ -52,13 +52,13 @@ async def test_property_crud(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_property_unauthorized_access(client: AsyncClient):
-    u1_payload = {"email": "u1@example.com", "password": "password123", "full_name": "User 1", "phone_number": "+79001112233"}
-    u2_payload = {"email": "u2@example.com", "password": "password123", "full_name": "User 2", "phone_number": "+79004445566"}
+    u1_payload = {"email": "u1@example.com", "password": "Password123", "full_name": "User 1", "phone_number": "+79001112233"}
+    u2_payload = {"email": "u2@example.com", "password": "Password123", "full_name": "User 2", "phone_number": "+79004445566"}
     await client.post("/auth/register", json=u1_payload)
     await client.post("/auth/register", json=u2_payload)
 
-    l1_data = {"email": "u1@example.com", "password": "password123"}
-    l2_data = {"email": "u2@example.com", "password": "password123"}
+    l1_data = {"email": "u1@example.com", "password": "Password123"}
+    l2_data = {"email": "u2@example.com", "password": "Password123"}
     t1 = (await client.post("/auth/login", json=l1_data)).json()["access_token"]
     t2 = (await client.post("/auth/login", json=l2_data)).json()["access_token"]
 
@@ -77,9 +77,9 @@ async def test_property_unauthorized_access(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_property_not_found(client: AsyncClient):
-    payload = {"email": "lost@example.com", "password": "password123", "full_name": "Lost"}
+    payload = {"email": "lost@example.com", "password": "Password123", "full_name": "Lost"}
     await client.post("/auth/register", json=payload)
-    login_data = {"email": "lost@example.com", "password": "password123"}
+    login_data = {"email": "lost@example.com", "password": "Password123"}
     token = (await client.post("/auth/login", json=login_data)).json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -97,9 +97,9 @@ async def test_property_not_found(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_geo_search(client: AsyncClient):
-    payload = {"email": "geo@example.com", "password": "password123", "full_name": "Geo"}
+    payload = {"email": "geo@example.com", "password": "Password123", "full_name": "Geo"}
     await client.post("/auth/register", json=payload)
-    login_data = {"email": "geo@example.com", "password": "password123"}
+    login_data = {"email": "geo@example.com", "password": "Password123"}
     token = (await client.post("/auth/login", json=login_data)).json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -116,9 +116,9 @@ async def test_geo_search(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_property_filters(client: AsyncClient):
-    payload = {"email": "filt@example.com", "password": "password123", "full_name": "Filt"}
+    payload = {"email": "filt@example.com", "password": "Password123", "full_name": "Filt"}
     await client.post("/auth/register", json=payload)
-    login_data = {"email": "filt@example.com", "password": "password123"}
+    login_data = {"email": "filt@example.com", "password": "Password123"}
     token = (await client.post("/auth/login", json=login_data)).json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -146,9 +146,9 @@ async def test_property_filters(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_invalid_coordinates(client: AsyncClient):
-    payload = {"email": "val@example.com", "password": "password123", "full_name": "Val"}
+    payload = {"email": "val@example.com", "password": "Password123", "full_name": "Val"}
     await client.post("/auth/register", json=payload)
-    login_data = {"email": "val@example.com", "password": "password123"}
+    login_data = {"email": "val@example.com", "password": "Password123"}
     token = (await client.post("/auth/login", json=login_data)).json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -165,13 +165,13 @@ async def test_invalid_coordinates(client: AsyncClient):
 async def test_property_owner_contacts(client: AsyncClient):
     payload = {
         "email": "contact@example.com",
-        "password": "password123",
+        "password": "Password123",
         "full_name": "Contact User",
         "phone_number": "+79001112233",
         "telegram_handle": "@contact_me",
     }
     await client.post("/auth/register", json=payload)
-    login_data = {"email": "contact@example.com", "password": "password123"}
+    login_data = {"email": "contact@example.com", "password": "Password123"}
     token_res = await client.post("/auth/login", json=login_data)
     token = token_res.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
@@ -189,9 +189,9 @@ async def test_property_owner_contacts(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_property_new_fields(client: AsyncClient):
-    payload = {"email": "fields@example.com", "password": "password123", "full_name": "Fields"}
+    payload = {"email": "fields@example.com", "password": "Password123", "full_name": "Fields"}
     await client.post("/auth/register", json=payload)
-    login_data = {"email": "fields@example.com", "password": "password123"}
+    login_data = {"email": "fields@example.com", "password": "Password123"}
     token = (await client.post("/auth/login", json=login_data)).json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -228,9 +228,9 @@ async def test_property_new_fields(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_property_filter_by_purpose(client: AsyncClient):
-    payload = {"email": "filter2@example.com", "password": "password123", "full_name": "Filter2"}
+    payload = {"email": "filter2@example.com", "password": "Password123", "full_name": "Filter2"}
     await client.post("/auth/register", json=payload)
-    login_data = {"email": "filter2@example.com", "password": "password123"}
+    login_data = {"email": "filter2@example.com", "password": "Password123"}
     token = (await client.post("/auth/login", json=login_data)).json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -263,9 +263,9 @@ async def test_property_filter_by_purpose(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_property_filter_by_material(client: AsyncClient):
-    payload = {"email": "mat@example.com", "password": "password123", "full_name": "Mat"}
+    payload = {"email": "mat@example.com", "password": "Password123", "full_name": "Mat"}
     await client.post("/auth/register", json=payload)
-    login_data = {"email": "mat@example.com", "password": "password123"}
+    login_data = {"email": "mat@example.com", "password": "Password123"}
     token = (await client.post("/auth/login", json=login_data)).json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -300,9 +300,9 @@ async def test_property_filter_by_material(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_property_filter_by_city(client: AsyncClient):
-    payload = {"email": "city@example.com", "password": "password123", "full_name": "City"}
+    payload = {"email": "city@example.com", "password": "Password123", "full_name": "City"}
     await client.post("/auth/register", json=payload)
-    login_data = {"email": "city@example.com", "password": "password123"}
+    login_data = {"email": "city@example.com", "password": "Password123"}
     token = (await client.post("/auth/login", json=login_data)).json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -329,9 +329,9 @@ async def test_property_filter_by_city(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_property_map_endpoint_with_city(client: AsyncClient):
-    payload = {"email": "mapcity@example.com", "password": "password123", "full_name": "MapCity"}
+    payload = {"email": "mapcity@example.com", "password": "Password123", "full_name": "MapCity"}
     await client.post("/auth/register", json=payload)
-    login_data = {"email": "mapcity@example.com", "password": "password123"}
+    login_data = {"email": "mapcity@example.com", "password": "Password123"}
     token = (await client.post("/auth/login", json=login_data)).json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -357,9 +357,9 @@ async def test_property_map_endpoint_with_city(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_property_list_pagination(client: AsyncClient):
-    payload = {"email": "page@example.com", "password": "password123", "full_name": "Page"}
+    payload = {"email": "page@example.com", "password": "Password123", "full_name": "Page"}
     await client.post("/auth/register", json=payload)
-    login_data = {"email": "page@example.com", "password": "password123"}
+    login_data = {"email": "page@example.com", "password": "Password123"}
     token = (await client.post("/auth/login", json=login_data)).json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 

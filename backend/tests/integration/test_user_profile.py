@@ -5,9 +5,9 @@ from decimal import Decimal
 
 @pytest.mark.asyncio
 async def test_user_preferences(client: AsyncClient):
-    payload = {"email": "pref@example.com", "password": "password123", "full_name": "Pref User"}
+    payload = {"email": "pref@example.com", "password": "Password123", "full_name": "Pref User"}
     await client.post("/auth/register", json=payload)
-    login_data = {"email": "pref@example.com", "password": "password123"}
+    login_data = {"email": "pref@example.com", "password": "Password123"}
     token_res = await client.post("/auth/login", json=login_data)
     token = token_res.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
@@ -31,9 +31,9 @@ async def test_user_preferences(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_property_interactions(client: AsyncClient):
-    payload = {"email": "int@example.com", "password": "password123", "full_name": "Int User"}
+    payload = {"email": "int@example.com", "password": "Password123", "full_name": "Int User"}
     await client.post("/auth/register", json=payload)
-    login_data = {"email": "int@example.com", "password": "password123"}
+    login_data = {"email": "int@example.com", "password": "Password123"}
     token_res = await client.post("/auth/login", json=login_data)
     token = token_res.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
@@ -66,9 +66,9 @@ async def test_property_interactions(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_interaction_nonexistent_property(client: AsyncClient):
-    payload = {"email": "err@example.com", "password": "password123", "full_name": "Err"}
+    payload = {"email": "err@example.com", "password": "Password123", "full_name": "Err"}
     await client.post("/auth/register", json=payload)
-    login_data = {"email": "err@example.com", "password": "password123"}
+    login_data = {"email": "err@example.com", "password": "Password123"}
     token = (await client.post("/auth/login", json=login_data)).json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 

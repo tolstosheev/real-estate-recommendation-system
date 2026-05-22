@@ -1,3 +1,4 @@
+import re
 from datetime import UTC, datetime, timedelta
 
 import bcrypt
@@ -21,6 +22,20 @@ class AuthService:
         salt = bcrypt.gensalt()
         return bcrypt.hashpw(password.encode("utf-8"), salt).decode("utf-8")
 
+    def _validate_password(self, password: str) -> None:
+        if len(password) < 8:
+            raise ValueError("Password must be at least 8 characters")
+        if not re.search(r"[A-Z]", password):
+            raise ValueError("Password must contain at least one uppercase letter")
+        if not re.search(r"[a-z]", password):
+            raise ValueError("Password must contain at least one lowercase letter")
+        if not re.search(r"\d", password):
+            raise ValueError("Password must contain at least one digit")
+
+    def _validate_email_format(self, email: str) -> None:
+        if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
+            raise ValueError("Invalid email format")
+
     async def register_user(
         self,
         email: str,
@@ -29,8 +44,8 @@ class AuthService:
         phone_number: str | None = None,
         telegram_handle: str | None = None,
     ):
-        if len(password) < 6:
-            raise ValueError("Password must be at least 6 characters")
+        self._validate_password(password)
+        self._validate_email_format(email)
 
         existing_user = await self.repository.get_by_email(email)
         if existing_user:

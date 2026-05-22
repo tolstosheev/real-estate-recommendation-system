@@ -1,17 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
 from app.core.redis import RedisClient
+from app.core.security import oauth2_scheme
 from app.models import Property
 from app.schemas.auth import Token, UserCreate, UserOut, UserUpdate
 from app.schemas.auth_login import UserLogin
 from app.services.auth_service import AuthService
 
 router = APIRouter()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 
 @router.post(

@@ -4,7 +4,7 @@ from httpx import AsyncClient
 
 @pytest.mark.asyncio
 async def test_register_user(client: AsyncClient):
-    payload = {"email": "test@example.com", "password": "testpassword123", "full_name": "Test User"}
+    payload = {"email": "test@example.com", "password": "Testpass123", "full_name": "Test User"}
     response = await client.post("/auth/register", json=payload)
     assert response.status_code == 201
     data = response.json()
@@ -15,7 +15,7 @@ async def test_register_user(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_register_duplicate_user(client: AsyncClient):
-    payload = {"email": "duplicate@example.com", "password": "password123", "full_name": "First User"}
+    payload = {"email": "duplicate@example.com", "password": "Password1", "full_name": "First User"}
     await client.post("/auth/register", json=payload)
 
     response = await client.post("/auth/register", json=payload)
@@ -25,7 +25,7 @@ async def test_register_duplicate_user(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_register_invalid_email(client: AsyncClient):
-    payload = {"email": "not-an-email", "password": "password123", "full_name": "Invalid User"}
+    payload = {"email": "not-an-email", "password": "Testpass123", "full_name": "Invalid User"}
     response = await client.post("/auth/register", json=payload)
     assert response.status_code == 422
 
@@ -39,10 +39,10 @@ async def test_register_missing_fields(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_login_success(client: AsyncClient):
-    payload = {"email": "login@example.com", "password": "loginpassword", "full_name": "Login User"}
+    payload = {"email": "login@example.com", "password": "Loginpass1", "full_name": "Login User"}
     await client.post("/auth/register", json=payload)
 
-    login_data = {"email": "login@example.com", "password": "loginpassword"}
+    login_data = {"email": "login@example.com", "password": "Loginpass1"}
     response = await client.post("/auth/login", json=login_data)
     assert response.status_code == 200
     data = response.json()
@@ -52,7 +52,7 @@ async def test_login_success(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_login_failure(client: AsyncClient):
-    login_data = {"email": "nonexistent@example.com", "password": "wrongpassword"}
+    login_data = {"email": "nonexistent@example.com", "password": "Wrongpass1"}
     response = await client.post("/auth/login", json=login_data)
     assert response.status_code == 401
     assert response.json()["detail"] == "Incorrect email or password"
@@ -60,10 +60,10 @@ async def test_login_failure(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_get_me_success(client: AsyncClient):
-    payload = {"email": "me@example.com", "password": "mepassword", "full_name": "Me User"}
+    payload = {"email": "me@example.com", "password": "Mepass12", "full_name": "Me User"}
     await client.post("/auth/register", json=payload)
 
-    login_data = {"email": "me@example.com", "password": "mepassword"}
+    login_data = {"email": "me@example.com", "password": "Mepass12"}
     token_res = await client.post("/auth/login", json=login_data)
     token = token_res.json()["access_token"]
 

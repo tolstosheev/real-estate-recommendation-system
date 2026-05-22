@@ -55,6 +55,9 @@ async def get_my_favorites(
         if prop_data:
             if isinstance(prop_data, dict):
                 prop_data["is_liked_by_me"] = True
+                if prop_data.get("owner"):
+                    prop_data["owner"]["phone_number"] = None
+                    prop_data["owner"]["telegram_handle"] = None
                 enriched_favorites.append(PropertyOut(**prop_data))
             else:
                 owner_data = None
@@ -62,8 +65,8 @@ async def get_my_favorites(
                     owner_data = {
                         "id": str(prop_data.owner.id),
                         "full_name": prop_data.owner.full_name,
-                        "phone_number": prop_data.owner.phone_number,
-                        "telegram_handle": prop_data.owner.telegram_handle,
+                        "phone_number": None,
+                        "telegram_handle": None,
                     }
                 prop_dict = {
                     "id": str(prop_data.id),
@@ -114,6 +117,9 @@ async def get_my_history(
                     str(current_user.id), str(prop.id), interaction_type="like"
                 )
                 prop_data["is_liked_by_me"] = liked is not None
+                if prop_data.get("owner"):
+                    prop_data["owner"]["phone_number"] = None
+                    prop_data["owner"]["telegram_handle"] = None
                 enriched_history.append(PropertyOut(**prop_data))
             else:
                 owner_data = None
@@ -121,8 +127,8 @@ async def get_my_history(
                     owner_data = {
                         "id": str(prop_data.owner.id),
                         "full_name": prop_data.owner.full_name,
-                        "phone_number": prop_data.owner.phone_number,
-                        "telegram_handle": prop_data.owner.telegram_handle,
+                        "phone_number": None,
+                        "telegram_handle": None,
                     }
                 prop_dict = {
                     "id": str(prop_data.id),

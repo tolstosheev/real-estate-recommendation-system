@@ -6,10 +6,10 @@ from app.core.db import get_db
 @pytest.mark.asyncio
 async def test_full_recommendation_cycle(client: AsyncClient):
     user_email = "e2e_user@test.com"
-    reg_payload = {"email": user_email, "password": "securepassword123", "full_name": "E2E Tester"}
+    reg_payload = {"email": user_email, "password": "SecurePass123", "full_name": "E2E Tester"}
     await client.post("/auth/register", json=reg_payload)
 
-    login_payload = {"email": user_email, "password": "securepassword123"}
+    login_payload = {"email": user_email, "password": "SecurePass123"}
     login_res = await client.post("/auth/login", json=login_payload)
     token = login_res.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}

@@ -4,9 +4,9 @@ from httpx import AsyncClient
 
 @pytest.mark.asyncio
 async def test_recommendations_with_preferences(client: AsyncClient):
-    payload = {"email": "pref_rec@example.com", "password": "password123", "full_name": "Pref Rec"}
+    payload = {"email": "pref_rec@example.com", "password": "Password123", "full_name": "Pref Rec"}
     await client.post("/auth/register", json=payload)
-    token = (await client.post("/auth/login", json={"email": "pref_rec@example.com", "password": "password123"})).json()["access_token"]
+    token = (await client.post("/auth/login", json={"email": "pref_rec@example.com", "password": "Password123"})).json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
     await client.put("/user/preferences", json={
@@ -30,9 +30,9 @@ async def test_recommendations_with_preferences(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_recommendations_without_properties(client: AsyncClient):
-    payload = {"email": "empty_rec@example.com", "password": "password123", "full_name": "Empty"}
+    payload = {"email": "empty_rec@example.com", "password": "Password123", "full_name": "Empty"}
     await client.post("/auth/register", json=payload)
-    token = (await client.post("/auth/login", json={"email": "empty_rec@example.com", "password": "password123"})).json()["access_token"]
+    token = (await client.post("/auth/login", json={"email": "empty_rec@example.com", "password": "Password123"})).json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
     res = await client.get("/api/recommendations/", headers=headers)
@@ -48,9 +48,9 @@ async def test_recommendations_unauthorized(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_recommendations_with_likes_only(client: AsyncClient):
-    payload = {"email": "like_rec@example.com", "password": "password123", "full_name": "Like Rec"}
+    payload = {"email": "like_rec@example.com", "password": "Password123", "full_name": "Like Rec"}
     await client.post("/auth/register", json=payload)
-    token = (await client.post("/auth/login", json={"email": "like_rec@example.com", "password": "password123"})).json()["access_token"]
+    token = (await client.post("/auth/login", json={"email": "like_rec@example.com", "password": "Password123"})).json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
     props = []

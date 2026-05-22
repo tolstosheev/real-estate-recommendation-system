@@ -63,8 +63,12 @@ class TestCreateAccessToken:
 
 class TestRegisterUser:
     @pytest.mark.parametrize("email, password, full_name, expected_error", [
-        ("new@test.com", "Short1!", "Valid Name", None),
-        ("new@test.com", "Ab1", "Name", "Password must be at least 6 characters"),
+        ("new@test.com", "Short1!ab", "Valid Name", None),
+        ("new@test.com", "Ab1", "Name", "Password must be at least 8 characters"),
+        ("new@test.com", "abcdefgh", "Name", "Password must contain at least one uppercase letter"),
+        ("new@test.com", "ABCDEF1!", "Name", "Password must contain at least one lowercase letter"),
+        ("new@test.com", "Abcdefgh", "Name", "Password must contain at least one digit"),
+        ("not-an-email", "ValidPass1", "Name", "Invalid email format"),
         ("existing@test.com", "ValidPass1!", "Name", "User with this email already exists"),
     ])
     @pytest.mark.asyncio
