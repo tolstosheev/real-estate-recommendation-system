@@ -189,7 +189,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, variant = 'vertic
               <span>{property.rooms} rm</span>
             </div>
           )}
-          {property.floor && property.total_floors && (
+          {property.floor != null && property.total_floors != null && (
             <div className="property-card__feature">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <rect x="4" y="2" width="16" height="20" rx="2"/>

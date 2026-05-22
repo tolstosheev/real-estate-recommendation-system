@@ -206,7 +206,7 @@ class RecommendationService:
             weights[4] = 0.0
         if city_filter_active:
             weights[13] = 0.0
-        
+
         if 'property_purpose' in filter_kwargs:
             weights[10] = 0.0  # sale
             weights[11] = 0.0  # rent

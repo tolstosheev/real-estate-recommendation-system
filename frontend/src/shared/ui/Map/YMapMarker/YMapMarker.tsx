@@ -8,10 +8,7 @@ interface MapMarkerProps {
   onClick?: () => void;
 }
 
-const
-
-
-    YMapMarker: React.FC<MapMarkerProps> = ({ coordinates, isSelected, children, onClick }) => {
+const YMapMarker: React.FC<MapMarkerProps> = ({ coordinates, isSelected, children, onClick }) => {
   const [YMapMarkerComponent, setYMapMarkerComponent] = useState<React.ElementType | null>(null);
   const [reactify, setReactify] = useState<{ useDefault: (value: unknown, deps?: unknown[]) => unknown } | null>(null);
 

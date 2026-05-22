@@ -93,6 +93,7 @@ async def geocode(address: str = Query(..., min_length=3)):
 
 @router.get("/geocode/reverse", summary="Reverse geocode", description="Proxy reverse geocoding to Yandex")
 async def reverse_geocode(lat: float = Query(...), lon: float = Query(...)):
+    geocoder = _get_geocoder()
     formatted = await geocoder.get_address_from_coords(lat, lon)
     if not formatted:
         raise HTTPException(status_code=404, detail="Address not found")

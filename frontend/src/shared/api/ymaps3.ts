@@ -1,6 +1,11 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
+export interface YMaps3Global {
+  ready: Promise<void>;
+  import: (module: string) => Promise<unknown>;
+}
+
 interface YMapsComponents {
   YMap: React.ElementType;
   YMapDefaultSchemeLayer: React.ElementType;

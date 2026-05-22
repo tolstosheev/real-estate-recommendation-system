@@ -25,7 +25,7 @@ const PropertyGrid: React.FC<PropertyGridProps> = ({
       </div>
     )}
     <div className="catalog-grid">
-      {properties.map((prop, index) => (
+      {  properties.map((prop, _index) => (
         <PropertyCard
           key={`${activeTab}-${prop.id}`}
           property={prop}
