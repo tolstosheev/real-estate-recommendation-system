@@ -2,10 +2,11 @@ from datetime import UTC, datetime, timedelta
 
 import bcrypt
 import jwt
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from app.models import User
+from app.models import Property, User
 from app.repositories.user_repository import UserRepository
 
 
@@ -81,9 +82,6 @@ class AuthService:
         telegram = user_data.get("telegram_handle", user.telegram_handle)
 
         if not phone and not telegram:
-            from sqlalchemy import func, select
-            from app.models import Property
-
             result = await self.repository.session.execute(
                 select(func.count(Property.id)).where(Property.user_id == user_id)
             )

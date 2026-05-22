@@ -12,6 +12,7 @@ ALLOWED_UPDATE_FIELDS = {
     "district", "metro", "material", "repair_type", "is_new", "lat", "lon",
     "balcony", "bathroom", "furnished", "parking", "ceiling_height",
     "heating_type", "water_supply", "electricity_power",
+    "images", "sq_living", "sq_kitchen", "room_type", "category",
 }
 
 
