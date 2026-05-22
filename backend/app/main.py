@@ -31,7 +31,7 @@ async def global_exception_handler(request: Request, exc: Exception):
     logger.error(f"Global exception caught: {str(exc)}", exc_info=True)
     return JSONResponse(
         status_code=500,
-        content={"detail": "Internal Server Error", "error": str(exc)},
+        content={"detail": "Internal Server Error"},
         headers={
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Credentials": "true",

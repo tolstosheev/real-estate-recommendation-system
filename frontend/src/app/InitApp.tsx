@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useAppSelector, useAppDispatch } from '@app/store/hooks';
 import { setCredentials } from '@entities/user/model/slice';
 import { authService } from '@shared/api/auth.service';
+import { getAccessToken, setAccessToken } from '@shared/lib/tokenService';
 import App from '../App';
 
 export const InitApp: React.FC = () => {
@@ -9,14 +10,14 @@ export const InitApp: React.FC = () => {
   const dispatch = useAppDispatch();
 
   useEffect(() => {
-    const token = localStorage.getItem('accessToken');
+    const token = getAccessToken();
     if (token && !user) {
       authService.getCurrentUser()
         .then((userData) => {
           dispatch(setCredentials({ user: userData, token }));
         })
         .catch(() => {
-          localStorage.removeItem('accessToken');
+          setAccessToken(null);
         });
     }
   }, [dispatch, user]);

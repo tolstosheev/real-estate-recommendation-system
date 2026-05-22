@@ -5,6 +5,13 @@ import { configureStore } from '@reduxjs/toolkit';
 import { authReducer } from '@entities/user/model/slice';
 import { InitApp } from '@app/InitApp';
 
+vi.mock('@shared/lib/tokenService', () => ({
+  getAccessToken: vi.fn(),
+  setAccessToken: vi.fn(),
+}));
+
+import { getAccessToken, setAccessToken } from '@shared/lib/tokenService';
+
 const mockGetCurrentUser = vi.fn();
 vi.mock('@shared/api/auth.service', () => ({
   authService: {
@@ -36,7 +43,6 @@ describe('InitApp', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    localStorage.clear();
     vi.mocked(useAppDispatch).mockReturnValue(mockDispatch);
   });
 
@@ -53,7 +59,7 @@ describe('InitApp', () => {
   });
 
   it('calls getCurrentUser when token exists and no user', () => {
-    localStorage.setItem('accessToken', 'test-token');
+    vi.mocked(getAccessToken).mockReturnValue('test-token');
     vi.mocked(useAppSelector).mockReturnValue({ user: null });
     mockGetCurrentUser.mockResolvedValue({});
 
@@ -67,7 +73,7 @@ describe('InitApp', () => {
   });
 
   it('dispatches setCredentials on successful getCurrentUser', async () => {
-    localStorage.setItem('accessToken', 'test-token');
+    vi.mocked(getAccessToken).mockReturnValue('test-token');
     vi.mocked(useAppSelector).mockReturnValue({ user: null });
     const userData = { id: '1', email: 'test@test.com', full_name: 'Test' };
     mockGetCurrentUser.mockResolvedValueOnce(userData);
@@ -86,8 +92,8 @@ describe('InitApp', () => {
     });
   });
 
-  it('removes token from localStorage on getCurrentUser failure', async () => {
-    localStorage.setItem('accessToken', 'test-token');
+  it('calls setAccessToken(null) on getCurrentUser failure', async () => {
+    vi.mocked(getAccessToken).mockReturnValue('test-token');
     vi.mocked(useAppSelector).mockReturnValue({ user: null });
     mockGetCurrentUser.mockRejectedValueOnce(new Error('Unauthorized'));
 
@@ -98,11 +104,12 @@ describe('InitApp', () => {
     );
 
     await vi.waitFor(() => {
-      expect(localStorage.getItem('accessToken')).toBeNull();
+      expect(setAccessToken).toHaveBeenCalledWith(null);
     });
   });
 
   it('does not call getCurrentUser when no token', () => {
+    vi.mocked(getAccessToken).mockReturnValue(null);
     vi.mocked(useAppSelector).mockReturnValue({ user: null });
 
     render(
@@ -115,7 +122,7 @@ describe('InitApp', () => {
   });
 
   it('does not call getCurrentUser when user already loaded', () => {
-    localStorage.setItem('accessToken', 'test-token');
+    vi.mocked(getAccessToken).mockReturnValue('test-token');
     vi.mocked(useAppSelector).mockReturnValue({ user: { id: '1', email: 'test@test.com', full_name: 'Test' } });
 
     render(
@@ -128,7 +135,7 @@ describe('InitApp', () => {
   });
 
   it('does not call getCurrentUser when token exists but app unmounts', () => {
-    localStorage.setItem('accessToken', 'test-token');
+    vi.mocked(getAccessToken).mockReturnValue('test-token');
     vi.mocked(useAppSelector).mockReturnValue({ user: null });
     mockGetCurrentUser.mockResolvedValue({});
 

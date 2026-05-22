@@ -6,6 +6,8 @@ from fastapi import UploadFile
 from minio import Minio
 from minio.error import S3Error
 
+from app.core.config import settings
+
 logger = logging.getLogger(__name__)
 
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
@@ -16,11 +18,11 @@ MAX_FILES = 10
 class ImageService:
     def __init__(self):
         self._client: Minio | None = None
-        self.endpoint = os.getenv("S3_ENDPOINT", "http://minio:9000")
-        self.access_key = os.getenv("S3_ACCESS_KEY", "minioadmin")
-        self.secret_key = os.getenv("S3_SECRET_KEY", "minioadmin")
-        self.bucket = os.getenv("S3_BUCKET", "nestai-images")
-        self.public_url = os.getenv("S3_PUBLIC_URL", "/api/images")
+        self.endpoint = settings.S3_ENDPOINT
+        self.access_key = settings.S3_ACCESS_KEY
+        self.secret_key = settings.S3_SECRET_KEY
+        self.bucket = settings.S3_BUCKET
+        self.public_url = settings.S3_PUBLIC_URL
 
     def _get_client(self) -> Minio:
         if self._client is None:

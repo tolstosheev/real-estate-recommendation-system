@@ -1,9 +1,10 @@
 import asyncio
 import contextlib
 import logging
-import os
 
 import redis.asyncio as redis
+
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +24,7 @@ class RedisClient:
                         cls._instance = None
 
                 if cls._instance is None:
-                    redis_url = os.getenv("REDIS_URL", "redis://redis:6379/0")
+                    redis_url = settings.REDIS_URL
                     cls._instance = redis.from_url(redis_url, decode_responses=True)
                     await cls._instance.ping()
                 return cls._instance

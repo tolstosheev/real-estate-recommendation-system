@@ -1,5 +1,4 @@
 import pytest
-import os
 from unittest.mock import MagicMock, patch, AsyncMock
 from fastapi import UploadFile
 from io import BytesIO
@@ -8,13 +7,13 @@ from app.services.image_service import ImageService
 
 @pytest.fixture
 def image_service():
-    with patch.dict(os.environ, {
-        "S3_ENDPOINT": "http://minio:9000",
-        "S3_ACCESS_KEY": "test-key",
-        "S3_SECRET_KEY": "test-secret",
-        "S3_BUCKET": "test-bucket",
-        "S3_PUBLIC_URL": "/api/images",
-    }, clear=False):
+    with (
+        patch("app.services.image_service.settings.S3_ENDPOINT", "http://minio:9000"),
+        patch("app.services.image_service.settings.S3_ACCESS_KEY", "test-key"),
+        patch("app.services.image_service.settings.S3_SECRET_KEY", "test-secret"),
+        patch("app.services.image_service.settings.S3_BUCKET", "test-bucket"),
+        patch("app.services.image_service.settings.S3_PUBLIC_URL", "/api/images"),
+    ):
         yield ImageService()
 
 

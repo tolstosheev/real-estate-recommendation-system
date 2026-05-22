@@ -1,14 +1,21 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import MockAdapter from 'axios-mock-adapter';
 import api from '@shared/api/api';
 import { authService } from '@shared/api/auth.service';
+
+vi.mock('@shared/lib/tokenService', () => ({
+  getAccessToken: vi.fn(),
+  setAccessToken: vi.fn(),
+}));
+
+import { getAccessToken } from '@shared/lib/tokenService';
 
 const mock = new MockAdapter(api);
 
 describe('authService', () => {
   beforeEach(() => {
-    localStorage.clear();
     mock.reset();
+    vi.clearAllMocks();
   });
 
   it('should login successfully and return token', async () => {
@@ -40,7 +47,7 @@ describe('authService', () => {
   });
 
   it('should get current user successfully', async () => {
-    localStorage.setItem('accessToken', 'valid-token');
+    vi.mocked(getAccessToken).mockReturnValue('valid-token');
     const userData = {
       id: 'user-1',
       email: 'test@test.com',

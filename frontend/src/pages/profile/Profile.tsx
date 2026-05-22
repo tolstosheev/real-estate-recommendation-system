@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '@app/store/hooks';
 import { logout, setCredentials } from '@entities/user/model/slice';
+import { getAccessToken } from '@shared/lib/tokenService';
 import type { UserPreferenceCreate, Property } from '@shared/api/types';
 import { preferencesService } from '@shared/api/preferences.service';
 import { authService } from '@shared/api/auth.service';
@@ -183,7 +184,7 @@ const Profile: React.FC = () => {
         phone_number: profileDraft.phone_number || null,
         telegram_handle: profileDraft.telegram_handle || null,
       });
-      dispatch(setCredentials({ user: updatedUser, token: localStorage.getItem('accessToken') || '' }));
+      dispatch(setCredentials({ user: updatedUser, token: getAccessToken() || '' }));
       setProfileSuccess('Profile updated successfully');
     } catch { setProfileError('Failed to update profile'); }
     finally { setIsSaving(false); }

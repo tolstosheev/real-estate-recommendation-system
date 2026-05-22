@@ -1,5 +1,9 @@
 import axios from 'axios';
 
+import { getAccessToken, setAccessToken } from '@shared/lib/tokenService';
+import { store } from '@app/store/store';
+import { logout } from '@entities/user/model/slice';
+
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '',
   headers: {
@@ -20,7 +24,7 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('accessToken');
+    const token = getAccessToken();
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -35,8 +39,8 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       const isAuthEndpoint = error.config?.url?.includes('/auth/');
       if (!isAuthEndpoint) {
-        localStorage.removeItem('accessToken');
-        window.location.href = '/onboarding';
+        setAccessToken(null);
+        store.dispatch(logout());
       }
     }
     return Promise.reject(error);

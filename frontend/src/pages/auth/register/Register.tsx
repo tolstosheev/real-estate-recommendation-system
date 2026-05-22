@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '@shared/api/auth.service';
 import { useAppDispatch } from '@app/store/hooks';
 import { setCredentials } from '@entities/user/model/slice';
+import { setAccessToken } from '@shared/lib/tokenService';
 import AuthLayout from '@shared/ui/AuthLayout';
 import Input from '@shared/ui/Input';
 import Button from '@shared/ui/Button';
@@ -31,7 +32,7 @@ const Register: React.FC = () => {
         password: formData.password 
       });
 
-      localStorage.setItem('accessToken', loginData.access_token);
+      setAccessToken(loginData.access_token);
       
       dispatch(setCredentials({ 
         user: user, 

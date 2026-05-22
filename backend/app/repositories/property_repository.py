@@ -6,6 +6,14 @@ from sqlalchemy.future import select
 
 from app.models import Property
 
+ALLOWED_UPDATE_FIELDS = {
+    "title", "description", "price", "rooms", "area", "floor", "total_floors",
+    "property_type", "property_purpose", "build_year", "city", "address",
+    "district", "metro", "material", "repair_type", "is_new", "lat", "lon",
+    "balcony", "bathroom", "furnished", "parking", "ceiling_height",
+    "heating_type", "water_supply", "electricity_power",
+}
+
 
 class PropertyRepository:
     def __init__(self, session: AsyncSession):
@@ -175,6 +183,7 @@ class PropertyRepository:
         return result.all()
 
     async def update(self, property_id: str, update_data: dict) -> Property | None:
+        update_data = {k: v for k, v in update_data.items() if k in ALLOWED_UPDATE_FIELDS}
         if "lat" in update_data and "lon" in update_data:
             lat = update_data.pop("lat")
             lon = update_data.pop("lon")

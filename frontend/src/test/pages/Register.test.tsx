@@ -6,6 +6,11 @@ import { configureStore } from '@reduxjs/toolkit';
 import { authReducer } from '@entities/user/model/slice';
 import Register from '@pages/auth/register/Register';
 
+vi.mock('@shared/lib/tokenService', () => ({
+  getAccessToken: vi.fn(),
+  setAccessToken: vi.fn(),
+}));
+
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
@@ -36,7 +41,6 @@ const renderRegister = () => render(
 describe('Register Page', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    localStorage.clear();
   });
 
   it('renders registration form', () => {

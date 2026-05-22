@@ -3,6 +3,7 @@ import {Link, useNavigate} from 'react-router-dom';
 import {useAppDispatch} from '@app/store/hooks';
 import {setCredentials} from '@entities/user/model/slice';
 import {authService} from '@shared/api/auth.service';
+import {setAccessToken} from '@shared/lib/tokenService';
 import AuthLayout from '@shared/ui/AuthLayout';
 import Input from '@shared/ui/Input';
 import Button from '@shared/ui/Button';
@@ -24,7 +25,7 @@ const Login: React.FC = () => {
     setIsLoading(true);
     try {
       const data = await authService.login({ email, password });
-      localStorage.setItem('accessToken', data.access_token);
+      setAccessToken(data.access_token);
       const currentUser = await authService.getCurrentUser();
       dispatch(setCredentials({ user: currentUser, token: data.access_token }));
       navigate('/');
