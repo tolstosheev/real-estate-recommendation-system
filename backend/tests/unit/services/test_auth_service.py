@@ -126,14 +126,52 @@ class TestGetCurrentUser:
 
 
 class TestUpdateUser:
-    @pytest.mark.parametrize("update_data, expected_fields", [
-        ({"full_name": "New Name"}, {"full_name": "New Name"}),
-        ({"phone_number": "+79990000000"}, {"phone_number": "+79990000000"}),
-        ({"full_name": "New", "phone_number": "+71111111111"}, {"full_name": "New", "phone_number": "+71111111111"}),
+    @pytest.mark.parametrize("update_data, expected_fields, current_phone, current_telegram", [
+        ({"full_name": "New Name"}, {"full_name": "New Name"}, "+79990000000", "@test"),
+        ({"phone_number": "+79990000000"}, {"phone_number": "+79990000000"}, "+79990000000", "@test"),
+        ({"full_name": "New", "phone_number": "+71111111111"}, {"full_name": "New", "phone_number": "+71111111111"}, "+79990000000", "@test"),
     ])
     @pytest.mark.asyncio
-    async def test_update_user(self, service, update_data, expected_fields):
-        mock_user = MagicMock(id="user-1", full_name="Old", phone_number=None)
+    async def test_update_user(self, service, update_data, expected_fields, current_phone, current_telegram):
+        mock_user = MagicMock(id="user-1", full_name="Old", phone_number=current_phone, telegram_handle=current_telegram)
+        service.repository.get_by_id = AsyncMock(return_value=mock_user)
         service.repository.update = AsyncMock(return_value=mock_user)
         result = await service.update_user("user-1", update_data)
         service.repository.update.assert_called_once_with("user-1", update_data)
+
+    @pytest.mark.asyncio
+    async def test_update_user_rejects_clearing_all_contacts_with_properties(self, service):
+        mock_user = MagicMock(id="user-1", full_name="Old", phone_number="+79990000000", telegram_handle="@test")
+        service.repository.get_by_id = AsyncMock(return_value=mock_user)
+        mock_count_result = MagicMock()
+        mock_count_result.scalar.return_value = 3
+        service.repository.session = AsyncMock()
+        service.repository.session.execute = AsyncMock(return_value=mock_count_result)
+        with pytest.raises(ValueError, match="contact details"):
+            await service.update_user("user-1", {"phone_number": None, "telegram_handle": None})
+
+    @pytest.mark.asyncio
+    async def test_update_user_allows_clearing_all_contacts_without_properties(self, service):
+        mock_user = MagicMock(id="user-1", full_name="Old", phone_number="+79990000000", telegram_handle="@test")
+        service.repository.get_by_id = AsyncMock(return_value=mock_user)
+        service.repository.update = AsyncMock(return_value=mock_user)
+        mock_count_result = MagicMock()
+        mock_count_result.scalar.return_value = 0
+        service.repository.session = AsyncMock()
+        service.repository.session.execute = AsyncMock(return_value=mock_count_result)
+        result = await service.update_user("user-1", {"phone_number": None, "telegram_handle": None})
+        assert result is not None
+
+    @pytest.mark.asyncio
+    async def test_update_user_allows_clearing_single_contact(self, service):
+        mock_user = MagicMock(id="user-1", full_name="Old", phone_number="+79990000000", telegram_handle="@test")
+        service.repository.get_by_id = AsyncMock(return_value=mock_user)
+        service.repository.update = AsyncMock(return_value=mock_user)
+        result = await service.update_user("user-1", {"phone_number": None})
+        assert result is not None
+
+    @pytest.mark.asyncio
+    async def test_update_user_returns_none_when_not_found(self, service):
+        service.repository.get_by_id = AsyncMock(return_value=None)
+        result = await service.update_user("nonexistent", {"full_name": "New"})
+        assert result is None

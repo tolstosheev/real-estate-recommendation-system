@@ -73,4 +73,23 @@ class AuthService:
         return await self.repository.get_by_id(user_id)
 
     async def update_user(self, user_id: str, user_data: dict):
+        user = await self.repository.get_by_id(user_id)
+        if not user:
+            return None
+
+        phone = user_data.get("phone_number", user.phone_number)
+        telegram = user_data.get("telegram_handle", user.telegram_handle)
+
+        if not phone and not telegram:
+            from sqlalchemy import func, select
+            from app.models import Property
+
+            result = await self.repository.session.execute(
+                select(func.count(Property.id)).where(Property.user_id == user_id)
+            )
+            if result.scalar() > 0:
+                raise ValueError(
+                    "Cannot remove all contact details while having active property listings"
+                )
+
         return await self.repository.update(user_id, user_data)
