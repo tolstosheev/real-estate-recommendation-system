@@ -131,15 +131,17 @@ const PropertyDetails: React.FC = () => {
             <div className="content-header__top">
               <div>
                 <h1 className="content-title">{property.title}</h1>
-                {property.property_type && (
-                  <span className="content-badge">{property.property_type}</span>
-                )}
-                {property.property_purpose && (
-                  <span className="content-badge content-badge--purpose">{property.property_purpose}</span>
-                )}
-                {property.category && (
-                  <span className="content-badge">{property.category}</span>
-                )}
+                <div className="content-badges">
+                  {property.property_type && (
+                    <span className="content-badge">{property.property_type}</span>
+                  )}
+                  {property.property_purpose && (
+                    <span className="content-badge content-badge--purpose">{property.property_purpose}</span>
+                  )}
+                  {property.category && (
+                    <span className="content-badge">{property.category}</span>
+                  )}
+                </div>
               </div>
               <div className="content-header__right">
                 <div className="content-price">

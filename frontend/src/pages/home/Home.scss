@@ -134,7 +134,7 @@
 
 .recommendations-slide {
   display: flex;
-  height: 100%;
+  flex: 1;
   min-height: 380px;
 }
 
@@ -145,17 +145,14 @@
   flex-direction: column;
 }
 
-.recommendations-slider {
-  padding: 20px 0 40px;
-  height: auto;
-}
-
 .swiper-wrapper {
   align-items: stretch;
 }
 
 .swiper-slide {
-  height: auto;
+  height: auto !important;
+  display: flex;
+  align-items: stretch;
 }
 
 .recommendations-pagination-container {

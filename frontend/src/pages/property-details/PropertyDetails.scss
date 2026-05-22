@@ -376,6 +376,13 @@
   }
 }
 
+.content-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
 .content-badge {
   display: inline-block;
   padding: 5px 14px;
