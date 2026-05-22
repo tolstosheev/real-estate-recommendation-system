@@ -8,6 +8,7 @@ export interface GeocoderResult {
   formattedAddress: string;
   district: string | null;
   metro: string | null;
+  city: string | null;
 }
 
 function getApiKey(): string {
@@ -53,12 +54,16 @@ export const geocodeAddress = async (address: string): Promise<GeocoderResult[]>
       let district: string | null = null;
       let metro: string | null = null;
       let area: string | null = null;
+      let province: string | null = null;
       for (const c of components) {
         if (c.kind === 'district') district = c.name;
         else if (c.kind === 'metro') metro = c.name;
         else if (c.kind === 'area') area = c.name;
+        else if (c.kind === 'province') province = c.name;
       }
       if (!district) district = area;
+
+      const city = province ? province.split(/\s+/)[0] : null;
 
       results.push({
         lat,
@@ -67,6 +72,7 @@ export const geocodeAddress = async (address: string): Promise<GeocoderResult[]>
         formattedAddress: formatted || address,
         district,
         metro,
+        city,
       });
     }
 

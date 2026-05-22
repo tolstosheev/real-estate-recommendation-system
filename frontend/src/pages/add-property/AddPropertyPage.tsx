@@ -30,6 +30,7 @@ export const AddPropertyPage: React.FC = () => {
     address: '',
     district: '',
     metro: '',
+    city: '',
     lat: '',
     lon: '',
     images: [] as string[],
@@ -76,6 +77,7 @@ export const AddPropertyPage: React.FC = () => {
         lon: selected.lon.toString(),
         district: selected.district || prev.district,
         metro: selected.metro || prev.metro,
+        city: selected.city || prev.city,
       }));
     });
   };
@@ -103,6 +105,7 @@ export const AddPropertyPage: React.FC = () => {
         ...formData,
         district: formData.district || undefined,
         metro: formData.metro || undefined,
+        city: formData.city || undefined,
         price: parseFloat(formData.price),
         rooms: formData.rooms ? parseInt(formData.rooms) : null,
         area: formData.area ? parseFloat(formData.area) : null,
