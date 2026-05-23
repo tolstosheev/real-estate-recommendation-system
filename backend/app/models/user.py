@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import ARRAY, JSON, Column, DateTime, ForeignKey, Integer, Numeric, String
+from sqlalchemy import ARRAY, Column, DateTime, ForeignKey, Integer, Numeric, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 
@@ -27,11 +27,11 @@ class UserPreference(Base):
     max_price = Column(Numeric)
     min_area = Column(Numeric)
     max_area = Column(Numeric)
-    preferred_rooms = Column(ARRAY(Integer))
-    property_types = Column(ARRAY(String))
-    property_purposes = Column(ARRAY(String))
-    cities = Column(ARRAY(String))
-    material = Column(ARRAY(String))
-    repair_type = Column(ARRAY(String))
+    preferred_rooms = Column(ARRAY(Integer))  # type: ignore[var-annotated]
+    property_types = Column(ARRAY(String))  # type: ignore[var-annotated]
+    property_purposes = Column(ARRAY(String))  # type: ignore[var-annotated]
+    cities = Column(ARRAY(String))  # type: ignore[var-annotated]
+    material = Column(ARRAY(String))  # type: ignore[var-annotated]
+    repair_type = Column(ARRAY(String))  # type: ignore[var-annotated]
     min_build_year = Column(Integer)
     max_build_year = Column(Integer)

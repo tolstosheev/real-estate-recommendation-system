@@ -19,14 +19,15 @@ class RedisClient:
             try:
                 if cls._instance is not None:
                     try:
-                        await cls._instance.ping()
-                    except Exception:
+                        await cls._instance.ping()  # type: ignore[misc]
+                    except Exception as e:
+                        logger.warning(f"Redis ping failed, reconnecting: {e}")
                         cls._instance = None
 
                 if cls._instance is None:
                     redis_url = settings.REDIS_URL
                     cls._instance = redis.from_url(redis_url, decode_responses=True)
-                    await cls._instance.ping()
+                    await cls._instance.ping()  # type: ignore[misc]
                 return cls._instance
             except Exception as e:
                 logger.error(f"Redis connection error: {e}")

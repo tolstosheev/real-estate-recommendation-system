@@ -44,8 +44,22 @@ async def login(login_data: UserLogin, db: AsyncSession = Depends(get_db)):
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    access_token = service.create_access_token(data={"sub": str(user.id), "id": str(user.id)})
+    access_token = await service.create_access_token(data={"sub": str(user.id), "id": str(user.id)})
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+@router.post(
+    "/refresh",
+    response_model=Token,
+    summary="Refresh Token",
+    description="Issues a new access token from an existing valid token",
+)
+async def refresh(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
+    service = AuthService(db)
+    new_token = await service.refresh_token(token)
+    if not new_token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+    return {"access_token": new_token, "token_type": "bearer"}
 
 
 @router.get(
@@ -70,5 +84,8 @@ async def update_me(user_in: UserUpdate, token: str = Depends(oauth2_scheme), db
     user = await service.get_current_user(token)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authentication credentials")
-    updated_user = await service.update_user_profile(str(user.id), user_in.model_dump(exclude_unset=True))
+    try:
+        updated_user = await service.update_user_profile(str(user.id), user_in.model_dump(exclude_unset=True))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
     return updated_user

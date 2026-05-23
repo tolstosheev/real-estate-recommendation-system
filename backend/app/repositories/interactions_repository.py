@@ -56,7 +56,7 @@ class InteractionRepository:
         result = await self.session.execute(query)
         return result.all()
 
-    async def find_interaction(self, user_id: str, property_id: str, interaction_type: str = None):
+    async def find_interaction(self, user_id: str, property_id: str, interaction_type: str | None = None):
         query = select(Interaction).filter(Interaction.user_id == user_id, Interaction.property_id == property_id)
         if interaction_type:
             query = query.filter(Interaction.interaction_type == interaction_type)

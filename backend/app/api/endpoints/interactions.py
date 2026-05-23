@@ -24,7 +24,7 @@ async def interact_with_property(
 ):
     service = InteractionService(db)
     try:
-        result = await service.add_interaction(current_user.id, interaction_in.model_dump())
+        result = await service.add_interaction(str(current_user.id), interaction_in.model_dump())
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
 
@@ -44,7 +44,7 @@ async def get_my_favorites(
     offset: int = 0,
 ):
     service = InteractionService(db)
-    rows = await service.get_favorites(current_user.id, limit, offset)
+    rows = await service.get_favorites(str(current_user.id), limit, offset)
 
     if not rows:
         return []
@@ -63,12 +63,12 @@ async def get_my_history(
     offset: int = 0,
 ):
     service = InteractionService(db)
-    rows = await service.get_view_history(current_user.id, limit, offset)
+    rows = await service.get_view_history(str(current_user.id), limit, offset)
 
     if not rows:
         return []
 
     prop_ids = [str(row[0].id) for row in rows]
-    liked_ids = await service.interaction_repo.batch_check_likes(current_user.id, prop_ids)
+    liked_ids = await service.batch_check_likes(str(current_user.id), prop_ids)
     prop_service = PropertyService(db)
     return await prop_service.enrich_and_mask(rows, liked_set=liked_ids)

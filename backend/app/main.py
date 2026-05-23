@@ -9,6 +9,7 @@ from app.api.endpoints import auth, geocode, interactions, properties, recommend
 from app.api.endpoints.upload import router as upload_router
 from app.core.config import settings
 from app.core.db import Base, engine
+from app.core.redis import RedisClient
 from app.services.image_service import ImageService
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -23,6 +24,9 @@ async def lifespan(app: FastAPI):
     image_service = ImageService()
     await image_service.ensure_bucket()
     yield
+    await image_service.aclose()
+    await RedisClient.close()
+    await engine.dispose()
 
 
 app = FastAPI(title="nestAI API", lifespan=lifespan)
@@ -39,7 +43,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=settings.CORS_ORIGINS.split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -16,4 +16,4 @@ async def get_recommendations(
     limit: int = Query(default=10, le=100), current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
 ):
     service = RecommendationService(db)
-    return await service.recommend(current_user.id, limit=limit)
+    return await service.recommend(str(current_user.id), limit=limit)

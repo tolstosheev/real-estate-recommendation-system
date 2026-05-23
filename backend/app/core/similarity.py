@@ -1,7 +1,7 @@
 
 import numpy as np
-from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.preprocessing import StandardScaler
+from sklearn.metrics.pairwise import cosine_similarity  # type: ignore[import-untyped]
+from sklearn.preprocessing import StandardScaler  # type: ignore[import-untyped]
 
 
 class SimilarityUtils:

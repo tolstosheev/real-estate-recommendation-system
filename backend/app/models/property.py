@@ -28,7 +28,7 @@ class Property(Base):
     district = Column(String)
     metro = Column(String)
     location = Column(Geometry("POINT", 4326))
-    images = Column(ARRAY(String))
+    images = Column(ARRAY(String))  # type: ignore[var-annotated]
     sq_living = Column(Numeric)
     sq_kitchen = Column(Numeric)
     build_year = Column(Integer)

@@ -2,12 +2,11 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import distinct, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
 from app.core.security import get_current_user, get_current_user_optional
-from app.models import Property, User
+from app.models import User
 from app.schemas.property import PropertyOut
 from app.services.property_service import PropertyService
 
@@ -20,32 +19,8 @@ router = APIRouter()
     description="Get distinct values for filters (districts, metro, materials, repair_types)",
 )
 async def get_properties_meta(db: AsyncSession = Depends(get_db)):
-
-    districts = (await db.execute(select(distinct(Property.district)).where(Property.district.isnot(None)))).scalars().all()
-    metro = (await db.execute(select(distinct(Property.metro)).where(Property.metro.isnot(None)))).scalars().all()
-    materials = (await db.execute(select(distinct(Property.material)).where(Property.material.isnot(None)))).scalars().all()
-    repair_types = (await db.execute(select(distinct(Property.repair_type)).where(Property.repair_type.isnot(None)))).scalars().all()
-    property_types = (await db.execute(select(distinct(Property.property_type)).where(Property.property_type.isnot(None)))).scalars().all()
-    cities = (await db.execute(select(distinct(Property.city)).where(Property.city.isnot(None)).order_by(Property.city))).scalars().all()
-
-    city_centers_raw = (await db.execute(
-        select(
-            Property.city,
-            func.avg(func.ST_Y(Property.location)).label("lat"),
-            func.avg(func.ST_X(Property.location)).label("lon"),
-        ).where(Property.city.isnot(None)).group_by(Property.city)
-    )).all()
-    city_centers = {row.city: [float(row.lon), float(row.lat)] for row in city_centers_raw}
-
-    return {
-        "districts": [d for d in districts if d],
-        "metro": [m for m in metro if m],
-        "materials": [m for m in materials if m],
-        "repair_types": [r for r in repair_types if r],
-        "property_types": [p for p in property_types if p],
-        "cities": [c for c in cities if c],
-        "city_centers": city_centers,
-    }
+    service = PropertyService(db)
+    return await service.get_meta()
 
 
 @router.get(
@@ -93,7 +68,7 @@ async def get_properties_map(
     )
 
     if current_user and result:
-        await service.enrich_with_likes(result, current_user.id)
+        await service.enrich_with_likes(result, str(current_user.id))
 
     return result
 
@@ -137,7 +112,7 @@ async def get_properties(
     )
 
     if current_user and properties:
-        await service.enrich_with_likes(properties, current_user.id)
+        await service.enrich_with_likes(properties, str(current_user.id))
 
     return properties
 

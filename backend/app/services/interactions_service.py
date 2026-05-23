@@ -1,6 +1,6 @@
 from sqlalchemy import update
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.redis import RedisClient
 from app.models import Property
@@ -9,6 +9,8 @@ from app.repositories.property_repository import PropertyRepository
 
 
 class InteractionService:
+    INTERACTION_WEIGHTS = {"view": 1, "like": 5}
+
     def __init__(self, session: AsyncSession):
         self.session = session
         self.interaction_repo = InteractionRepository(session)
@@ -69,3 +71,6 @@ class InteractionService:
 
     async def get_view_history(self, user_id: str, limit: int = 100, offset: int = 0) -> list[Property]:
         return await self.interaction_repo.get_user_view_history(user_id, limit, offset)
+
+    async def batch_check_likes(self, user_id: str, property_ids: list[str]) -> set[str]:
+        return await self.interaction_repo.batch_check_likes(user_id, property_ids)

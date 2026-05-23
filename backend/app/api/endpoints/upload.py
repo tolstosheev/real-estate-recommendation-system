@@ -2,13 +2,13 @@ import logging
 import os
 
 from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
 from app.core.security import get_current_user
-from app.models import Property, User
+from app.models import User
 from app.services.image_service import ImageService
+from app.services.property_service import PropertyService
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -68,10 +68,8 @@ async def delete_image(
         raise HTTPException(status_code=400, detail="Invalid filename")
 
     image_url = f"/api/images/{filename}"
-    result = await db.execute(
-        select(Property).where(Property.images.any(image_url))
-    )
-    found_props = result.scalars().all()
+    service = PropertyService(db)
+    found_props = await service.get_properties_by_image_url(image_url)
     if found_props:
         owned = any(str(p.user_id) == str(current_user.id) for p in found_props)
         if not owned:

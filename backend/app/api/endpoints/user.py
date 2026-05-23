@@ -19,7 +19,7 @@ router = APIRouter()
 )
 async def get_my_preferences(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     service = UserPreferenceService(db)
-    prefs = await service.get_preferences(current_user.id)
+    prefs = await service.get_preferences(str(current_user.id))
     if not prefs:
         raise HTTPException(status_code=404, detail="Preferences not set")
     return prefs
@@ -36,4 +36,4 @@ async def update_my_preferences(
     pref_in: UserPreferenceCreate, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
 ):
     service = UserPreferenceService(db)
-    return await service.set_preferences(current_user.id, pref_in.model_dump())
+    return await service.set_preferences(str(current_user.id), pref_in.model_dump())
