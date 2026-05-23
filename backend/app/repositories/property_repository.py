@@ -189,6 +189,9 @@ class PropertyRepository:
             lat = update_data.pop("lat")
             lon = update_data.pop("lon")
             update_data["location"] = func.ST_GeomFromText(f"POINT({lon} {lat})", 4326)
+        else:
+            update_data.pop("lat", None)
+            update_data.pop("lon", None)
 
         query = (
             update(Property)
