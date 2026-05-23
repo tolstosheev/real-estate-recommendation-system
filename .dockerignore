@@ -1,0 +1,15 @@
+.git
+.gitignore
+__pycache__
+*.pyc
+.env
+.env.example
+node_modules
+.pytest_cache
+.mypy_cache
+.ruff_cache
+coverage_html
+.venv
+venv
+*.md
+SESSION_CONTEXT.md

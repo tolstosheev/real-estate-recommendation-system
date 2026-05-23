@@ -131,7 +131,13 @@ jobs:
         run: npm ci
 
       - name: Lint
-        run: npx eslint src --ext .ts,.tsx || true
+        run: npx eslint src --ext .ts,.tsx
+
+      - name: TypeScript check
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npm run build
 
       - name: Run tests with coverage
         run: npx vitest --coverage --coverage.thresholds.lines=90
