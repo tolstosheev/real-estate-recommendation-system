@@ -78,7 +78,7 @@ const YandexMap: React.FC<MapProps> = ({ center = [37.6173, 55.7558], zoom = 11,
     }
 
     const boundsProvider = o as BoundsProvider;
-    if ((!ne || !sw) && typeof boundsProvider.getNorthEast === 'function') {
+    if ((!ne || !sw) && typeof boundsProvider.getNorthEast === 'function' && typeof boundsProvider.getSouthWest === 'function') {
       ne = tryNE(boundsProvider.getNorthEast());
       sw = tryNE(boundsProvider.getSouthWest());
     }

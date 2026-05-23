@@ -32,9 +32,11 @@ const Catalog: React.FC = () => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const loaderRef = useRef<HTMLDivElement>(null);
+  const propertiesLengthRef = useRef(0);
 
-  const urlFilters = useMemo(() => parseFilters(searchParams, defaultFilters), [searchParams]);
-  const urlSearch = useMemo(() => parseSearch(searchParams), [searchParams]);
+  const searchKey = searchParams.toString();
+  const urlFilters = useMemo(() => parseFilters(new URLSearchParams(searchKey), defaultFilters), [searchKey]);
+  const urlSearch = useMemo(() => parseSearch(new URLSearchParams(searchKey)), [searchKey]);
 
   const filteredAiRecs = useMemo(() => {
     if (activeTab !== 'all' || !aiRecs.length) return [];
@@ -59,7 +61,7 @@ const Catalog: React.FC = () => {
       }
       return true;
     });
-  }, [aiRecs, draftFilters, searchQuery, activeTab]);
+  }, [aiRecs, urlFilters, searchQuery, activeTab]);
 
   const [meta, setMeta] = useState<{
     districts: string[];
@@ -71,18 +73,27 @@ const Catalog: React.FC = () => {
   }>({ districts: [], metro: [], materials: [], repair_types: [], property_types: [], cities: [] });
 
   useEffect(() => {
-    propertyService.getMeta().then(setMeta).catch(() => {});
+    const controller = new AbortController();
+    propertyService.getMeta(controller.signal).then(setMeta).catch(() => {});
+    return () => controller.abort();
   }, []);
 
   useEffect(() => {
+    const controller = new AbortController();
     if (isAuthenticated && activeTab === 'all') {
-      recommendationsService.getRecommendations().then(setAiRecs).catch(() => {});
+      recommendationsService.getRecommendations({ signal: controller.signal }).then(setAiRecs).catch(() => {});
     } else {
       setAiRecs([]);
     }
+    return () => controller.abort();
   }, [isAuthenticated, activeTab, recVersion]);
 
+  const abortRef = useRef<AbortController | null>(null);
+
   const fetchProperties = useCallback(async (tab: TabType, pageNum: number, isNewTab = false, filters?: CatalogFilters, search?: string) => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
     setIsLoading(true);
     try {
       let url = '/api/properties/';
@@ -97,7 +108,7 @@ const Catalog: React.FC = () => {
         ? buildParams(filters ?? defaultFilters, search ?? '', pageNum)
         : { limit: CATALOG_PAGE_SIZE, offset: (pageNum - 1) * CATALOG_PAGE_SIZE };
 
-      const response = await api.get(url, { params });
+      const response = await api.get(url, { params, signal: controller.signal });
       const data = response.data as Property[];
 
       if (isNewTab) {
@@ -111,7 +122,8 @@ const Catalog: React.FC = () => {
       }
 
       setHasMore(data.length === CATALOG_PAGE_SIZE);
-    } catch (err) {
+    } catch (err: unknown) {
+      if ((err as { code?: string })?.code === 'ERR_CANCELED') return;
       console.error('Failed to fetch properties:', err);
     } finally {
       setIsLoading(false);
@@ -121,19 +133,20 @@ const Catalog: React.FC = () => {
   useEffect(() => {
     setProperties([]);
     setPage(1);
-    setHasMore(true);
     fetchProperties(activeTab, 1, true, urlFilters, urlSearch);
-  }, [activeTab, fetchProperties, urlFilters, urlSearch]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, fetchProperties, searchKey]);
 
   const hasMoreRef = useRef(hasMore);
   const isLoadingRef = useRef(isLoading);
   hasMoreRef.current = hasMore;
   isLoadingRef.current = isLoading;
+  propertiesLengthRef.current = properties.length;
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMoreRef.current && !isLoadingRef.current) {
+        if (entries[0].isIntersecting && hasMoreRef.current && !isLoadingRef.current && propertiesLengthRef.current > 0) {
           setPage(prev => prev + 1);
         }
       },
@@ -151,7 +164,8 @@ const Catalog: React.FC = () => {
     if (page > 1) {
       fetchProperties(activeTab, page, false, urlFilters, urlSearch);
     }
-  }, [page, activeTab, fetchProperties, urlFilters, urlSearch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [page, activeTab, fetchProperties, searchKey]);
 
   // debounce search -> write to URL
   useEffect(() => {
@@ -170,21 +184,21 @@ const Catalog: React.FC = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery]);
 
-  const handleDraftChange = (key: keyof CatalogFilters, value: unknown) => {
+  const handleDraftChange = useCallback((key: keyof CatalogFilters, value: unknown) => {
     setDraftFilters(prev => ({ ...prev, [key]: value }));
-  };
+  }, []);
 
-  const applyFilters = () => {
+  const applyFilters = useCallback(() => {
     setSearchParams(filtersToSearchParams(draftFilters, searchQuery, defaultFilters));
-  };
+  }, [draftFilters, searchQuery, setSearchParams]);
 
-  const resetFilters = () => {
+  const resetFilters = useCallback(() => {
     setDraftFilters(defaultFilters);
     setSearchQuery('');
     setSearchParams(filtersToSearchParams(defaultFilters, '', defaultFilters));
-  };
+  }, [setSearchParams]);
 
-  const handleLikeToggle = (propertyId: string, isLiked: boolean) => {
+  const handleLikeToggle = useCallback((propertyId: string, isLiked: boolean) => {
     setProperties(prev => 
       prev.map(p => p.id === propertyId ? { 
         ...p, 
@@ -196,7 +210,7 @@ const Catalog: React.FC = () => {
       setProperties(prev => prev.filter(p => p.id !== propertyId));
     }
     setRecVersion(v => v + 1);
-  };
+  }, [activeTab]);
 
   const displayProperties = useMemo(() => {
     if (activeTab !== 'all' || !filteredAiRecs.length) return properties;
@@ -208,6 +222,10 @@ const Catalog: React.FC = () => {
       ...properties.filter(p => !filteredAiRecs.some(ai => ai.id === p.id)),
     ];
   }, [properties, filteredAiRecs, activeTab]);
+
+  useEffect(() => {
+    return () => abortRef.current?.abort();
+  }, []);
 
   return (
     <div className="catalog-page">

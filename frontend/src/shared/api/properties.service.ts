@@ -2,13 +2,13 @@ import api from './api';
 import type { Property } from './types';
 
 export const propertyService = {
-  async getProperties(params: Record<string, unknown> = {}): Promise<Property[]> {
-    const response = await api.get('/api/properties', { params });
+  async getProperties(params: Record<string, unknown> = {}, signal?: AbortSignal): Promise<Property[]> {
+    const response = await api.get('/api/properties', { params, signal });
     return response.data;
   },
 
-  async getPropertyById(id: string): Promise<Property> {
-    const response = await api.get(`/api/properties/${id}`);
+  async getPropertyById(id: string, signal?: AbortSignal): Promise<Property> {
+    const response = await api.get(`/api/properties/${id}`, { signal });
     return response.data;
   },
 
@@ -26,20 +26,21 @@ export const propertyService = {
     await api.delete(`/api/properties/${id}`);
   },
 
-  async getMyProperties(): Promise<Property[]> {
-    const response = await api.get('/api/properties/my');
+  async getMyProperties(signal?: AbortSignal): Promise<Property[]> {
+    const response = await api.get('/api/properties/my', { signal });
     return response.data;
   },
 
-  async getMeta(): Promise<{
+  async getMeta(signal?: AbortSignal): Promise<{
     districts: string[];
     metro: string[];
     materials: string[];
     repair_types: string[];
     property_types: string[];
     cities: string[];
+    city_centers: Record<string, [number, number]>;
   }> {
-    const response = await api.get('/api/properties/meta');
+    const response = await api.get('/api/properties/meta', { signal });
     return response.data;
   },
 
@@ -52,7 +53,7 @@ export const propertyService = {
     return response.data.urls;
   },
 
-  async getPropertiesInBox(bounds: [number, number, number, number], filters: Record<string, unknown> = {}): Promise<Property[]> {
+  async getPropertiesInBox(bounds: [number, number, number, number], filters: Record<string, unknown> = {}, signal?: AbortSignal): Promise<Property[]> {
     const [north, east, south, west] = bounds;
     const params = {
       min_lat: south,
@@ -62,7 +63,7 @@ export const propertyService = {
       limit: 200,
       ...filters,
     };
-    const response = await api.get('/api/properties/map', { params });
+    const response = await api.get('/api/properties/map', { params, signal });
     return response.data;
   },
 };

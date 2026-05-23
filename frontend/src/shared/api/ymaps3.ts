@@ -6,12 +6,24 @@ export interface YMaps3Global {
   import: (module: string) => Promise<unknown>;
 }
 
-interface YMapsComponents {
+interface YMapsReactify {
+  reactify: {
+    bindTo: (r: typeof React, d: typeof ReactDOM) => {
+      module: (ymaps: unknown) => YMapsRawComponents;
+      useDefault: (value: unknown, deps?: unknown[]) => unknown;
+    };
+  };
+}
+
+interface YMapsRawComponents {
   YMap: React.ElementType;
   YMapDefaultSchemeLayer: React.ElementType;
   YMapDefaultFeaturesLayer: React.ElementType;
   YMapMarker: React.ElementType;
   YMapListener: React.ElementType;
+}
+
+interface YMapsComponents extends YMapsRawComponents {
   reactify: { useDefault: (value: unknown, deps?: unknown[]) => unknown };
 }
 
@@ -48,7 +60,7 @@ async function initYmaps(): Promise<YMapsComponents> {
   await ymaps3.ready;
 
   const [ymaps3Reactify] = await Promise.all([
-    ymaps3.import('@yandex/ymaps3-reactify'),
+    ymaps3.import('@yandex/ymaps3-reactify') as Promise<YMapsReactify>,
     ymaps3.import('@yandex/ymaps3-default-ui-theme').catch(() => {}),
   ]);
   const reactify = ymaps3Reactify.reactify.bindTo(React, ReactDOM);

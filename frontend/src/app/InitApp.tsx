@@ -10,17 +10,20 @@ export const InitApp: React.FC = () => {
   const dispatch = useAppDispatch();
 
   useEffect(() => {
+    const controller = new AbortController();
     const token = getAccessToken();
     if (token && !user) {
-      authService.getCurrentUser()
+      authService.getCurrentUser(controller.signal)
         .then((userData) => {
           dispatch(setCredentials({ user: userData, token }));
         })
-        .catch(() => {
+        .catch((err) => {
+          if (err?.code === 'ERR_CANCELED') return;
           setAccessToken(null);
           dispatch(logout());
         });
     }
+    return () => controller.abort();
   }, [dispatch, user]);
 
   return <App />;

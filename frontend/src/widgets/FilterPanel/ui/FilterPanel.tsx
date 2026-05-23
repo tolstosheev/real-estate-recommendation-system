@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { memo, useState } from 'react';
 import type { FilterValues } from '@shared/utils/filterParams';
 import RangeSlider from '@shared/ui/RangeSlider';
 import CheckboxGroup from '@shared/ui/CheckboxGroup';
@@ -166,4 +166,4 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
   );
 };
 
-export default FilterPanel;
+export default memo(FilterPanel);

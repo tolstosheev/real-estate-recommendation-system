@@ -94,15 +94,6 @@ const MapPage: React.FC = () => {
     setCommandedZoom(clampZoom(trackedZoom + 2));
   }, [trackedZoom]);
 
-  const handleCardClick = (propertyId: string) => {
-    const prop = displayProperties.find(p => p.id === propertyId);
-    if (prop) {
-      setSelectedPropertyId(propertyId);
-      setMapCenter([prop.lon, prop.lat]);
-      setCommandedZoom(clampZoom(20));
-    }
-  };
-
   const isZoomedOut = trackedZoom < ZOOM_THRESHOLD;
   const [properties, setProperties] = useState<Property[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -128,7 +119,8 @@ const MapPage: React.FC = () => {
   const suppressUrlFetchRef = useRef(false);
   const isFetchingRef = useRef(false);
 
-  const urlFilters = useMemo(() => parseFilters(searchParams, defaultMapFilters), [searchParams]);
+  const searchKey = searchParams.toString();
+  const urlFilters = useMemo(() => parseFilters(new URLSearchParams(searchKey), defaultMapFilters), [searchKey]);
   const urlFiltersRef = useRef(urlFilters);
   urlFiltersRef.current = urlFilters;
 
@@ -170,10 +162,11 @@ const MapPage: React.FC = () => {
     }
     fetchProperties(null, urlFilters);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
+  }, [searchKey]);
 
   useEffect(() => {
-    propertyService.getMeta().then(data => {
+    const controller = new AbortController();
+    propertyService.getMeta(controller.signal).then(data => {
       setMeta({
         cities: data.cities || [],
         materials: data.materials || [],
@@ -182,14 +175,17 @@ const MapPage: React.FC = () => {
         city_centers: data.city_centers || {},
       });
     }).catch(() => { /* meta fetch is optional */ });
+    return () => controller.abort();
   }, []);
 
   useEffect(() => {
+    const controller = new AbortController();
     if (isAuthenticated) {
-      recommendationsService.getRecommendations().then(setAiRecs).catch(() => { /* recs fetch is optional */ });
+      recommendationsService.getRecommendations({ signal: controller.signal }).then(setAiRecs).catch(() => { /* recs fetch is optional */ });
     } else {
       setAiRecs([]);
     }
+    return () => controller.abort();
   }, [isAuthenticated]);
 
   useEffect(() => { trackedZoomRef.current = trackedZoom; }, [trackedZoom]);
@@ -252,6 +248,15 @@ const MapPage: React.FC = () => {
     }
     return merged;
   }, [filteredAiRecs, properties]);
+
+  const handleCardClick = useCallback((propertyId: string) => {
+    const prop = displayProperties.find(p => p.id === propertyId);
+    if (prop) {
+      setSelectedPropertyId(propertyId);
+      setMapCenter([prop.lon, prop.lat]);
+      setCommandedZoom(clampZoom(20));
+    }
+  }, [displayProperties]);
 
   const clusteredMarkers = useMemo(() => {
     let visible = displayProperties;
@@ -355,11 +360,11 @@ const MapPage: React.FC = () => {
     };
   }, []);
 
-  const handleDraftChange = (key: keyof MapFilters, value: unknown) => {
+  const handleDraftChange = useCallback((key: keyof MapFilters, value: unknown) => {
     setDraftFilters(prev => ({ ...prev, [key]: value }));
-  };
+  }, []);
 
-  const applyFilters = async () => {
+  const applyFilters = useCallback(async () => {
     if (isFetchingRef.current) return;
     isFetchingRef.current = true;
     try {
@@ -385,9 +390,9 @@ const MapPage: React.FC = () => {
     } finally {
       isFetchingRef.current = false;
     }
-  };
+  }, [draftFilters, setSearchParams, fetchProperties, meta.city_centers]);
 
-  const resetFilters = async () => {
+  const resetFilters = useCallback(async () => {
     setDraftFilters(defaultMapFilters);
     suppressUrlFetchRef.current = true;
     setSearchParams(filtersToSearchParams(defaultMapFilters, '', defaultMapFilters));
@@ -402,7 +407,7 @@ const MapPage: React.FC = () => {
         setTrackedZoom(12);
       }
     }
-  };
+  }, [setSearchParams, fetchProperties, meta.city_centers]);
 
   const activeFilterCount = useMemo(() => {
     let count = 0;

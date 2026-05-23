@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { memo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import cn from 'classnames';
 import type { Property } from '@shared/api/types';
@@ -227,4 +227,4 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, variant = 'vertic
   );
 };
 
-export default PropertyCard;
+export default memo(PropertyCard);

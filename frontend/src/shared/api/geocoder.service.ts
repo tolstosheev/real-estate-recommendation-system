@@ -1,5 +1,4 @@
 const YANDEX_GEOCODER_URL = 'https://geocode-maps.yandex.ru/v1/';
-const API_BASE = '/api';
 
 export interface GeocoderResult {
   lat: number;
@@ -15,7 +14,7 @@ function getApiKey(): string {
   return import.meta.env.VITE_YANDEX_GEOCODER_API_KEY || import.meta.env.VITE_YANDEX_MAPS_API_KEY || '';
 }
 
-export const geocodeAddress = async (address: string): Promise<GeocoderResult[]> => {
+export const geocodeAddress = async (address: string, signal?: AbortSignal): Promise<GeocoderResult[]> => {
   if (!address || address.trim().length < 3) return [];
 
   const apiKey = getApiKey();
@@ -30,7 +29,7 @@ export const geocodeAddress = async (address: string): Promise<GeocoderResult[]>
   });
 
   try {
-    const response = await fetch(`${YANDEX_GEOCODER_URL}?${params}`);
+    const response = await fetch(`${YANDEX_GEOCODER_URL}?${params}`, { signal });
     if (!response.ok) return [];
     const data = await response.json();
 

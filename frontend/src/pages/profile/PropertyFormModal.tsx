@@ -35,9 +35,11 @@ const PropertyFormModal: React.FC<PropertyFormModalProps> = ({ isOpen, onClose, 
   const { addressSuggestions, showSuggestions, suggestionsRef, handleAddressChange, selectAddressSuggestion } = useAddressAutocomplete();
 
   useEffect(() => {
-    propertyService.getMeta().then(data => {
+    const controller = new AbortController();
+    propertyService.getMeta(controller.signal).then(data => {
       setMetroOptions(data.metro || []);
     }).catch(() => {});
+    return () => controller.abort();
   }, []);
 
   useEffect(() => {
@@ -46,6 +48,7 @@ const PropertyFormModal: React.FC<PropertyFormModalProps> = ({ isOpen, onClose, 
         setFormData({
           title: property.title || '',
           description: property.description || '',
+          category: property.category || '',
           price: property.price ? String(property.price) : '',
           rooms: property.rooms ? String(property.rooms) : '',
           area: property.area ? String(property.area) : '',

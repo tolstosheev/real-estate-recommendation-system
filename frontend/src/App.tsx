@@ -12,6 +12,7 @@ import PropertyDetails from '@pages/property-details';
 import Profile from '@pages/profile';
 import { AddPropertyPage } from '@pages/add-property';
 import Header from '@shared/ui/Header';
+import ErrorBoundary from '@shared/ui/ErrorBoundary';
 
 const Layout: React.FC = () => {
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
@@ -55,24 +56,26 @@ const OnboardingRoute: React.FC = () => {
 const App: React.FC = () => {
   return (
     <Router>
-      <Routes>
-        <Route element={<OnboardingRoute />}>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/onboarding" element={<Onboarding />} />
-        </Route>
-        <Route element={<Layout />}>
-          <Route path="/" element={<Home />} />
-          <Route path="/map" element={<MapPage />} />
-          <Route path="/catalog" element={<Catalog />} />
-          <Route path="/property/:id" element={<PropertyDetails />} />
-          <Route element={<GuestRoute />}>
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/add-property" element={<AddPropertyPage />} />
+      <ErrorBoundary>
+        <Routes>
+          <Route element={<OnboardingRoute />}>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/onboarding" element={<Onboarding />} />
           </Route>
-        </Route>
-        <Route path="*" element={<Navigate to="/onboarding" replace />} />
-      </Routes>
+          <Route element={<Layout />}>
+            <Route path="/" element={<Home />} />
+            <Route path="/map" element={<MapPage />} />
+            <Route path="/catalog" element={<Catalog />} />
+            <Route path="/property/:id" element={<PropertyDetails />} />
+            <Route element={<GuestRoute />}>
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/add-property" element={<AddPropertyPage />} />
+            </Route>
+          </Route>
+          <Route path="*" element={<Navigate to="/onboarding" replace />} />
+        </Routes>
+      </ErrorBoundary>
     </Router>
   );
 };

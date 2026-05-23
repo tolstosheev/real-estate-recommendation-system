@@ -49,9 +49,10 @@ const PropertyDetails: React.FC = () => {
   }, [id, isAuthenticated, property?.is_liked_by_me, navigate]);
 
   useEffect(() => {
+    const controller = new AbortController();
     const fetchProperty = async () => {
       try {
-        const response = await api.get(`/api/properties/${id}`);
+        const response = await api.get(`/api/properties/${id}`, { signal: controller.signal });
         setProperty(response.data);
 
         if (isAuthenticated) {
@@ -59,19 +60,22 @@ const PropertyDetails: React.FC = () => {
             await api.post('/api/interactions/interact', {
               property_id: id,
               interaction_type: 'view'
-            });
+            }, { signal: controller.signal });
             setProperty(prev => prev ? { ...prev, views_count: (prev.views_count || 0) + 1 } : null);
-          } catch (err) {
+          } catch (err: unknown) {
+            if ((err as { code?: string })?.code === 'ERR_CANCELED') return;
             console.error('Failed to record view:', err);
           }
         }
-      } catch (err) {
+      } catch (err: unknown) {
+        if ((err as { code?: string })?.code === 'ERR_CANCELED') return;
         console.error(err);
       } finally {
         setIsLoading(false);
       }
     };
     fetchProperty();
+    return () => controller.abort();
   }, [id, isAuthenticated]);
 
   if (isLoading) return <div className="page-loading"><div className="loader"></div></div>;

@@ -35,8 +35,8 @@ export const authService = {
     const response = await api.post('/auth/register', userData);
     return response.data;
   },
-  async getCurrentUser(): Promise<User> {
-    const response = await api.get('/auth/me');
+  async getCurrentUser(signal?: AbortSignal): Promise<User> {
+    const response = await api.get('/auth/me', { signal });
     return response.data;
   },
   async updateProfile(data: UpdateProfileData): Promise<User> {

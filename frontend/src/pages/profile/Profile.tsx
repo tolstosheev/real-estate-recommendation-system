@@ -52,7 +52,8 @@ const Profile: React.FC = () => {
   }, [isAuthenticated, navigate]);
 
   useEffect(() => {
-    propertyService.getMeta().then(data => {
+    const controller = new AbortController();
+    propertyService.getMeta(controller.signal).then(data => {
       setMeta({
         cities: data.cities || [],
         materials: data.materials || [],
@@ -60,9 +61,11 @@ const Profile: React.FC = () => {
         property_types: data.property_types || [],
       });
     }).catch(() => {});
+    return () => controller.abort();
   }, []);
 
   useEffect(() => {
+    const controller = new AbortController();
     if (!user) return;
 
     setProfileDraft({
@@ -71,7 +74,7 @@ const Profile: React.FC = () => {
       telegram_handle: user.telegram_handle || '',
     });
 
-    preferencesService.getPreferences()
+    preferencesService.getPreferences(controller.signal)
       .then((data) => {
         setPrefs({
           min_price: data.min_price != null ? Number(data.min_price) : undefined,
@@ -90,16 +93,19 @@ const Profile: React.FC = () => {
         setHasLoadedPrefs(true);
       })
       .catch(() => {});
+    return () => controller.abort();
   }, [user]);
 
   useEffect(() => {
-    if (activeTab === 'my-properties' && user) { loadMyProperties(); }
+    const controller = new AbortController();
+    if (activeTab === 'my-properties' && user) { loadMyProperties(controller.signal); }
+    return () => controller.abort();
   }, [activeTab, user]);
 
-  const loadMyProperties = async () => {
+  const loadMyProperties = async (signal?: AbortSignal) => {
     setLoadingProps(true);
     try {
-      const myProps = await propertyService.getMyProperties();
+      const myProps = await propertyService.getMyProperties(signal);
       setMyProperties(myProps);
     } catch { /* ignore */ }
     finally { setLoadingProps(false); }

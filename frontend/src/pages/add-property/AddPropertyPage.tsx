@@ -52,9 +52,11 @@ export const AddPropertyPage: React.FC = () => {
   const { addressSuggestions, showSuggestions, suggestionsRef, handleAddressChange, selectAddressSuggestion } = useAddressAutocomplete();
 
   useEffect(() => {
-    propertyService.getMeta().then(data => {
+    const controller = new AbortController();
+    propertyService.getMeta(controller.signal).then(data => {
       setMetroOptions(data.metro || []);
     }).catch(() => {});
+    return () => controller.abort();
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
