@@ -102,7 +102,7 @@ class TestUserPreferenceRepository:
         mock_session.execute = AsyncMock(return_value=mock_result)
         repo = UserPreferenceRepository(mock_session)
         result = await repo.update_or_create("u1", {"min_price": 1000.0})
-        assert mock_session.add.called
+        assert mock_session.execute.called
         assert mock_session.commit.called
 
     @pytest.mark.asyncio
@@ -213,18 +213,20 @@ class TestInteractionRepository:
         repo = InteractionRepository(mock_session)
         result = await repo.create_interaction({"interaction_type": itype, "user_id": "u1", "property_id": "p1"})
         assert mock_session.add.called
-        assert mock_session.commit.called
+        assert mock_session.flush.called
 
     @pytest.mark.asyncio
     async def test_get_user_favorites(self):
         from app.repositories.interactions_repository import InteractionRepository
         mock_session = AsyncMock()
         mock_result = MagicMock()
-        mock_result.scalars.return_value.all.return_value = [MagicMock(id="p1")]
+        mock_prop = MagicMock(id="p1")
+        mock_result.all.return_value = [(mock_prop, MagicMock(), MagicMock())]
         mock_session.execute = AsyncMock(return_value=mock_result)
         repo = InteractionRepository(mock_session)
         result = await repo.get_user_favorites("u1")
         assert len(result) == 1
+        assert result[0][0].id == "p1"
 
     @pytest.mark.asyncio
     async def test_get_user_view_history_dedup(self):

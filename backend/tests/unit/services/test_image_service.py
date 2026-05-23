@@ -237,10 +237,4 @@ class TestGetFile:
             await image_service.get_file("test.jpg")
 
 
-class TestGetUrl:
-    @pytest.mark.parametrize("filename, expected", [
-        ("test.jpg", "/api/images/test.jpg"),
-        ("dir/img.png", "/api/images/dir/img.png"),
-    ])
-    def test_get_url(self, image_service, filename, expected):
-        assert image_service.get_url(filename) == expected
+

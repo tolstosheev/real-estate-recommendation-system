@@ -2,6 +2,19 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 
+class AsyncIter:
+    def __init__(self, items):
+        self.items = list(items)
+
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self):
+        if not self.items:
+            raise StopAsyncIteration
+        return self.items.pop(0)
+
+
 class TestRedisClient:
     @pytest.mark.asyncio
     async def test_get_client_success(self):
@@ -41,12 +54,13 @@ class TestRedisClient:
         from app.core.redis import RedisClient
         mock_redis = AsyncMock()
         mock_redis.delete = AsyncMock(return_value=True)
-        mock_redis.keys = AsyncMock(return_value=["recs:key1", "recs:key2"])
+        mock_redis.scan_iter = MagicMock(return_value=AsyncIter(["recs:key1", "recs:key2"]))
         RedisClient._instance = mock_redis
 
         await RedisClient.clear_user_cache("user-1")
         mock_redis.delete.assert_any_call("user_vec:user-1")
-        mock_redis.delete.assert_any_call("recs:key1", "recs:key2")
+        mock_redis.delete.assert_any_call("recs:key1")
+        mock_redis.delete.assert_any_call("recs:key2")
         RedisClient._instance = None
 
     @pytest.mark.asyncio

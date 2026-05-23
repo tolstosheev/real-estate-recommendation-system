@@ -47,8 +47,6 @@ const Profile: React.FC = () => {
   const [wizardMode, setWizardMode] = useState(false);
   const [hasLoadedPrefs, setHasLoadedPrefs] = useState(false);
 
-  const userLoadedRef = React.useRef(false);
-
   useEffect(() => {
     if (!isAuthenticated) { navigate('/login'); }
   }, [isAuthenticated, navigate]);
@@ -65,8 +63,7 @@ const Profile: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (!user || userLoadedRef.current) return;
-    userLoadedRef.current = true;
+    if (!user) return;
 
     setProfileDraft({
       full_name: user.full_name || '',
@@ -108,12 +105,19 @@ const Profile: React.FC = () => {
     finally { setLoadingProps(false); }
   };
 
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
   const handleDeleteProperty = async (id: string) => {
-    if (!confirm('Delete property?')) return;
+    setConfirmDeleteId(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!confirmDeleteId) return;
     try {
-      await propertyService.deleteProperty(id);
-      setMyProperties(prev => prev.filter(p => p.id !== id));
+      await propertyService.deleteProperty(confirmDeleteId);
+      setMyProperties(prev => prev.filter(p => p.id !== confirmDeleteId));
     } catch { /* ignore */ }
+    finally { setConfirmDeleteId(null); }
   };
 
   const handleAddProperty = () => {
@@ -595,6 +599,29 @@ const Profile: React.FC = () => {
         onSuccess={handleModalSuccess}
         property={editingProperty}
       />
+
+      {confirmDeleteId && (
+        <div className="modal-overlay" onClick={() => setConfirmDeleteId(null)}>
+          <div className="modal-content confirm-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="modal-title">Delete Property</h2>
+              <button className="modal-close" onClick={() => setConfirmDeleteId(null)} aria-label="Close">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+            <div className="modal-body">
+              <p>Are you sure you want to delete this property?</p>
+              <p>This action cannot be undone.</p>
+            </div>
+            <div className="confirm-dialog__actions">
+              <Button variant="secondary" onClick={() => setConfirmDeleteId(null)}>Cancel</Button>
+              <Button variant="primary" onClick={confirmDelete}>Confirm</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

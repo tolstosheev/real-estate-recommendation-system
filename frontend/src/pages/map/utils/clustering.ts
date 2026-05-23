@@ -18,7 +18,7 @@ export const isWithinBounds = (p: Property, bounds: [number, number, number, num
 
 export function clusterProperties(properties: Property[], zoom: number): ClusteredItem[] {
   if (zoom >= CLUSTER_MAX_ZOOM || !properties.length) {
-    return properties.map(p => ({ coordinates: [p.lon, p.lat], count: 1, property: p }));
+    return properties.filter(p => p.lat != null && p.lon != null).map(p => ({ coordinates: [p.lon, p.lat], count: 1, property: p }));
   }
 
   const cellSize = CLUSTER_BASE_CELL / Math.pow(2, zoom);

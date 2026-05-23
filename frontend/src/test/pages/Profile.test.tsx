@@ -607,24 +607,24 @@ describe('Profile Page', () => {
     });
 
     it('deletes property with confirmation', async () => {
-      vi.spyOn(window, 'confirm').mockReturnValue(true);
       mocks.mockGetMyProperties.mockResolvedValue(mockProperties);
       renderProfile();
       fireEvent.click(screen.getByText('My Properties'));
       await screen.findByText('Luxury Apartment');
       fireEvent.click(screen.getAllByText('Delete')[0]);
+      fireEvent.click(screen.getByText('Confirm'));
       await waitFor(() => {
         expect(mocks.mockDeleteProperty).toHaveBeenCalledWith('p1');
       });
     });
 
-    it('cancels delete when confirm returns false', async () => {
-      vi.spyOn(window, 'confirm').mockReturnValue(false);
+    it('cancels delete when Cancel clicked', async () => {
       mocks.mockGetMyProperties.mockResolvedValue(mockProperties);
       renderProfile();
       fireEvent.click(screen.getByText('My Properties'));
       await screen.findByText('Luxury Apartment');
       fireEvent.click(screen.getAllByText('Delete')[0]);
+      fireEvent.click(screen.getByText('Cancel'));
       expect(mocks.mockDeleteProperty).not.toHaveBeenCalled();
     });
 

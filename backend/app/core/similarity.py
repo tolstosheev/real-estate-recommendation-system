@@ -6,8 +6,8 @@ from sklearn.preprocessing import StandardScaler
 
 class SimilarityUtils:
     @staticmethod
-    def normalize_features(features: list[list[float]]):
-        if not features:
+    def normalize_features(features: np.ndarray | list[list[float]]):
+        if features is None or (isinstance(features, np.ndarray) and features.size == 0) or (not isinstance(features, np.ndarray) and not features):
             return np.array([]), None
         scaler = StandardScaler()
         return scaler.fit_transform(features), scaler

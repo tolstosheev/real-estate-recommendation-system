@@ -13,7 +13,7 @@ async def test_get_user_properties(client: AsyncClient, auth_headers):
         "property_type": "House",
     }
     await client.post("/api/properties/", json=prop_data, headers=headers)
-    res = await client.get("/user/properties", headers=headers)
+    res = await client.get("/api/properties/my", headers=headers)
     assert res.status_code == 200
     data = res.json()
     assert len(data) == 1
@@ -22,7 +22,7 @@ async def test_get_user_properties(client: AsyncClient, auth_headers):
 
 @pytest.mark.asyncio
 async def test_get_user_properties_unauthorized(client: AsyncClient):
-    res = await client.get("/user/properties")
+    res = await client.get("/api/properties/my")
     assert res.status_code == 401
 
 
@@ -30,7 +30,7 @@ async def test_get_user_properties_unauthorized(client: AsyncClient):
 async def test_update_user_profile(client: AsyncClient, auth_headers):
     headers, user_id = auth_headers
     update_data = {"full_name": "Updated Name", "phone_number": "+79999999999"}
-    res = await client.put("/user/profile", json=update_data, headers=headers)
+    res = await client.put("/auth/me", json=update_data, headers=headers)
     assert res.status_code == 200
     data = res.json()
     assert data["full_name"] == "Updated Name"
@@ -39,25 +39,18 @@ async def test_update_user_profile(client: AsyncClient, auth_headers):
 
 @pytest.mark.asyncio
 async def test_update_user_profile_unauthorized(client: AsyncClient):
-    res = await client.put("/user/profile", json={"full_name": "Hacker"})
+    res = await client.put("/auth/me", json={"full_name": "Hacker"})
     assert res.status_code == 401
 
 
 @pytest.mark.asyncio
 async def test_get_user_by_id(client: AsyncClient, auth_headers):
     headers, user_id = auth_headers
-    res = await client.get(f"/user/{user_id}", headers=headers)
+    res = await client.get("/auth/me", headers=headers)
     assert res.status_code == 200
     data = res.json()
     assert "email" in data
     assert "full_name" in data
-
-
-@pytest.mark.asyncio
-async def test_get_user_not_found(client: AsyncClient, auth_headers):
-    headers, _ = auth_headers
-    res = await client.get("/user/00000000-0000-0000-0000-000000000000", headers=headers)
-    assert res.status_code == 404
 
 
 @pytest.mark.asyncio

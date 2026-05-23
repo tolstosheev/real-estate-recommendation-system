@@ -31,8 +31,10 @@ const defaultMapFilters: MapFilters = {
 };
 
 const MAP_PAGE_SIZE = 100;
-const ALL_PROPERTIES_LIMIT = 10000;
+const ALL_PROPERTIES_LIMIT = 200;
 const ZOOM_THRESHOLD = 13;
+const ZOOM_MIN = 3;
+const ZOOM_MAX = 21;
 const SESSION_KEY = 'nestai_map_position';
 
 function loadSavedPosition(): { lon: number; lat: number; zoom: number } | null {
@@ -73,13 +75,14 @@ const MapPage: React.FC = () => {
     if (saved) return [saved.lon, saved.lat];
     return [37.6173, 55.7558];
   });
+  const clampZoom = (z: number) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z));
   const [commandedZoom, setCommandedZoom] = useState(() => {
     const saved = loadSavedPosition();
-    return saved?.zoom ?? 11;
+    return clampZoom(saved?.zoom ?? 11);
   });
   const [trackedZoom, setTrackedZoom] = useState(() => {
     const saved = loadSavedPosition();
-    return saved?.zoom ?? 11;
+    return clampZoom(saved?.zoom ?? 11);
   });
   const trackedZoomRef = useRef(trackedZoom);
   const isFirstPositionSaveRef = useRef(true);
@@ -88,7 +91,7 @@ const MapPage: React.FC = () => {
 
   const handleClusterZoom = useCallback((coords: [number, number]) => {
     setMapCenter(coords);
-    setCommandedZoom(trackedZoom + 2);
+    setCommandedZoom(clampZoom(trackedZoom + 2));
   }, [trackedZoom]);
 
   const handleCardClick = (propertyId: string) => {
@@ -96,7 +99,7 @@ const MapPage: React.FC = () => {
     if (prop) {
       setSelectedPropertyId(propertyId);
       setMapCenter([prop.lon, prop.lat]);
-      setCommandedZoom(20);
+      setCommandedZoom(clampZoom(20));
     }
   };
 
@@ -123,6 +126,7 @@ const MapPage: React.FC = () => {
   const hasInitialFetch = useRef(false);
   const suppressBoundsFetchRef = useRef(true);
   const suppressUrlFetchRef = useRef(false);
+  const isFetchingRef = useRef(false);
 
   const urlFilters = useMemo(() => parseFilters(searchParams, defaultMapFilters), [searchParams]);
   const urlFiltersRef = useRef(urlFilters);
@@ -138,8 +142,8 @@ const MapPage: React.FC = () => {
         navigator.geolocation.getCurrentPosition(
           (position) => {
             setMapCenter([position.coords.longitude, position.coords.latitude]);
-            setCommandedZoom(12);
-            setTrackedZoom(12);
+            setCommandedZoom(clampZoom(12));
+            setTrackedZoom(clampZoom(12));
           },
           () => { /* geolocation error, keep defaults */ },
           { timeout: 5000, enableHighAccuracy: false }
@@ -292,17 +296,23 @@ const MapPage: React.FC = () => {
     return params;
   };
 
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   const fetchProperties = useCallback(async (bounds: [number, number, number, number] | null, activeFilters: MapFilters): Promise<Property[]> => {
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
     setIsLoading(true);
     try {
       const params = buildParams(activeFilters, bounds, 0);
       const endpoint = bounds ? `/api/properties/map` : `/api/properties/`;
-      const response = await api.get(endpoint, { params });
+      const response = await api.get(endpoint, { params, signal: controller.signal });
       const data = response.data as Property[];
       setProperties(data);
       setHasData(true);
       return data;
     } catch (err) {
+      if (controller.signal.aborted) return [];
       console.error('Failed to fetch properties:', err);
       return [];
     } finally {
@@ -330,11 +340,12 @@ const MapPage: React.FC = () => {
   }, [fetchProperties]);
 
   const handleZoomChange = useCallback((zoom: number) => {
-    setTrackedZoom(zoom);
+    setTrackedZoom(clampZoom(zoom));
   }, []);
 
   useEffect(() => {
     return () => {
+      abortControllerRef.current?.abort();
       if (boundsTimeoutRef.current) {
         clearTimeout(boundsTimeoutRef.current);
       }
@@ -349,24 +360,30 @@ const MapPage: React.FC = () => {
   };
 
   const applyFilters = async () => {
-    if (boundsTimeoutRef.current) {
-      clearTimeout(boundsTimeoutRef.current);
-      boundsTimeoutRef.current = null;
-    }
-    suppressUrlFetchRef.current = true;
-    setSearchParams(filtersToSearchParams(draftFilters, '', defaultMapFilters));
-    setFiltersOpen(false);
-
-    setCurrentBounds(null);
-    const data = await fetchProperties(null, draftFilters);
-
-    if (data.length > 0) {
-      const firstCity = data[0].city;
-      if (firstCity && meta.city_centers[firstCity]) {
-        setMapCenter(meta.city_centers[firstCity]);
-        setCommandedZoom(12);
-        setTrackedZoom(12);
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
+    try {
+      if (boundsTimeoutRef.current) {
+        clearTimeout(boundsTimeoutRef.current);
+        boundsTimeoutRef.current = null;
       }
+      suppressUrlFetchRef.current = true;
+      setSearchParams(filtersToSearchParams(draftFilters, '', defaultMapFilters));
+      setFiltersOpen(false);
+
+      setCurrentBounds(null);
+      const data = await fetchProperties(null, draftFilters);
+
+      if (data.length > 0) {
+        const firstCity = data[0].city;
+        if (firstCity && meta.city_centers[firstCity]) {
+          setMapCenter(meta.city_centers[firstCity]);
+          setCommandedZoom(clampZoom(12));
+          setTrackedZoom(clampZoom(12));
+        }
+      }
+    } finally {
+      isFetchingRef.current = false;
     }
   };
 

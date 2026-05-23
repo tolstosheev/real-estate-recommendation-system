@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.category import compute_category
 from app.core.redis import RedisClient
 from app.models import Interaction, Property
+from app.repositories.interactions_repository import InteractionRepository
 from app.repositories.property_repository import PropertyRepository
 from app.repositories.user_repository import UserRepository
 from app.services.geocoding_service import GeocodingService
@@ -156,17 +157,27 @@ class PropertyService:
         )
         return await self.batch_enrich(results)
 
-    async def get_property_details(self, property_id: str):
+    async def get_property_details(self, property_id: str, current_user_id: str | None = None):
         cache_key = f"prop_details:{property_id}"
         redis = await self._get_redis()
 
         if redis:
             cached = await redis.get(cache_key)
             if cached:
-                return json.loads(cached)
+                property_obj = json.loads(cached)
+                if current_user_id:
+                    liked_ids = await InteractionRepository(
+                        self.repository.session
+                    ).batch_check_likes(current_user_id, [property_id])
+                    if liked_ids:
+                        property_obj["is_liked_by_me"] = True
+                return property_obj
 
         result = await self.repository.get_by_id(property_id)
         property_obj = await self._enrich_property(result)
+
+        if current_user_id and property_obj:
+            await self.enrich_with_likes([property_obj], current_user_id)
 
         if redis and property_obj:
             owner_data = {

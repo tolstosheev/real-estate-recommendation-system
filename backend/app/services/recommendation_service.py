@@ -10,6 +10,7 @@ from app.models import Property
 from app.repositories.interactions_repository import InteractionRepository
 from app.repositories.preferences_repository import UserPreferenceRepository
 from app.repositories.property_repository import PropertyRepository
+from app.services.property_service import PropertyService
 
 
 class RecommendationService:
@@ -201,7 +202,7 @@ class RecommendationService:
             weights[11] = 0.0  # rent
             weights[12] = 0.0  # daily_rent
 
-        norm_prop_vectors, scaler = self.utils.normalize_features(prop_vectors.tolist())
+        norm_prop_vectors, scaler = self.utils.normalize_features(prop_vectors)
         norm_user_vec = scaler.transform(user_vec.reshape(1, -1))[0]
 
         norm_prop_vectors = np.nan_to_num(norm_prop_vectors, nan=0.0)
@@ -217,9 +218,24 @@ class RecommendationService:
 
         top_props = self._diversify(scored_props, norm_prop_vectors, norm_user_vec, limit)
 
+        prop_loc = {}
+        for row in all_rows:
+            prop_loc[str(row[0].id)] = (
+                float(row[1]) if len(row) > 1 and row[1] else 0.0,
+                float(row[2]) if len(row) > 2 and row[2] else 0.0,
+            )
+        for p in top_props:
+            loc = prop_loc.get(str(p.id))
+            if loc:
+                p.lon, p.lat = loc
+
         if top_props and redis:
             prop_ids = [str(p.id) for p in top_props]
             await redis.setex(f"user_recs:{user_id}:{limit}", 3600, json.dumps(prop_ids))
+
+        if top_props:
+            prop_svc = PropertyService(self.prop_repo.session)
+            return await prop_svc.batch_enrich_recs(top_props, user_id)
 
         return top_props
 

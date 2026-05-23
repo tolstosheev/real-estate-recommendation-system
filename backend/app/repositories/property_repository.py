@@ -185,7 +185,9 @@ class PropertyRepository:
 
     async def update(self, property_id: str, update_data: dict) -> Property | None:
         update_data = {k: v for k, v in update_data.items() if k in ALLOWED_UPDATE_FIELDS}
-        if "lat" in update_data and "lon" in update_data:
+        if "lat" in update_data or "lon" in update_data:
+            if "lat" not in update_data or "lon" not in update_data:
+                raise ValueError("Both lat and lon must be provided together")
             lat = update_data.pop("lat")
             lon = update_data.pop("lon")
             update_data["location"] = func.ST_GeomFromText(f"POINT({lon} {lat})", 4326)

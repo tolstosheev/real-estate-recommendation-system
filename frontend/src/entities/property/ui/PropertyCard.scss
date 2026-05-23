@@ -1,6 +1,7 @@
 @use '@app/styles/index' as *;
 
 .property-card {
+  will-change: transform;
   background: $color-white;
   border-radius: 16px;
   overflow: hidden;

@@ -14,6 +14,24 @@ from app.services.property_service import PropertyService
 router = APIRouter()
 
 
+async def _enrich_and_mask(db: AsyncSession, rows: list, liked_set: set[str] | bool = False) -> list:
+    prop_service = PropertyService(db)
+    prop_ids = [str(row[0].id) for row in rows]
+    prop_rows = await prop_service.repository.get_by_ids(prop_ids)
+    enriched = await prop_service.batch_enrich(prop_rows)
+
+    for p in enriched:
+        if isinstance(liked_set, set):
+            p.is_liked_by_me = str(p.id) in liked_set
+        else:
+            p.is_liked_by_me = bool(liked_set)
+        if p.owner:
+            p.owner.phone_number = None
+            p.owner.telegram_handle = None
+
+    return enriched
+
+
 @router.post(
     "/interact", status_code=status.HTTP_201_CREATED, summary="Interact with Property", description="Like or view a property"
 )
@@ -49,20 +67,7 @@ async def get_my_favorites(
     if not rows:
         return []
 
-    prop_service = PropertyService(db)
-    prop_ids = [str(row[0].id) for row in rows]
-    prop_rows = await prop_service.repository.get_by_ids(prop_ids)
-    enriched = await prop_service.batch_enrich(prop_rows)
-
-    result = []
-    for p in enriched:
-        p.is_liked_by_me = True
-        if p.owner:
-            p.owner.phone_number = None
-            p.owner.telegram_handle = None
-        result.append(p)
-
-    return result
+    return await _enrich_and_mask(db, rows, liked_set=True)
 
 
 @router.get(
@@ -80,19 +85,6 @@ async def get_my_history(
     if not rows:
         return []
 
-    prop_service = PropertyService(db)
     prop_ids = [str(row[0].id) for row in rows]
-    prop_rows = await prop_service.repository.get_by_ids(prop_ids)
-    enriched = await prop_service.batch_enrich(prop_rows)
-
-    liked_ids = await service.interaction_repo.batch_check_likes(
-        current_user.id, prop_ids
-    )
-
-    for p in enriched:
-        p.is_liked_by_me = str(p.id) in liked_ids
-        if p.owner:
-            p.owner.phone_number = None
-            p.owner.telegram_handle = None
-
-    return enriched
+    liked_ids = await service.interaction_repo.batch_check_likes(current_user.id, prop_ids)
+    return await _enrich_and_mask(db, rows, liked_set=liked_ids)

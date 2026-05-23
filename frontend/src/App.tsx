@@ -14,7 +14,8 @@ import { AddPropertyPage } from '@pages/add-property';
 import Header from '@shared/ui/Header';
 
 const Layout: React.FC = () => {
-  const { isAuthenticated, user } = useAppSelector((state) => state.auth);
+  const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
+  const user = useAppSelector((state) => state.auth.user);
   const dispatch = useAppDispatch();
 
   const handleLogout = () => {
@@ -65,9 +66,7 @@ const App: React.FC = () => {
           <Route path="/map" element={<MapPage />} />
           <Route path="/catalog" element={<Catalog />} />
           <Route path="/property/:id" element={<PropertyDetails />} />
-        </Route>
-        <Route element={<GuestRoute />}>
-          <Route element={<Layout />}>
+          <Route element={<GuestRoute />}>
             <Route path="/profile" element={<Profile />} />
             <Route path="/add-property" element={<AddPropertyPage />} />
           </Route>

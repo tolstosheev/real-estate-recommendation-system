@@ -78,8 +78,8 @@ class PropertyUpdate(BaseModel):
 class OwnerOut(BaseModel):
     id: UUID
     full_name: str
-    phone_number: str | None
-    telegram_handle: str | None
+    phone_number: str | None = None
+    telegram_handle: str | None = None
     model_config = ConfigDict(from_attributes=True)
 
 

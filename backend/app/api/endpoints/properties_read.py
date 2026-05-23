@@ -1,4 +1,6 @@
 
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import distinct, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -160,19 +162,17 @@ async def get_my_properties(
     "/{property_id}", response_model=PropertyOut, summary="Get Property Details", description="Get property by ID"
 )
 async def get_property(
-    property_id: str,
+    property_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user_optional),
 ):
+    property_id_str = str(property_id)
     service = PropertyService(db)
-    property_obj = await service.get_property_details(property_id)
+    property_obj = await service.get_property_details(
+        property_id_str,
+        current_user_id=str(current_user.id) if current_user else None,
+    )
     if not property_obj:
         raise HTTPException(status_code=404, detail="Property not found")
-
-    if current_user:
-        if isinstance(property_obj, dict):
-            property_obj["is_liked_by_me"] = True
-        else:
-            property_obj.is_liked_by_me = True
 
     return property_obj

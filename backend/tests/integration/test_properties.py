@@ -69,10 +69,10 @@ async def test_property_unauthorized_access(client: AsyncClient):
     res = await client.put(
         f"/api/properties/{prop_id}", json={"title": "Hacked"}, headers={"Authorization": f"Bearer {t2}"}
     )
-    assert res.status_code == 403
+    assert res.status_code == 404
 
     res = await client.delete(f"/api/properties/{prop_id}", headers={"Authorization": f"Bearer {t2}"})
-    assert res.status_code == 403
+    assert res.status_code == 404
 
 
 @pytest.mark.asyncio

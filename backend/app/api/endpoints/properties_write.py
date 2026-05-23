@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -35,13 +37,14 @@ async def create_property(
     description="Update an existing property listing",
 )
 async def update_property(
-    property_id: str,
+    property_id: UUID,
     property_data: PropertyUpdate,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    property_id_str = str(property_id)
     service = PropertyService(db)
-    prop = await service.get_owned_property(property_id, str(current_user.id))
+    prop = await service.get_owned_property(property_id_str, str(current_user.id))
     if not prop:
         raise HTTPException(status_code=404, detail="Property not found or not authorized")
 
@@ -49,7 +52,7 @@ async def update_property(
     if not update_dict:
         raise HTTPException(status_code=400, detail="No fields to update")
 
-    updated = await service.update_property(property_id, update_dict)
+    updated = await service.update_property(property_id_str, update_dict)
     return updated
 
 
@@ -60,13 +63,14 @@ async def update_property(
     description="Delete property listing",
 )
 async def delete_property(
-    property_id: str, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+    property_id: UUID, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
 ):
+    property_id_str = str(property_id)
     service = PropertyService(db)
-    prop = await service.get_owned_property(property_id, str(current_user.id))
+    prop = await service.get_owned_property(property_id_str, str(current_user.id))
     if not prop:
         raise HTTPException(status_code=404, detail="Property not found or not authorized")
 
-    if not await service.delete_property(property_id):
+    if not await service.delete_property(property_id_str):
         raise HTTPException(status_code=404, detail="Property not found")
     return None

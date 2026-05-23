@@ -39,7 +39,7 @@ const Catalog: React.FC = () => {
   const filteredAiRecs = useMemo(() => {
     if (activeTab !== 'all' || !aiRecs.length) return [];
     return aiRecs.filter(p => {
-      const df = draftFilters;
+      const df = urlFilters;
       if (df.cities.length && (!p.city || !df.cities.includes(p.city))) return false;
       if (df.propertyTypes.length && (!p.property_type || !df.propertyTypes.includes(p.property_type))) return false;
       if (df.propertyPurposes.length && (!p.property_purpose || !df.propertyPurposes.includes(p.property_purpose))) return false;
@@ -145,7 +145,7 @@ const Catalog: React.FC = () => {
     }
 
     return () => observer.disconnect();
-  }, []);
+  }, [hasMore]);
 
   useEffect(() => {
     if (page > 1) {

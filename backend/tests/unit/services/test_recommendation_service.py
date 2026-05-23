@@ -111,9 +111,9 @@ class TestBuildFilterKwargs:
 
 class TestExtractInteractedIds:
     @pytest.mark.parametrize("favs, views, expected_count", [
-        ([MagicMock(id="1"), MagicMock(id="2")], [MagicMock(id="2"), MagicMock(id="3")], 3),
-        ([], [MagicMock(id="1")], 1),
-        ([MagicMock(id="1")], [], 1),
+        ([(MagicMock(id="1"), 0, 0), (MagicMock(id="2"), 0, 0)], [(MagicMock(id="2"), 0, 0), (MagicMock(id="3"), 0, 0)], 3),
+        ([], [(MagicMock(id="1"), 0, 0)], 1),
+        ([(MagicMock(id="1"), 0, 0)], [], 1),
         ([], [], 0),
     ])
     def test_extract_interacted_ids(self, favs, views, expected_count):
@@ -123,10 +123,10 @@ class TestExtractInteractedIds:
 
 class TestDeterminePreferredCity:
     @pytest.mark.parametrize("prefs_cities, favs, views, expected", [
-        (["Moscow"], [MagicMock(city="London")], [], "Moscow"),
-        (None, [MagicMock(city="London"), MagicMock(city="London")],
-         [MagicMock(city="Paris")], "London"),
-        (None, [], [MagicMock(city="Berlin")], "Berlin"),
+        (["Moscow"], [(MagicMock(city="London"), 0, 0)], [], "Moscow"),
+        (None, [(MagicMock(city="London"), 0, 0), (MagicMock(city="London"), 0, 0)],
+         [(MagicMock(city="Paris"), 0, 0)], "London"),
+        (None, [], [(MagicMock(city="Berlin"), 0, 0)], "Berlin"),
         (None, [], [], None),
     ])
     @pytest.mark.asyncio
@@ -158,9 +158,11 @@ class TestRecommend:
         service.prop_repo.get_all = AsyncMock(return_value=[(MagicMock(id="1"), 0, 0)])
         service.prop_repo.get_by_ids = AsyncMock(return_value=[])
         service.utils.compute_user_profile_vector = MagicMock(return_value=None)
-        with patch.object(RecommendationService, "_diversify", side_effect=lambda sp, pv, uv, limit: [p for p, _ in sp]):
-            result = await service.recommend("user-1", limit=5)
-            assert len(result) >= 0
+        with patch("app.services.recommendation_service.PropertyService.batch_enrich_recs", new_callable=AsyncMock) as mock_enrich:
+            mock_enrich.side_effect = lambda props, uid: props
+            with patch.object(RecommendationService, "_diversify", side_effect=lambda sp, pv, uv, limit: [p for p, _ in sp]):
+                result = await service.recommend("user-1", limit=5)
+                assert len(result) >= 0
 
     @pytest.mark.asyncio
     async def test_recommend_with_filters(self, service):
@@ -179,22 +181,26 @@ class TestRecommend:
         service.prop_repo.get_by_ids = AsyncMock(return_value=[])
         service.utils.compute_user_profile_vector = MagicMock(return_value=None)
 
-        with patch.object(RecommendationService, "_diversify", side_effect=lambda sp, pv, uv, limit: [p for p, _ in sp]):
-            result = await service.recommend("user-1", limit=5)
-            assert len(result) >= 0
+        with patch("app.services.recommendation_service.PropertyService.batch_enrich_recs", new_callable=AsyncMock) as mock_enrich:
+            mock_enrich.side_effect = lambda props, uid: props
+            with patch.object(RecommendationService, "_diversify", side_effect=lambda sp, pv, uv, limit: [p for p, _ in sp]):
+                result = await service.recommend("user-1", limit=5)
+                assert len(result) >= 0
 
     @pytest.mark.asyncio
     async def test_recommend_excludes_interacted(self, service):
         service.pref_repo.get_by_user_id = AsyncMock(return_value=None)
-        service.inter_repo.get_user_favorites = AsyncMock(return_value=[MagicMock(id="1")])
+        service.inter_repo.get_user_favorites = AsyncMock(return_value=[(MagicMock(id="1"), 0, 0)])
         service.inter_repo.get_user_view_history = AsyncMock(return_value=[])
         props = [(MagicMock(id=str(i), price=100), 0, 0) for i in range(5)]
         service.prop_repo.get_all = AsyncMock(return_value=props)
         service.prop_repo.get_by_ids = AsyncMock(return_value=[])
         service.utils.compute_user_profile_vector = MagicMock(return_value=None)
-        with patch.object(RecommendationService, "_diversify", side_effect=lambda sp, pv, uv, limit: [p for p, _ in sp]):
-            result = await service.recommend("user-1", limit=5)
-            assert all(p.id != "1" for p in result)
+        with patch("app.services.recommendation_service.PropertyService.batch_enrich_recs", new_callable=AsyncMock) as mock_enrich:
+            mock_enrich.side_effect = lambda props, uid: props
+            with patch.object(RecommendationService, "_diversify", side_effect=lambda sp, pv, uv, limit: [p for p, _ in sp]):
+                result = await service.recommend("user-1", limit=5)
+                assert all(p.id != "1" for p in result)
 
 
 class TestBuildUserVector:
@@ -257,7 +263,7 @@ class TestBuildUserVector:
         service.pref_repo.get_by_user_id = AsyncMock(return_value=None)
         fav = MagicMock(spec=Property, id="p1", price=100, area=50, rooms=2, build_year=2010,
                         property_type="Apartment", property_purpose="sale", city="Moscow")
-        service.inter_repo.get_user_favorites = AsyncMock(return_value=[fav])
+        service.inter_repo.get_user_favorites = AsyncMock(return_value=[(fav, 37.0, 55.0)])
         service.inter_repo.get_user_view_history = AsyncMock(return_value=[])
         service.prop_repo.get_by_ids = AsyncMock(return_value=[(fav, 37.0, 55.0)])
         service.utils.compute_user_profile_vector = MagicMock(return_value=np.array([1.0] * 14))
@@ -312,8 +318,10 @@ class TestRecommendWithCache:
         mock_redis.get = AsyncMock(return_value=cached_ids)
         service.prop_repo.get_by_ids = AsyncMock(return_value=[(MagicMock(id="p1"), 0, 0), (MagicMock(id="p2"), 0, 0)])
         with patch("app.services.recommendation_service.RedisClient.get_client", AsyncMock(return_value=mock_redis)):
-            result = await service.recommend("user-1", limit=5)
-            assert service.prop_repo.get_by_ids.called
+            with patch("app.services.recommendation_service.PropertyService.batch_enrich_recs", new_callable=AsyncMock) as mock_enrich:
+                mock_enrich.side_effect = lambda props, uid: props
+                result = await service.recommend("user-1", limit=5)
+                assert service.prop_repo.get_by_ids.called
 
 
 class TestRecommendWithUserVec:
@@ -334,9 +342,11 @@ class TestRecommendWithUserVec:
         service.utils.normalize_features = MagicMock(return_value=(data, scaler))
         service.utils.calculate_cosine_similarity = MagicMock(return_value=0.5)
 
-        with patch.object(RecommendationService, "_diversify", side_effect=lambda sp, pv, uv, limit: [p for p, _ in sp[:limit]]):
-            result = await service.recommend("user-1", limit=n_props)
-            assert len(result) > 0
+        with patch("app.services.recommendation_service.PropertyService.batch_enrich_recs", new_callable=AsyncMock) as mock_enrich:
+            mock_enrich.side_effect = lambda props, uid: props
+            with patch.object(RecommendationService, "_diversify", side_effect=lambda sp, pv, uv, limit: [p for p, _ in sp[:limit]]):
+                result = await service.recommend("user-1", limit=n_props)
+                assert len(result) > 0
 
 
 class TestBuildUserVectorEdgeCases:
@@ -360,7 +370,7 @@ class TestBuildUserVectorEdgeCases:
         service.pref_repo.get_by_user_id = AsyncMock(return_value=None)
         view = MagicMock(spec=Property, id="v1")
         service.inter_repo.get_user_favorites = AsyncMock(return_value=[])
-        service.inter_repo.get_user_view_history = AsyncMock(return_value=[view])
+        service.inter_repo.get_user_view_history = AsyncMock(return_value=[(view, MagicMock(), 0, 0)])
         service.prop_repo.get_by_ids = AsyncMock(return_value=[])
         service.utils.compute_user_profile_vector = MagicMock(return_value=None)
         with patch("app.services.recommendation_service.RedisClient.get_client", AsyncMock(return_value=None)):
@@ -413,9 +423,11 @@ class TestRecommendEdgeCases:
         service.utils.normalize_features = MagicMock(return_value=(data, scaler))
         service.utils.calculate_cosine_similarity = MagicMock(return_value=0.5)
 
-        with patch.object(RecommendationService, "_diversify", side_effect=lambda sp, pv, uv, limit: [p for p, _ in sp[:limit]]):
-            result = await service.recommend("user-1", limit=n_props)
-            assert len(result) > 0
+        with patch("app.services.recommendation_service.PropertyService.batch_enrich_recs", new_callable=AsyncMock) as mock_enrich:
+            mock_enrich.side_effect = lambda props, uid: props
+            with patch.object(RecommendationService, "_diversify", side_effect=lambda sp, pv, uv, limit: [p for p, _ in sp[:limit]]):
+                result = await service.recommend("user-1", limit=n_props)
+                assert len(result) > 0
 
 
 class TestFetchCandidatesPriceRelaxation:
@@ -449,7 +461,9 @@ class TestRecommendWeightAdjustments:
         mock_redis.get = AsyncMock(return_value=None)
         mock_redis.setex = AsyncMock(return_value=True)
         with patch("app.services.recommendation_service.RedisClient.get_client", AsyncMock(return_value=mock_redis)):
-            with patch.object(RecommendationService, "_diversify", side_effect=lambda sp, pv, uv, limit: [p for p, _ in sp[:limit]]):
-                result = await service.recommend("user-1", limit=n_props)
-                assert len(result) > 0
+            with patch("app.services.recommendation_service.PropertyService.batch_enrich_recs", new_callable=AsyncMock) as mock_enrich:
+                mock_enrich.side_effect = lambda props, uid: props
+                with patch.object(RecommendationService, "_diversify", side_effect=lambda sp, pv, uv, limit: [p for p, _ in sp[:limit]]):
+                    result = await service.recommend("user-1", limit=n_props)
+                    assert len(result) > 0
                 assert mock_redis.setex.called

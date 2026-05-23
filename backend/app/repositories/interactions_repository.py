@@ -24,9 +24,10 @@ class InteractionRepository:
         query = (
             select(Property, func.ST_X(Property.location).label("lon"), func.ST_Y(Property.location).label("lat"))
             .join(Interaction, Property.id == Interaction.property_id)
-            .filter(Interaction.user_id == user_id, Interaction.interaction_type == "like")
-            .offset(offset)
-            .limit(limit)
+        .filter(Interaction.user_id == user_id, Interaction.interaction_type == "like")
+        .order_by(Interaction.created_at.desc())
+        .offset(offset)
+        .limit(limit)
         )
         result = await self.session.execute(query)
         return result.all()

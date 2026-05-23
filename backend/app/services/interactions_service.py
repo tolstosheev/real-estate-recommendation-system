@@ -1,5 +1,6 @@
 from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError
 
 from app.core.redis import RedisClient
 from app.models import Property
@@ -38,22 +39,28 @@ class InteractionService:
                 return {"status": "removed", "interaction": None}
             return {"status": "exists", "interaction": existing}
 
-        interaction = await self.interaction_repo.create_interaction({**interaction_data, "user_id": user_id})
+        try:
+            interaction = await self.interaction_repo.create_interaction({**interaction_data, "user_id": user_id})
 
-        if interaction_type == "view":
-            await self.session.execute(
-                update(Property)
-                .where(Property.id == property_id)
-                .values(views_count=Property.views_count + 1)
-            )
-        elif interaction_type == "like":
-            await self.session.execute(
-                update(Property)
-                .where(Property.id == property_id)
-                .values(likes_count=Property.likes_count + 1)
-            )
+            if interaction_type == "view":
+                await self.session.execute(
+                    update(Property)
+                    .where(Property.id == property_id)
+                    .values(views_count=Property.views_count + 1)
+                )
+            elif interaction_type == "like":
+                await self.session.execute(
+                    update(Property)
+                    .where(Property.id == property_id)
+                    .values(likes_count=Property.likes_count + 1)
+                )
 
-        await self.session.commit()
+            await self.session.commit()
+        except IntegrityError:
+            await self.session.rollback()
+            existing = await self.interaction_repo.find_interaction(user_id, property_id, interaction_type)
+            return {"status": "exists", "interaction": existing}
+
         await RedisClient.clear_user_cache(user_id)
         return {"status": "created", "interaction": interaction}
 
