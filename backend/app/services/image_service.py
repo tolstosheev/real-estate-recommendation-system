@@ -2,6 +2,7 @@ import asyncio
 import logging
 import os
 import uuid
+from io import BytesIO
 
 from fastapi import UploadFile
 from minio import Minio
@@ -60,8 +61,6 @@ class ImageService:
         if len(content) > MAX_FILE_SIZE:
             raise ValueError(f"File too large. Max size: {MAX_FILE_SIZE // (1024*1024)}MB")
 
-        from io import BytesIO
-
         client = self._get_client()
         try:
             await asyncio.to_thread(
@@ -110,6 +109,9 @@ class ImageService:
                 return
             logger.error(f"Failed to delete {filename}: {e}")
             raise
+
+    async def aclose(self):
+        self._client = None
 
     async def get_file(self, filename: str) -> bytes | None:
         client = self._get_client()

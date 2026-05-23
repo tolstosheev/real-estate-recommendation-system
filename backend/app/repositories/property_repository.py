@@ -1,9 +1,11 @@
 
+from collections.abc import Sequence
+
 from geoalchemy2 import Geography
-from sqlalchemy import cast, delete, func, update
+from sqlalchemy import cast, delete, desc, distinct, func, update
+from sqlalchemy.engine import Row
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import desc
 
 from app.models import Property
 
@@ -26,20 +28,20 @@ class PropertyRepository:
         max_lat: float,
         min_lon: float,
         max_lon: float,
-        min_price: float = None,
-        max_price: float = None,
+        min_price: float | None = None,
+        max_price: float | None = None,
         rooms: list[int] | None = None,
         property_type: list[str] | None = None,
         property_purpose: list[str] | None = None,
-        district: str = None,
-        metro: str = None,
+        district: str | None = None,
+        metro: str | None = None,
         material: list[str] | None = None,
         repair_type: list[str] | None = None,
-        min_build_year: int = None,
-        max_build_year: int = None,
+        min_build_year: int | None = None,
+        max_build_year: int | None = None,
         city: list[str] | None = None,
-        min_area: float = None,
-        max_area: float = None,
+        min_area: float | None = None,
+        max_area: float | None = None,
         is_new: list[str] | None = None,
         limit: int = 50,
         offset: int = 0,
@@ -56,29 +58,29 @@ class PropertyRepository:
         if rooms:
             query = query.filter(Property.rooms.in_(rooms))
         if property_type:
-            query = query.filter(Property.property_type.in_(property_type))
+            query = query.filter(func.lower(Property.property_type).in_([t.lower() for t in property_type]))
         if property_purpose:
-            query = query.filter(Property.property_purpose.in_(property_purpose))
+            query = query.filter(func.lower(Property.property_purpose).in_([p.lower() for p in property_purpose]))
         if district is not None:
             query = query.filter(Property.district == district)
         if metro is not None:
             query = query.filter(Property.metro == metro)
         if material:
-            query = query.filter(Property.material.in_(material))
+            query = query.filter(func.lower(Property.material).in_([m.lower() for m in material]))
         if repair_type:
-            query = query.filter(Property.repair_type.in_(repair_type))
+            query = query.filter(func.lower(Property.repair_type).in_([r.lower() for r in repair_type]))
         if min_build_year is not None:
             query = query.filter(Property.build_year >= min_build_year)
         if max_build_year is not None:
             query = query.filter(Property.build_year <= max_build_year)
         if city:
-            query = query.filter(Property.city.in_(city))
+            query = query.filter(func.lower(Property.city).in_([c.lower() for c in city]))
         if min_area is not None:
             query = query.filter(Property.area >= min_area)
         if max_area is not None:
             query = query.filter(Property.area <= max_area)
         if is_new:
-            query = query.filter(Property.is_new.in_(is_new))
+            query = query.filter(func.lower(Property.is_new).in_([n.lower() for n in is_new]))
 
         query = query.order_by(desc(Property.created_at)).offset(offset).limit(limit)
         result = await self.session.execute(query)
@@ -98,24 +100,24 @@ class PropertyRepository:
         self,
         limit: int = 100,
         offset: int = 0,
-        min_price: float = None,
-        max_price: float = None,
+        min_price: float | None = None,
+        max_price: float | None = None,
         rooms: list[int] | None = None,
         property_type: list[str] | None = None,
-        lat: float = None,
-        lon: float = None,
-        radius_km: float = None,
-        district: str = None,
-        metro: str = None,
+        lat: float | None = None,
+        lon: float | None = None,
+        radius_km: float | None = None,
+        district: str | None = None,
+        metro: str | None = None,
         material: list[str] | None = None,
         repair_type: list[str] | None = None,
-        min_build_year: int = None,
-        max_build_year: int = None,
+        min_build_year: int | None = None,
+        max_build_year: int | None = None,
         city: list[str] | None = None,
         property_purpose: list[str] | None = None,
-        search: str = None,
-        min_area: float = None,
-        max_area: float = None,
+        search: str | None = None,
+        min_area: float | None = None,
+        max_area: float | None = None,
         is_new: list[str] | None = None,
     ):
 
@@ -128,19 +130,19 @@ class PropertyRepository:
         if rooms:
             query = query.filter(Property.rooms.in_(rooms))
         if property_type:
-            query = query.filter(Property.property_type.in_(property_type))
+            query = query.filter(func.lower(Property.property_type).in_([t.lower() for t in property_type]))
         if city:
-            query = query.filter(Property.city.in_(city))
+            query = query.filter(func.lower(Property.city).in_([c.lower() for c in city]))
         if property_purpose:
-            query = query.filter(Property.property_purpose.in_(property_purpose))
+            query = query.filter(func.lower(Property.property_purpose).in_([p.lower() for p in property_purpose]))
         if district is not None:
             query = query.filter(Property.district == district)
         if metro is not None:
             query = query.filter(Property.metro == metro)
         if material:
-            query = query.filter(Property.material.in_(material))
+            query = query.filter(func.lower(Property.material).in_([m.lower() for m in material]))
         if repair_type:
-            query = query.filter(Property.repair_type.in_(repair_type))
+            query = query.filter(func.lower(Property.repair_type).in_([r.lower() for r in repair_type]))
         if min_build_year is not None:
             query = query.filter(Property.build_year >= min_build_year)
         if max_build_year is not None:
@@ -150,7 +152,7 @@ class PropertyRepository:
         if max_area is not None:
             query = query.filter(Property.area <= max_area)
         if is_new:
-            query = query.filter(Property.is_new.in_(is_new))
+            query = query.filter(func.lower(Property.is_new).in_([n.lower() for n in is_new]))
         if search is not None:
             like_pattern = f"%{search}%"
             query = query.filter(
@@ -167,6 +169,59 @@ class PropertyRepository:
         result = await self.session.execute(query)
         return result.all()
 
+    async def get_meta(self) -> dict:
+        districts = (await self.session.execute(select(distinct(Property.district)).where(Property.district.isnot(None)))).scalars().all()
+        metro = (await self.session.execute(select(distinct(Property.metro)).where(Property.metro.isnot(None)))).scalars().all()
+        materials = (await self.session.execute(select(distinct(Property.material)).where(Property.material.isnot(None)))).scalars().all()
+        repair_types = (await self.session.execute(select(distinct(Property.repair_type)).where(Property.repair_type.isnot(None)))).scalars().all()
+        property_types = (await self.session.execute(select(distinct(Property.property_type)).where(Property.property_type.isnot(None)))).scalars().all()
+        cities = (await self.session.execute(select(distinct(Property.city)).where(Property.city.isnot(None)).order_by(Property.city))).scalars().all()
+
+        city_centers_raw = (await self.session.execute(
+            select(
+                Property.city,
+                func.avg(func.ST_Y(Property.location)).label("lat"),
+                func.avg(func.ST_X(Property.location)).label("lon"),
+            ).where(Property.city.isnot(None)).group_by(Property.city)
+        )).all()
+        city_centers = {row.city: [float(row.lon), float(row.lat)] for row in city_centers_raw}
+
+        return {
+            "districts": [d for d in districts if d],
+            "metro": [m for m in metro if m],
+            "materials": [m for m in materials if m],
+            "repair_types": [r for r in repair_types if r],
+            "property_types": [p for p in property_types if p],
+            "cities": [c for c in cities if c],
+            "city_centers": city_centers,
+        }
+
+    async def get_by_image_url(self, image_url: str) -> list[Property]:
+        result = await self.session.execute(
+            select(Property).where(Property.images.any(image_url))
+        )
+        return list(result.scalars().all())
+
+    async def get_by_user_id(self, user_id: str, limit: int = 100, offset: int = 0):
+        query = select(Property, func.ST_X(Property.location).label("lon"), func.ST_Y(Property.location).label("lat")) \
+            .filter(Property.user_id == user_id) \
+            .order_by(Property.created_at.desc()) \
+            .offset(offset).limit(limit)
+        result = await self.session.execute(query)
+        return result.all()
+
+    async def count_by_user_id(self, user_id: str) -> int:
+        result = await self.session.execute(
+            select(func.count(Property.id)).where(Property.user_id == user_id)
+        )
+        return result.scalar() or 0
+
+    async def get_ids_by_user_id(self, user_id: str) -> list[str]:
+        result = await self.session.execute(
+            select(Property.id).where(Property.user_id == user_id)
+        )
+        return [str(pid) for pid in result.scalars().all()]
+
     async def get_by_id(self, property_id: str):
         query = select(
             Property, func.ST_X(Property.location).label("lon"), func.ST_Y(Property.location).label("lat")
@@ -174,7 +229,7 @@ class PropertyRepository:
         result = await self.session.execute(query)
         return result.first()
 
-    async def get_by_ids(self, property_ids: list[str]) -> list[Property]:
+    async def get_by_ids(self, property_ids: list[str]) -> Sequence[Row[tuple[Property, float, float]]]:
         if not property_ids:
             return []
         query = select(

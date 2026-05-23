@@ -1,7 +1,8 @@
+import asyncio
 import json
 
 import numpy as np
-from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.metrics.pairwise import cosine_similarity  # type: ignore[import-untyped]
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.redis import RedisClient
@@ -15,6 +16,15 @@ from app.services.property_service import PropertyService
 
 class RecommendationService:
     VECTOR_DIM = 14
+    CACHE_TTL_USER_VEC = 3600
+    CACHE_TTL_RECS = 3600
+    MMR_LAMBDA = 0.7
+    DEFAULT_BUILD_YEAR = 2000
+    DEFAULT_ROOMS = 2.0
+    DEFAULT_AREA_MAX = 200
+    DEFAULT_AREA_MID = 100.0
+    FAVORITE_WEIGHT = 1.0
+    VIEW_WEIGHT = 0.2
 
     FEATURE_WEIGHTS = np.array([
         2.0,   # 0: price
@@ -33,10 +43,11 @@ class RecommendationService:
         2.0,   # 13: city_match
     ])
 
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session: AsyncSession, prop_service: PropertyService | None = None):
         self.prop_repo = PropertyRepository(session)
         self.pref_repo = UserPreferenceRepository(session)
         self.inter_repo = InteractionRepository(session)
+        self.prop_service = prop_service or PropertyService(session)
         self.utils = SimilarityUtils()
 
     def _get_property_vector(
@@ -53,7 +64,7 @@ class RecommendationService:
             float(prop.rooms) if prop.rooms else 0.0,
             float(lon),
             float(lat),
-            float(prop.build_year) if prop.build_year else 2000.0,
+            float(prop.build_year) if prop.build_year else self.DEFAULT_BUILD_YEAR,
             1.0 if ptype == 'apartment' else 0.0,
             1.0 if ptype == 'studio' else 0.0,
             1.0 if ptype == 'house' else 0.0,
@@ -86,16 +97,16 @@ class RecommendationService:
                 else float(prefs.min_price or prefs.max_price or 0)
             )
             a_min = float(prefs.min_area or 0)
-            a_max = float(prefs.max_area or 200)
-            area = (a_min + a_max) / 2 if a_min > 0 or a_max < 200 else 100.0
-            rooms = sum(prefs.preferred_rooms) / len(prefs.preferred_rooms) if prefs.preferred_rooms else 2.0
+            a_max = float(prefs.max_area or self.DEFAULT_AREA_MAX)
+            area = (a_min + a_max) / 2 if a_min > 0 or a_max < self.DEFAULT_AREA_MAX else self.DEFAULT_AREA_MID
+            rooms = sum(prefs.preferred_rooms) / len(prefs.preferred_rooms) if prefs.preferred_rooms else self.DEFAULT_ROOMS
             if prefs.min_build_year and prefs.max_build_year:
                 build_year = (prefs.min_build_year + prefs.max_build_year) / 2
             else:
-                build_year = prefs.min_build_year or prefs.max_build_year or 2000
+                build_year = prefs.min_build_year or prefs.max_build_year or self.DEFAULT_BUILD_YEAR  # type: ignore[assignment]
 
-            sel_types = [t.lower() for t in (prefs.property_types or [])]
-            sel_purps = [p.lower() for p in (prefs.property_purposes or [])]
+            sel_types = [t.lower() for t in (prefs.property_types or [])]  # type: ignore[union-attr]
+            sel_purps = [p.lower() for p in (prefs.property_purposes or [])]  # type: ignore[union-attr]
 
             explicit_vec = [
                 price, area, rooms, 0.0, 0.0, build_year,
@@ -122,7 +133,7 @@ class RecommendationService:
                     lon = float(row[1]) if len(row) > 1 and row[1] else 0.0
                     lat = float(row[2]) if len(row) > 2 and row[2] else 0.0
                     vec = self._get_property_vector(prop, lon, lat, preferred_city)
-                    weighted_vectors.append(vec * 1.0)
+                    weighted_vectors.append(vec * self.FAVORITE_WEIGHT)
 
             if views:
                 for row in views:
@@ -130,14 +141,14 @@ class RecommendationService:
                     lon = float(row[2]) if len(row) > 2 and row[2] else 0.0
                     lat = float(row[3]) if len(row) > 3 and row[3] else 0.0
                     vec = self._get_property_vector(prop, lon, lat, preferred_city)
-                    weighted_vectors.append(vec * 0.2)
+                    weighted_vectors.append(vec * self.VIEW_WEIGHT)
 
             if weighted_vectors:
                 implicit_vec = np.mean(weighted_vectors, axis=0).tolist()
 
-        user_vec = self.utils.compute_user_profile_vector(explicit_vec, implicit_vec)
+        user_vec = self.utils.compute_user_profile_vector(explicit_vec, implicit_vec)  # type: ignore[arg-type]
         if user_vec is not None and redis:
-            await redis.setex(f"user_vec:{user_id}", 3600, json.dumps(user_vec.tolist()))
+            await redis.setex(f"user_vec:{user_id}", self.CACHE_TTL_USER_VEC, json.dumps(user_vec.tolist()))
 
         return user_vec
 
@@ -202,8 +213,12 @@ class RecommendationService:
             weights[11] = 0.0  # rent
             weights[12] = 0.0  # daily_rent
 
-        norm_prop_vectors, scaler = self.utils.normalize_features(prop_vectors)
-        norm_user_vec = scaler.transform(user_vec.reshape(1, -1))[0]
+        norm_prop_vectors, scaler = await asyncio.to_thread(
+            self.utils.normalize_features, prop_vectors
+        )
+        norm_user_vec = await asyncio.to_thread(
+            lambda: scaler.transform(user_vec.reshape(1, -1))[0]
+        )
 
         norm_prop_vectors = np.nan_to_num(norm_prop_vectors, nan=0.0)
         norm_user_vec = np.nan_to_num(norm_user_vec, nan=0.0)
@@ -211,12 +226,14 @@ class RecommendationService:
         norm_prop_vectors *= weights
         norm_user_vec *= weights
 
-        scores = cosine_similarity(norm_prop_vectors, norm_user_vec.reshape(1, -1)).flatten()
-        scored_props = list(zip(properties, scores))
+        scores = await asyncio.to_thread(
+            lambda: cosine_similarity(norm_prop_vectors, norm_user_vec.reshape(1, -1)).flatten()
+        )
+        scored_props = list(zip(properties, scores, strict=False))
 
         scored_props.sort(key=lambda x: x[1], reverse=True)
 
-        top_props = self._diversify(scored_props, norm_prop_vectors, norm_user_vec, limit)
+        top_props = await self._diversify(scored_props, norm_prop_vectors, norm_user_vec, limit)
 
         prop_loc = {}
         for row in all_rows:
@@ -231,16 +248,15 @@ class RecommendationService:
 
         if top_props and redis:
             prop_ids = [str(p.id) for p in top_props]
-            await redis.setex(f"user_recs:{user_id}:{limit}", 3600, json.dumps(prop_ids))
+            await redis.setex(f"user_recs:{user_id}:{limit}", self.CACHE_TTL_RECS, json.dumps(prop_ids))
 
         if top_props:
-            prop_svc = PropertyService(self.prop_repo.session)
-            return await prop_svc.batch_enrich_recs(top_props, user_id)
+            return await self.prop_service.batch_enrich_recs(top_props, user_id)
 
         return top_props
 
     def _build_filter_kwargs(self, prefs) -> dict:
-        filter_kwargs = {}
+        filter_kwargs: dict[str, object] = {}
         if not prefs:
             return filter_kwargs
 
@@ -249,11 +265,11 @@ class RecommendationService:
         if prefs.max_price is not None:
             filter_kwargs['max_price'] = float(prefs.max_price)
         if prefs.cities:
-            filter_kwargs['city'] = prefs.cities
+            filter_kwargs['city'] = [c.lower() for c in prefs.cities]
         if prefs.material:
-            filter_kwargs['material'] = prefs.material
+            filter_kwargs['material'] = [m.lower() for m in prefs.material]
         if prefs.repair_type:
-            filter_kwargs['repair_type'] = prefs.repair_type
+            filter_kwargs['repair_type'] = [r.lower() for r in prefs.repair_type]
         if prefs.min_build_year:
             filter_kwargs['min_build_year'] = prefs.min_build_year
         if prefs.max_build_year:
@@ -261,9 +277,9 @@ class RecommendationService:
         if prefs.preferred_rooms:
             filter_kwargs['rooms'] = prefs.preferred_rooms
         if prefs.property_types:
-            filter_kwargs['property_type'] = prefs.property_types
+            filter_kwargs['property_type'] = [t.lower() for t in prefs.property_types]
         if prefs.property_purposes:
-            filter_kwargs['property_purpose'] = prefs.property_purposes
+            filter_kwargs['property_purpose'] = [p.lower() for p in prefs.property_purposes]
         if prefs.min_area is not None:
             filter_kwargs['min_area'] = float(prefs.min_area)
         if prefs.max_area is not None:
@@ -277,14 +293,14 @@ class RecommendationService:
         if prefs and prefs.cities:
             return prefs.cities[0]
 
-        city_counts = {}
+        city_counts: dict[str, int] = {}
         for row in (favs or []) + (views or []):
             p = row[0]
             if p.city:
                 city_counts[p.city] = city_counts.get(p.city, 0) + 1
 
         if city_counts:
-            return max(city_counts, key=city_counts.get)
+            return max(city_counts, key=lambda k: city_counts[k])
 
         return None
 
@@ -296,63 +312,47 @@ class RecommendationService:
         return interacted_ids
 
     async def _fetch_candidates(self, filter_kwargs: dict, limit: int):
-        all_rows = await self.prop_repo.get_all(limit=1000, **filter_kwargs)
+        strict_keys = {'city', 'property_purpose', 'min_price', 'max_price'}
+        strict = {k: v for k, v in filter_kwargs.items() if k in strict_keys}
+        relaxable = {k: v for k, v in filter_kwargs.items() if k not in strict_keys}
+
+        def merge_strict(**extra) -> dict:
+            return {**strict, **extra}
+
+        all_rows = await self.prop_repo.get_all(limit=1000, **merge_strict(**relaxable))
 
         if not all_rows or len(all_rows) < limit:
-            relaxed = {k: v for k, v in filter_kwargs.items() if k not in ('material', 'repair_type')}
-            rows = await self.prop_repo.get_all(limit=1000, **relaxed)
+            relaxed = {k: v for k, v in relaxable.items() if k not in ('material', 'repair_type')}
+            rows = await self.prop_repo.get_all(limit=1000, **merge_strict(**relaxed))
             if len(rows) > len(all_rows):
                 all_rows = rows
 
             if not all_rows or len(all_rows) < limit:
                 for key in ('rooms', 'min_area', 'max_area', 'min_build_year', 'max_build_year'):
                     relaxed.pop(key, None)
-                rows = await self.prop_repo.get_all(limit=1000, **relaxed)
+                rows = await self.prop_repo.get_all(limit=1000, **merge_strict(**relaxed))
                 if len(rows) > len(all_rows):
                     all_rows = rows
 
                 if not all_rows or len(all_rows) < limit:
                     for key in ('property_type',):
                         relaxed.pop(key, None)
-                    rows = await self.prop_repo.get_all(limit=1000, **relaxed)
+                    rows = await self.prop_repo.get_all(limit=1000, **merge_strict(**relaxed))
                     if len(rows) > len(all_rows):
                         all_rows = rows
 
-                    if not all_rows or len(all_rows) < limit:
-                        minimal = {}
-                        min_p = filter_kwargs.get('min_price')
-                        max_p = filter_kwargs.get('max_price')
-                        if min_p is not None and max_p is not None:
-                            price_range = max_p - min_p
-                            minimal['min_price'] = max(0, min_p - price_range * 0.25)
-                            minimal['max_price'] = max_p + price_range * 0.25
-                        elif min_p is not None:
-                            minimal['min_price'] = min_p * 0.5
-                        elif max_p is not None:
-                            minimal['max_price'] = max_p * 1.5
-                        city_list = filter_kwargs.get('city')
-                        if city_list:
-                            minimal['city'] = city_list
-                        if minimal:
-                            rows = await self.prop_repo.get_all(limit=1000, **minimal)
-                            if len(rows) > len(all_rows):
-                                all_rows = rows
-
-                            if not all_rows or len(all_rows) < limit:
-                                rows = await self.prop_repo.get_all(limit=min(limit * 2, 500))
-                                if len(rows) > len(all_rows):
-                                    all_rows = rows
-
         return all_rows
 
-    def _diversify(self, scored_props, prop_vectors, user_vec, limit, lambda_param=0.7):
+    async def _diversify(self, scored_props, prop_vectors, user_vec, limit, lambda_param=None):
+        if lambda_param is None:
+            lambda_param = self.MMR_LAMBDA
         if not scored_props or limit >= len(scored_props):
             return [p for p, _ in scored_props]
 
         n = len(scored_props)
         properties = [p for p, _ in scored_props]
         scores = np.array([s for _, s in scored_props])
-        pairwise_sim = cosine_similarity(prop_vectors)
+        pairwise_sim = await asyncio.to_thread(cosine_similarity, prop_vectors)
 
         selected = []
         remaining = list(range(n))

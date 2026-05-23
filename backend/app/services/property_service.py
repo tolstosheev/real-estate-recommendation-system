@@ -1,8 +1,9 @@
 import hashlib
 import json
+import logging
 from decimal import Decimal
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.category import compute_category
@@ -13,6 +14,8 @@ from app.repositories.property_repository import PropertyRepository
 from app.repositories.user_repository import UserRepository
 from app.services.geocoding_service import GeocodingService
 
+logger = logging.getLogger(__name__)
+
 
 class DecimalEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -22,10 +25,18 @@ class DecimalEncoder(json.JSONEncoder):
 
 
 class PropertyService:
-    def __init__(self, session: AsyncSession):
+    LAT_SENTINEL = 0.0
+    LON_SENTINEL = 0.0
+    LAT_MIN = -90.0
+    LAT_MAX = 90.0
+    LON_MIN = -180.0
+    LON_MAX = 180.0
+    CACHE_TTL_DETAILS = 600
+
+    def __init__(self, session: AsyncSession, geocoder: GeocodingService | None = None):
         self.repository = PropertyRepository(session)
         self.user_repo = UserRepository(session)
-        self.geocoder = GeocodingService()
+        self.geocoder = geocoder or GeocodingService()
         self.redis = None
 
     async def _get_redis(self):
@@ -61,7 +72,8 @@ class PropertyService:
             try:
                 user_id = str(prop.user_id) if prop.user_id else None
                 prop.owner = await self.user_repo.get_by_id(user_id) if user_id else None
-            except Exception:
+            except Exception as e:
+                logger.error(f"Failed to enrich owner for property {prop.id}: {e}")
                 prop.owner = None
 
         return prop
@@ -105,16 +117,19 @@ class PropertyService:
 
         return enriched
 
+    async def get_meta(self) -> dict:
+        return await self.repository.get_meta()
+
     async def create_property(self, property_data: dict):
         property_type = property_data.get("property_type")
         rooms = property_data.get("rooms")
         if property_type and rooms is not None:
             property_data["category"] = compute_category(property_type, rooms)
 
-        lat = property_data.get("lat", 0.0)
-        lon = property_data.get("lon", 0.0)
+        lat = property_data.get("lat", self.LAT_SENTINEL)
+        lon = property_data.get("lon", self.LON_SENTINEL)
 
-        if lat == 0.0 and lon == 0.0:
+        if lat == self.LAT_SENTINEL and lon == self.LON_SENTINEL:
             address = property_data.get("address")
             if address:
                 coords = await self.geocoder.get_coords_from_address(address)
@@ -122,7 +137,7 @@ class PropertyService:
                     property_data["lat"], property_data["lon"] = coords
                     lat, lon = coords
 
-        if not (-90 <= lat <= 90) or not (-180 <= lon <= 180):
+        if not (self.LAT_MIN <= lat <= self.LAT_MAX) or not (self.LON_MIN <= lon <= self.LON_MAX):
             raise ValueError("Invalid coordinates")
 
         prop = await self.repository.create(property_data)
@@ -131,16 +146,16 @@ class PropertyService:
 
     async def get_properties_in_bbox(
         self, min_lat: float, max_lat: float, min_lon: float, max_lon: float,
-        min_price: float = None, max_price: float = None,
+        min_price: float | None = None, max_price: float | None = None,
         rooms: list[int] | None = None,
         property_type: list[str] | None = None,
         property_purpose: list[str] | None = None,
-        district: str = None, metro: str = None,
+        district: str | None = None, metro: str | None = None,
         material: list[str] | None = None,
         repair_type: list[str] | None = None,
-        min_build_year: int = None, max_build_year: int = None,
+        min_build_year: int | None = None, max_build_year: int | None = None,
         city: list[str] | None = None,
-        min_area: float = None, max_area: float = None,
+        min_area: float | None = None, max_area: float | None = None,
         is_new: list[str] | None = None,
         limit: int = 50, offset: int = 0,
     ):
@@ -178,13 +193,10 @@ class PropertyService:
             await self.enrich_with_likes([property_obj], current_user_id)
 
         if redis and property_obj:
-            owner_data = {
-                "id": str(property_obj.owner.id) if property_obj.owner else None,
-                "full_name": property_obj.owner.full_name if property_obj.owner else "",
-            }
+            owner_id = str(property_obj.owner.id) if property_obj.owner else None
             await redis.setex(
                 cache_key,
-                600,
+                self.CACHE_TTL_DETAILS,
                 json.dumps(
                     {
                         "id": str(property_obj.id),
@@ -206,7 +218,12 @@ class PropertyService:
                         "lat": float(property_obj.lat) if property_obj.lat else 0.0,
                         "lon": float(property_obj.lon) if property_obj.lon else 0.0,
                         "images": list(property_obj.images) if property_obj.images else None,
-                        "owner": owner_data,
+                        "owner": {
+                            "id": owner_id,
+                            "full_name": property_obj.owner.full_name if property_obj.owner else None,
+                            "phone_number": property_obj.owner.phone_number if property_obj.owner else None,
+                            "telegram_handle": property_obj.owner.telegram_handle if property_obj.owner else None,
+                        } if property_obj.owner else None,
                         "views_count": property_obj.views_count,
                         "likes_count": property_obj.likes_count,
                         "district": property_obj.district,
@@ -229,24 +246,24 @@ class PropertyService:
         self,
         limit: int = 100,
         offset: int = 0,
-        min_price: float = None,
-        max_price: float = None,
+        min_price: float | None = None,
+        max_price: float | None = None,
         rooms: list[int] | None = None,
         property_type: list[str] | None = None,
-        lat: float = None,
-        lon: float = None,
-        radius_km: float = None,
-        district: str = None,
-        metro: str = None,
+        lat: float | None = None,
+        lon: float | None = None,
+        radius_km: float | None = None,
+        district: str | None = None,
+        metro: str | None = None,
         material: list[str] | None = None,
         repair_type: list[str] | None = None,
-        min_build_year: int = None,
-        max_build_year: int = None,
+        min_build_year: int | None = None,
+        max_build_year: int | None = None,
         city: list[str] | None = None,
         property_purpose: list[str] | None = None,
-        search: str = None,
-        min_area: float = None,
-        max_area: float = None,
+        search: str | None = None,
+        min_area: float | None = None,
+        max_area: float | None = None,
         is_new: list[str] | None = None,
     ):
         results = await self.repository.get_all(
@@ -321,13 +338,25 @@ class PropertyService:
             await redis.delete(f"prop_details:{property_id}")
         return await self._enrich_property(result)
 
+    async def count_by_user_id(self, user_id: str) -> int:
+        return await self.repository.count_by_user_id(user_id)
+
+    async def get_ids_by_user_id(self, user_id: str) -> list[str]:
+        return await self.repository.get_ids_by_user_id(user_id)
+
+    async def get_properties_by_image_url(self, image_url: str) -> list[Property]:
+        return await self.repository.get_by_image_url(image_url)
+
     async def get_user_properties(self, user_id: str, limit: int = 100, offset: int = 0):
-        query = select(Property, func.ST_X(Property.location).label("lon"), func.ST_Y(Property.location).label("lat")) \
-            .filter(Property.user_id == user_id) \
-            .order_by(Property.created_at.desc()) \
-            .offset(offset).limit(limit)
-        result = await self.repository.session.execute(query)
-        return await self.batch_enrich(result.all())
+        results = await self.repository.get_by_user_id(user_id, limit, offset)
+        return await self.batch_enrich(results)
+
+    async def aclose(self):
+        if hasattr(self.geocoder, 'close'):
+            await self.geocoder.close()
+        if self.redis:
+            await self.redis.aclose()
+            self.redis = None
 
     async def delete_property(self, property_id: str):
         await self.repository.session.execute(

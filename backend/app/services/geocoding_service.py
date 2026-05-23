@@ -8,6 +8,8 @@ logger = logging.getLogger(__name__)
 
 
 class GeocodingService:
+    HTTP_TIMEOUT = 5.0
+
     def __init__(self):
         self.api_key = settings.YANDEX_API_KEY
         self.base_url = "https://geocode-maps.yandex.ru/v1"
@@ -15,7 +17,7 @@ class GeocodingService:
 
     def _get_client(self) -> httpx.AsyncClient:
         if self._client is None:
-            self._client = httpx.AsyncClient(timeout=5.0)
+            self._client = httpx.AsyncClient(timeout=self.HTTP_TIMEOUT)
         return self._client
 
     async def close(self):
