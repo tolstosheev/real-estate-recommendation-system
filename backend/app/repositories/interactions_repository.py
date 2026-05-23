@@ -1,5 +1,5 @@
 
-from sqlalchemy import delete
+from sqlalchemy import delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -22,18 +22,18 @@ class InteractionRepository:
 
     async def get_user_favorites(self, user_id: str, limit: int = 100, offset: int = 0):
         query = (
-            select(Property)
+            select(Property, func.ST_X(Property.location).label("lon"), func.ST_Y(Property.location).label("lat"))
             .join(Interaction, Property.id == Interaction.property_id)
             .filter(Interaction.user_id == user_id, Interaction.interaction_type == "like")
             .offset(offset)
             .limit(limit)
         )
         result = await self.session.execute(query)
-        return result.scalars().all()
+        return result.all()
 
     async def get_user_view_history(self, user_id: str, limit: int = 100, offset: int = 0):
         query = (
-            select(Property, Interaction.created_at)
+            select(Property, Interaction.created_at, func.ST_X(Property.location).label("lon"), func.ST_Y(Property.location).label("lat"))
             .join(Interaction, Property.id == Interaction.property_id)
             .filter(Interaction.user_id == user_id, Interaction.interaction_type == "view")
             .order_by(Interaction.created_at.desc())
@@ -48,7 +48,7 @@ class InteractionRepository:
             prop = row[0]
             if prop.id not in seen:
                 seen.add(prop.id)
-                unique_properties.append(prop)
+                unique_properties.append(row)
         return unique_properties
 
     async def find_interaction(self, user_id: str, property_id: str, interaction_type: str = None):

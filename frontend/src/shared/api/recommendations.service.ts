@@ -6,8 +6,8 @@ interface RecommendationResponse extends Omit<PropertyRecommendation, 'is_ai_rec
 }
 
 export const recommendationsService = {
-  async getRecommendations(): Promise<PropertyRecommendation[]> {
-    const response = await api.get('/api/recommendations');
+  async getRecommendations(options?: { signal?: AbortSignal }): Promise<PropertyRecommendation[]> {
+    const response = await api.get('/api/recommendations', options || {});
     return response.data.map((prop: RecommendationResponse) => ({
       ...prop,
       is_ai_recommendation: true

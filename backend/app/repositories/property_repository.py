@@ -3,6 +3,7 @@ from geoalchemy2 import Geography
 from sqlalchemy import cast, delete, func, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy import desc
 
 from app.models import Property
 
@@ -79,7 +80,7 @@ class PropertyRepository:
         if is_new:
             query = query.filter(Property.is_new.in_(is_new))
 
-        query = query.offset(offset).limit(limit)
+        query = query.order_by(desc(Property.created_at)).offset(offset).limit(limit)
         result = await self.session.execute(query)
         return result.all()
 
@@ -162,7 +163,7 @@ class PropertyRepository:
                 func.ST_DWithin(cast(Property.location, Geography), cast(point, Geography), radius_km * 1000)
             )
 
-        query = query.offset(offset).limit(limit)
+        query = query.order_by(desc(Property.created_at)).offset(offset).limit(limit)
         result = await self.session.execute(query)
         return result.all()
 

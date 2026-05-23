@@ -73,7 +73,7 @@ async def get_properties_map(
     min_area: float | None = None,
     max_area: float | None = None,
     is_new: list[str] | None = Query(None),
-    limit: int = 50,
+    limit: int = Query(default=50, le=200),
     offset: int = 0,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user_optional),
@@ -108,7 +108,7 @@ async def get_properties_map(
     description="List properties with filters and spatial search",
 )
 async def get_properties(
-    limit: int = 100,
+    limit: int = Query(default=100, le=200),
     offset: int = 0,
     min_price: float | None = None,
     max_price: float | None = None,
@@ -156,10 +156,13 @@ async def get_properties(
     description="Get properties created by current user",
 )
 async def get_my_properties(
-    current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+    limit: int = Query(default=100, le=200),
+    offset: int = Query(default=0, ge=0),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
     service = PropertyService(db)
-    return await service.get_user_properties(str(current_user.id))
+    return await service.get_user_properties(str(current_user.id), limit, offset)
 
 
 @router.get(

@@ -172,8 +172,6 @@ class PropertyService:
             owner_data = {
                 "id": str(property_obj.owner.id) if property_obj.owner else None,
                 "full_name": property_obj.owner.full_name if property_obj.owner else "",
-                "phone_number": property_obj.owner.phone_number if property_obj.owner else None,
-                "telegram_handle": property_obj.owner.telegram_handle if property_obj.owner else None,
             }
             await redis.setex(
                 cache_key,
@@ -265,10 +263,11 @@ class PropertyService:
             await redis.delete(f"prop_details:{property_id}")
         return await self._enrich_property(result)
 
-    async def get_user_properties(self, user_id: str):
+    async def get_user_properties(self, user_id: str, limit: int = 100, offset: int = 0):
         query = select(Property, func.ST_X(Property.location).label("lon"), func.ST_Y(Property.location).label("lat")) \
             .filter(Property.user_id == user_id) \
-            .order_by(Property.created_at.desc())
+            .order_by(Property.created_at.desc()) \
+            .offset(offset).limit(limit)
         result = await self.repository.session.execute(query)
         return await self.batch_enrich(result.all())
 

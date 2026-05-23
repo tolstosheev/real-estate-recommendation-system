@@ -122,6 +122,7 @@ const MapPage: React.FC = () => {
   const boundsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasInitialFetch = useRef(false);
   const suppressBoundsFetchRef = useRef(true);
+  const suppressUrlFetchRef = useRef(false);
 
   const urlFilters = useMemo(() => parseFilters(searchParams, defaultMapFilters), [searchParams]);
   const urlFiltersRef = useRef(urlFilters);
@@ -157,6 +158,10 @@ const MapPage: React.FC = () => {
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
+      return;
+    }
+    if (suppressUrlFetchRef.current) {
+      suppressUrlFetchRef.current = false;
       return;
     }
     fetchProperties(null, urlFilters);
@@ -348,6 +353,7 @@ const MapPage: React.FC = () => {
       clearTimeout(boundsTimeoutRef.current);
       boundsTimeoutRef.current = null;
     }
+    suppressUrlFetchRef.current = true;
     setSearchParams(filtersToSearchParams(draftFilters, '', defaultMapFilters));
     setFiltersOpen(false);
 
@@ -366,6 +372,7 @@ const MapPage: React.FC = () => {
 
   const resetFilters = async () => {
     setDraftFilters(defaultMapFilters);
+    suppressUrlFetchRef.current = true;
     setSearchParams(filtersToSearchParams(defaultMapFilters, '', defaultMapFilters));
     setFiltersOpen(false);
     setCurrentBounds(null);

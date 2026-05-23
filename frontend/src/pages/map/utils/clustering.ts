@@ -25,6 +25,7 @@ export function clusterProperties(properties: Property[], zoom: number): Cluster
   const grid = new Map<string, { sumLat: number; sumLon: number; count: number; property: Property | null }>();
 
   for (const p of properties) {
+    if (p.lat == null || p.lon == null) continue;
     const gx = Math.floor(p.lon / cellSize);
     const gy = Math.floor(p.lat / cellSize);
     const key = `${gx}:${gy}`;

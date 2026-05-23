@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import uuid
@@ -38,8 +39,8 @@ class ImageService:
     async def ensure_bucket(self):
         try:
             client = self._get_client()
-            if not client.bucket_exists(self.bucket):
-                client.make_bucket(self.bucket)
+            if not await asyncio.to_thread(client.bucket_exists, self.bucket):
+                await asyncio.to_thread(client.make_bucket, self.bucket)
                 logger.info(f"Created bucket: {self.bucket}")
         except S3Error as e:
             logger.error(f"Failed to ensure bucket: {e}")
@@ -59,26 +60,30 @@ class ImageService:
         if len(content) > MAX_FILE_SIZE:
             raise ValueError(f"File too large. Max size: {MAX_FILE_SIZE // (1024*1024)}MB")
 
+        from io import BytesIO
+
         client = self._get_client()
         try:
-            client.put_object(
+            await asyncio.to_thread(
+                client.put_object,
                 self.bucket,
                 filename,
-                data=__import__("io").BytesIO(content),
-                length=len(content),
-                content_type=file.content_type or "application/octet-stream",
+                BytesIO(content),
+                len(content),
+                file.content_type or "application/octet-stream",
             )
             logger.info(f"Uploaded {filename} to bucket {self.bucket}")
             return f"{self.public_url}/{filename}"
         except S3Error as e:
             if e.code == "NoSuchBucket":
                 await self.ensure_bucket()
-                client.put_object(
+                await asyncio.to_thread(
+                    client.put_object,
                     self.bucket,
                     filename,
-                    data=__import__("io").BytesIO(content),
-                    length=len(content),
-                    content_type=file.content_type or "application/octet-stream",
+                    BytesIO(content),
+                    len(content),
+                    file.content_type or "application/octet-stream",
                 )
                 logger.info(f"Uploaded {filename} to bucket {self.bucket}")
                 return f"{self.public_url}/{filename}"
@@ -98,7 +103,7 @@ class ImageService:
     async def delete(self, filename: str) -> None:
         client = self._get_client()
         try:
-            client.remove_object(self.bucket, filename)
+            await asyncio.to_thread(client.remove_object, self.bucket, filename)
             logger.info(f"Deleted {filename} from bucket {self.bucket}")
         except S3Error as e:
             if e.code in ("NoSuchKey", "NoSuchBucket"):
@@ -109,7 +114,7 @@ class ImageService:
     async def get_file(self, filename: str) -> bytes | None:
         client = self._get_client()
         try:
-            response = client.get_object(self.bucket, filename)
+            response = await asyncio.to_thread(client.get_object, self.bucket, filename)
             data = response.read()
             response.close()
             response.release_conn()

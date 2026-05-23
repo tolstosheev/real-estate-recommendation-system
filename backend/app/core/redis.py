@@ -37,9 +37,8 @@ class RedisClient:
         redis = await cls.get_client()
         if redis:
             await redis.delete(f"user_vec:{user_id}")
-            keys = await redis.keys(f"user_recs:{user_id}:*")
-            if keys:
-                await redis.delete(*keys)
+            async for key in redis.scan_iter(match=f"user_recs:{user_id}:*"):
+                await redis.delete(key)
 
     @classmethod
     async def clear_property_cache(cls, property_ids: list[str]):

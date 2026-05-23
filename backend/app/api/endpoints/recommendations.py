@@ -1,5 +1,5 @@
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
@@ -14,7 +14,7 @@ router = APIRouter()
 
 @router.get("/", response_model=list[PropertyOut])
 async def get_recommendations(
-    limit: int = 10, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
+    limit: int = Query(default=10, le=100), current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
 ):
     service = RecommendationService(db)
     recommendations = await service.recommend(current_user.id, limit=limit)

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination, Navigation } from 'swiper/modules';
 import { useAppSelector } from '@app/store/hooks';
@@ -16,18 +16,28 @@ const Home: React.FC = () => {
   const [recs, setRecs] = useState<PropertyRecommendation[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
 
   const fetchRecs = useCallback(async () => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setIsLoading(true);
     try {
-      const data = await recommendationsService.getRecommendations();
-      setRecs(data);
-      setHasError(false);
+      const data = await recommendationsService.getRecommendations({ signal: controller.signal });
+      if (!controller.signal.aborted) {
+        setRecs(data);
+        setHasError(false);
+      }
     } catch (e) {
+      if (controller.signal.aborted) return;
       console.error('Failed to fetch recommendations', e);
       setHasError(true);
     } finally {
-      setIsLoading(false);
+      if (!controller.signal.aborted) {
+        setIsLoading(false);
+      }
     }
   }, []);
 
@@ -37,6 +47,7 @@ const Home: React.FC = () => {
     } else {
       setHasError(true);
     }
+    return () => abortRef.current?.abort();
   }, [isAuthenticated, fetchRecs]);
 
   return (

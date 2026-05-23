@@ -1,6 +1,7 @@
 import json
 
 import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.redis import RedisClient
@@ -113,40 +114,22 @@ class RecommendationService:
         implicit_vec = None
         if favorites or views:
             weighted_vectors = []
-            all_ids = set()
-            fav_ids = set()
-            view_ids = set()
 
             if favorites:
-                for p in favorites:
-                    pid = str(p.id)
-                    all_ids.add(pid)
-                    fav_ids.add(pid)
+                for row in favorites:
+                    prop = row[0]
+                    lon = float(row[1]) if len(row) > 1 and row[1] else 0.0
+                    lat = float(row[2]) if len(row) > 2 and row[2] else 0.0
+                    vec = self._get_property_vector(prop, lon, lat, preferred_city)
+                    weighted_vectors.append(vec * 1.0)
 
             if views:
-                for p in views:
-                    pid = str(p.id)
-                    all_ids.add(pid)
-                    view_ids.add(pid)
-
-            if all_ids:
-                prop_map = {}
-                rows = await self.prop_repo.get_by_ids(list(all_ids))
-                for row in rows:
-                    pid = str(row[0].id)
-                    prop_map[pid] = row
-
-                for pid in fav_ids:
-                    res = prop_map.get(pid)
-                    if res:
-                        vec = self._get_property_vector(res[0], res[1], res[2], preferred_city)
-                        weighted_vectors.append(vec * 1.0)
-
-                for pid in view_ids:
-                    res = prop_map.get(pid)
-                    if res:
-                        vec = self._get_property_vector(res[0], res[1], res[2], preferred_city)
-                        weighted_vectors.append(vec * 0.2)
+                for row in views:
+                    prop = row[0]
+                    lon = float(row[2]) if len(row) > 2 and row[2] else 0.0
+                    lat = float(row[3]) if len(row) > 3 and row[3] else 0.0
+                    vec = self._get_property_vector(prop, lon, lat, preferred_city)
+                    weighted_vectors.append(vec * 0.2)
 
             if weighted_vectors:
                 implicit_vec = np.mean(weighted_vectors, axis=0).tolist()
@@ -165,7 +148,13 @@ class RecommendationService:
             if cached_recs:
                 prop_ids = json.loads(cached_recs)
                 rows = await self.prop_repo.get_by_ids(prop_ids)
-                return [row[0] for row in rows]
+                enriched = []
+                for row in rows:
+                    prop = row[0]
+                    prop.lat = float(row[2]) if len(row) > 2 and row[2] else 0.0
+                    prop.lon = float(row[1]) if len(row) > 1 and row[1] else 0.0
+                    enriched.append(prop)
+                return enriched
 
         prefs = await self.pref_repo.get_by_user_id(user_id)
 
@@ -221,11 +210,8 @@ class RecommendationService:
         norm_prop_vectors *= weights
         norm_user_vec *= weights
 
-        scored_props = []
-        for i, prop in enumerate(properties):
-            p_vec = norm_prop_vectors[i]
-            score = self.utils.calculate_cosine_similarity(norm_user_vec, p_vec)
-            scored_props.append((prop, score))
+        scores = cosine_similarity(norm_prop_vectors, norm_user_vec.reshape(1, -1)).flatten()
+        scored_props = list(zip(properties, scores))
 
         scored_props.sort(key=lambda x: x[1], reverse=True)
 
@@ -270,13 +256,14 @@ class RecommendationService:
         return filter_kwargs
 
     async def _determine_preferred_city(
-        self, prefs, favs: list[Property], views: list[Property]
+        self, prefs, favs, views
     ) -> str | None:
         if prefs and prefs.cities:
             return prefs.cities[0]
 
         city_counts = {}
-        for p in (favs or []) + (views or []):
+        for row in (favs or []) + (views or []):
+            p = row[0]
             if p.city:
                 city_counts[p.city] = city_counts.get(p.city, 0) + 1
 
@@ -286,10 +273,10 @@ class RecommendationService:
         return None
 
     @staticmethod
-    def _extract_interacted_ids(favs: list[Property], views: list[Property]) -> set[str]:
+    def _extract_interacted_ids(favs, views) -> set[str]:
         interacted_ids = set()
-        for p in (favs or []) + (views or []):
-            interacted_ids.add(str(p.id))
+        for row in (favs or []) + (views or []):
+            interacted_ids.add(str(row[0].id))
         return interacted_ids
 
     async def _fetch_candidates(self, filter_kwargs: dict, limit: int):
@@ -336,7 +323,7 @@ class RecommendationService:
                                 all_rows = rows
 
                             if not all_rows or len(all_rows) < limit:
-                                rows = await self.prop_repo.get_all(limit=1000)
+                                rows = await self.prop_repo.get_all(limit=min(limit * 2, 500))
                                 if len(rows) > len(all_rows):
                                     all_rows = rows
 
@@ -345,8 +332,6 @@ class RecommendationService:
     def _diversify(self, scored_props, prop_vectors, user_vec, limit, lambda_param=0.7):
         if not scored_props or limit >= len(scored_props):
             return [p for p, _ in scored_props]
-
-        from sklearn.metrics.pairwise import cosine_similarity
 
         n = len(scored_props)
         properties = [p for p, _ in scored_props]
