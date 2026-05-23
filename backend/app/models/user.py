@@ -31,8 +31,6 @@ class UserPreference(Base):
     property_types = Column(ARRAY(String))
     property_purposes = Column(ARRAY(String))
     cities = Column(ARRAY(String))
-    tags = Column(ARRAY(String))
-    priority_weight = Column(JSON)
     material = Column(ARRAY(String))
     repair_type = Column(ARRAY(String))
     min_build_year = Column(Integer)

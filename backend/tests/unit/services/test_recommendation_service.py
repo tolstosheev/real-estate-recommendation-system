@@ -170,7 +170,7 @@ class TestRecommend:
             min_build_year=2000, max_build_year=2020,
             preferred_rooms=[1, 2], property_types=["Apartment"],
             property_purposes=["sale"], min_area=30.0, max_area=100.0,
-            tags=[], priority_weight=None,
+
         )
         service.pref_repo.get_by_user_id = AsyncMock(return_value=prefs)
         service.inter_repo.get_user_favorites = AsyncMock(return_value=[])

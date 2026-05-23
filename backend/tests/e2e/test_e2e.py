@@ -61,7 +61,7 @@ async def test_user_journey_recommendation_shift(client: AsyncClient):
     # Set preferences for budget properties
     await client.put(
         "/user/preferences",
-        json={"min_price": 50000, "max_price": 200000, "min_area": 30, "preferred_rooms": [1, 2], "tags": ["budget"]},
+        json={"min_price": 50000, "max_price": 200000, "min_area": 30, "preferred_rooms": [1, 2]},
         headers=headers,
     )
 

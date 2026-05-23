@@ -51,7 +51,6 @@ export default defineConfig({
         'src/**/*.test.{ts,tsx}',
         'src/**/*.spec.{ts,tsx}',
         'src/shared/api/ymaps3.ts',
-        'src/shared/api/yandex-maps-config.ts',
         'src/shared/ui/Map/**',
       ],
       thresholds: {
