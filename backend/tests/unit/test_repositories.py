@@ -229,16 +229,17 @@ class TestInteractionRepository:
         assert result[0][0].id == "p1"
 
     @pytest.mark.asyncio
-    async def test_get_user_view_history_dedup(self):
+    async def test_get_user_view_history(self):
         from app.repositories.interactions_repository import InteractionRepository
         mock_session = AsyncMock()
         mock_result = MagicMock()
         prop = MagicMock(id="p1")
-        mock_result.all.return_value = [(prop, MagicMock()), (prop, MagicMock())]
+        mock_result.all.return_value = [(prop, MagicMock(), MagicMock(), MagicMock())]
         mock_session.execute = AsyncMock(return_value=mock_result)
         repo = InteractionRepository(mock_session)
         result = await repo.get_user_view_history("u1")
         assert len(result) == 1
+        assert result[0][0].id == "p1"
 
     @pytest.mark.asyncio
     async def test_find_interaction_with_type(self):

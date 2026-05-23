@@ -33,24 +33,28 @@ class InteractionRepository:
         return result.all()
 
     async def get_user_view_history(self, user_id: str, limit: int = 100, offset: int = 0):
-        query = (
-            select(Property, Interaction.created_at, func.ST_X(Property.location).label("lon"), func.ST_Y(Property.location).label("lat"))
-            .join(Interaction, Property.id == Interaction.property_id)
-            .filter(Interaction.user_id == user_id, Interaction.interaction_type == "view")
-            .order_by(Interaction.created_at.desc())
+        subq = (
+            select(
+                Interaction.property_id,
+                func.max(Interaction.created_at).label("max_created")
+            )
+            .filter(
+                Interaction.user_id == user_id,
+                Interaction.interaction_type == "view"
+            )
+            .group_by(Interaction.property_id)
+            .order_by(func.max(Interaction.created_at).desc())
             .offset(offset)
             .limit(limit)
+            .subquery()
+        )
+        query = (
+            select(Property, subq.c.max_created, func.ST_X(Property.location).label("lon"), func.ST_Y(Property.location).label("lat"))
+            .join(subq, Property.id == subq.c.property_id)
+            .order_by(subq.c.max_created.desc())
         )
         result = await self.session.execute(query)
-
-        seen = set()
-        unique_properties = []
-        for row in result.all():
-            prop = row[0]
-            if prop.id not in seen:
-                seen.add(prop.id)
-                unique_properties.append(row)
-        return unique_properties
+        return result.all()
 
     async def find_interaction(self, user_id: str, property_id: str, interaction_type: str = None):
         query = select(Interaction).filter(Interaction.user_id == user_id, Interaction.property_id == property_id)

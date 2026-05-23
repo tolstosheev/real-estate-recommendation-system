@@ -603,17 +603,23 @@ const Profile: React.FC = () => {
       {confirmDeleteId && (
         <div className="modal-overlay" onClick={() => setConfirmDeleteId(null)}>
           <div className="modal-content confirm-dialog" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2 className="modal-title">Delete Property</h2>
+            <div className="confirm-dialog__header">
+              <div className="confirm-dialog__icon-wrap">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 6h18" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  <line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" />
+                </svg>
+              </div>
               <button className="modal-close" onClick={() => setConfirmDeleteId(null)} aria-label="Close">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
                 </svg>
               </button>
             </div>
-            <div className="modal-body">
-              <p>Are you sure you want to delete this property?</p>
-              <p>This action cannot be undone.</p>
+            <div className="confirm-dialog__body">
+              <h3 className="confirm-dialog__title">Delete Property</h3>
+              <p className="confirm-dialog__message">Are you sure you want to delete this property?</p>
+              <p className="confirm-dialog__warning">This action cannot be undone.</p>
             </div>
             <div className="confirm-dialog__actions">
               <Button variant="secondary" onClick={() => setConfirmDeleteId(null)}>Cancel</Button>

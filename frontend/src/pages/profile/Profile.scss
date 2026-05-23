@@ -542,6 +542,95 @@
   }
 }
 
+/* === Confirm Delete Dialog === */
+
+.confirm-dialog {
+  max-width: calc-rem(400);
+  padding: calc-rem(32) calc-rem(32) calc-rem(24);
+}
+
+.confirm-dialog__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: calc-rem(20);
+}
+
+.confirm-dialog__icon-wrap {
+  width: calc-rem(56);
+  height: calc-rem(56);
+  border-radius: 50%;
+  background: #fef2f2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #dc2626;
+}
+
+.confirm-dialog__body {
+  margin-bottom: calc-rem(28);
+}
+
+.confirm-dialog__title {
+  font-size: calc-rem(20);
+  font-weight: 700;
+  color: $color-gray-800;
+  margin: 0 0 calc-rem(10);
+}
+
+.confirm-dialog__message {
+  font-size: calc-rem(15);
+  color: $color-gray-600;
+  margin: 0 0 calc-rem(6);
+  line-height: 1.5;
+}
+
+.confirm-dialog__warning {
+  font-size: calc-rem(13);
+  color: #dc2626;
+  margin: 0;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: calc-rem(6);
+}
+
+.confirm-dialog__warning::before {
+  content: '⚠';
+  font-size: calc-rem(14);
+}
+
+.confirm-dialog__actions {
+  display: flex;
+  gap: calc-rem(12);
+  justify-content: flex-end;
+
+  .btn {
+    min-width: calc-rem(110);
+    padding: calc-rem(10) calc-rem(20);
+    font-size: calc-rem(14);
+    font-weight: 600;
+    border-radius: calc-rem(10);
+  }
+
+  .btn--primary {
+    background: #dc2626;
+
+    &:hover {
+      background: #b91c1c;
+    }
+  }
+
+  .btn--secondary {
+    background: $color-gray-100;
+    color: $color-gray-700;
+
+    &:hover {
+      background: $color-gray-200;
+    }
+  }
+}
+
 @keyframes fadeInUp {
   from {
     opacity: 0;

@@ -16,9 +16,12 @@ router = APIRouter()
 
 async def _enrich_and_mask(db: AsyncSession, rows: list, liked_set: set[str] | bool = False) -> list:
     prop_service = PropertyService(db)
-    prop_ids = [str(row[0].id) for row in rows]
-    prop_rows = await prop_service.repository.get_by_ids(prop_ids)
+    prop_ids_order = [str(row[0].id) for row in rows]
+    prop_rows = await prop_service.repository.get_by_ids(prop_ids_order)
     enriched = await prop_service.batch_enrich(prop_rows)
+
+    enriched_map = {str(p.id): p for p in enriched if p is not None}
+    enriched = [enriched_map[pid] for pid in prop_ids_order if pid in enriched_map]
 
     for p in enriched:
         if isinstance(liked_set, set):
