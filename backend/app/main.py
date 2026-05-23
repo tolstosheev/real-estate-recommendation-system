@@ -7,17 +7,19 @@ from fastapi.responses import JSONResponse
 
 from app.api.endpoints import auth, geocode, interactions, properties, recommendations, user
 from app.api.endpoints.upload import router as upload_router
+from app.core.config import settings
 from app.core.db import Base, engine
 from app.services.image_service import ImageService
 
-logging.basicConfig(level=logging.INFO, filename="server_errors.log", filemode="a")
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    if settings.app_env != "production":
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
     image_service = ImageService()
     await image_service.ensure_bucket()
     yield
@@ -32,10 +34,6 @@ async def global_exception_handler(request: Request, exc: Exception):
     return JSONResponse(
         status_code=500,
         content={"detail": "Internal Server Error"},
-        headers={
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Credentials": "true",
-        },
     )
 
 

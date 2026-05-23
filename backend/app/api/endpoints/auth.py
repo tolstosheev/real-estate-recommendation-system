@@ -1,11 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
-from app.core.redis import RedisClient
 from app.core.security import oauth2_scheme
-from app.models import Property
 from app.schemas.auth import Token, UserCreate, UserOut, UserUpdate
 from app.schemas.auth_login import UserLogin
 from app.services.auth_service import AuthService
@@ -73,7 +70,5 @@ async def update_me(user_in: UserUpdate, token: str = Depends(oauth2_scheme), db
     user = await service.get_current_user(token)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authentication credentials")
-    updated_user = await service.update_user(str(user.id), user_in.model_dump(exclude_unset=True))
-    prop_ids = await db.scalars(select(Property.id).where(Property.user_id == user.id))
-    await RedisClient.clear_property_cache([str(pid) for pid in prop_ids.all()])
+    updated_user = await service.update_user_profile(str(user.id), user_in.model_dump(exclude_unset=True))
     return updated_user

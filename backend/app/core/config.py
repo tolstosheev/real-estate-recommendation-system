@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str
     SECRET_KEY: str = ""
     ALGORITHM: str = "HS256"
+    app_env: str = "development"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     YANDEX_API_KEY: str = ""
     REDIS_URL: str = "redis://redis:6379/0"

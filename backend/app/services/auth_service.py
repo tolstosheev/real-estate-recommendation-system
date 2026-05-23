@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 
 from app.core.config import settings
+from app.core.redis import RedisClient
 from app.models import Property, User
 from app.repositories.user_repository import UserRepository
 
@@ -110,3 +111,12 @@ class AuthService:
                 )
 
         return await self.repository.update(user_id, user_data)
+
+    async def update_user_profile(self, user_id: str, user_data: dict):
+        updated = await self.update_user(user_id, user_data)
+        if updated:
+            prop_ids = await self.repository.session.execute(
+                select(Property.id).where(Property.user_id == user_id)
+            )
+            await RedisClient.clear_property_cache([str(pid) for pid in prop_ids.scalars().all()])
+        return updated

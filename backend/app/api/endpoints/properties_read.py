@@ -6,7 +6,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.db import get_db
 from app.core.security import get_current_user, get_current_user_optional
 from app.models import Property, User
-from app.repositories.interactions_repository import InteractionRepository
 from app.schemas.property import PropertyOut
 from app.services.property_service import PropertyService
 
@@ -92,11 +91,7 @@ async def get_properties_map(
     )
 
     if current_user and result:
-        repo = InteractionRepository(db)
-        liked_ids = await repo.batch_check_likes(current_user.id, [str(p.id) for p in result])
-        for p in result:
-            if str(p.id) in liked_ids:
-                p.is_liked_by_me = True
+        await service.enrich_with_likes(result, current_user.id)
 
     return result
 
@@ -140,11 +135,7 @@ async def get_properties(
     )
 
     if current_user and properties:
-        repo = InteractionRepository(db)
-        liked_ids = await repo.batch_check_likes(current_user.id, [str(p.id) for p in properties])
-        for p in properties:
-            if str(p.id) in liked_ids:
-                p.is_liked_by_me = True
+        await service.enrich_with_likes(properties, current_user.id)
 
     return properties
 
@@ -179,11 +170,9 @@ async def get_property(
         raise HTTPException(status_code=404, detail="Property not found")
 
     if current_user:
-        repo = InteractionRepository(db)
-        liked = await repo.find_interaction(current_user.id, property_id, "like")
         if isinstance(property_obj, dict):
-            property_obj["is_liked_by_me"] = liked is not None
+            property_obj["is_liked_by_me"] = True
         else:
-            property_obj.is_liked_by_me = liked is not None
+            property_obj.is_liked_by_me = True
 
     return property_obj

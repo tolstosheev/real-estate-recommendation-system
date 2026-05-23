@@ -247,6 +247,33 @@ class PropertyService:
         )
         return await self.batch_enrich(results)
 
+    async def get_owned_property(self, property_id: str, user_id: str) -> Property | None:
+        result = await self.repository.get_by_id(property_id)
+        if not result:
+            return None
+        prop = result[0]
+        if str(prop.user_id) != user_id:
+            return None
+        return prop
+
+    async def enrich_with_likes(self, properties: list, current_user_id: str) -> None:
+        if not properties or not current_user_id:
+            return
+        repo = InteractionRepository(self.repository.session)
+        liked_ids = await repo.batch_check_likes(current_user_id, [str(p.id) for p in properties])
+        for p in properties:
+            if str(p.id) in liked_ids:
+                p.is_liked_by_me = True
+
+    async def batch_enrich_recs(self, recommendations: list, current_user_id: str) -> list:
+        if not recommendations:
+            return []
+        prop_ids = [str(p.id) for p in recommendations]
+        rows = await self.repository.get_by_ids(prop_ids)
+        enriched = await self.batch_enrich(rows)
+        await self.enrich_with_likes(enriched, current_user_id)
+        return enriched
+
     async def update_property(self, property_id: str, update_data: dict):
         if "property_type" in update_data or "rooms" in update_data:
             existing = await self.repository.get_by_id(property_id)

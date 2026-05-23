@@ -41,13 +41,9 @@ async def update_property(
     db: AsyncSession = Depends(get_db),
 ):
     service = PropertyService(db)
-    result = await service.repository.get_by_id(property_id)
-    if not result:
-        raise HTTPException(status_code=404, detail="Property not found")
-
-    property_obj = result[0]
-    if property_obj.user_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to update this property")
+    prop = await service.get_owned_property(property_id, str(current_user.id))
+    if not prop:
+        raise HTTPException(status_code=404, detail="Property not found or not authorized")
 
     update_dict = property_data.model_dump(exclude_unset=True)
     if not update_dict:
@@ -67,13 +63,9 @@ async def delete_property(
     property_id: str, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
 ):
     service = PropertyService(db)
-    result = await service.repository.get_by_id(property_id)
-    if not result:
-        raise HTTPException(status_code=404, detail="Property not found")
-
-    property_obj = result[0]
-    if property_obj.user_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to delete this property")
+    prop = await service.get_owned_property(property_id, str(current_user.id))
+    if not prop:
+        raise HTTPException(status_code=404, detail="Property not found or not authorized")
 
     if not await service.delete_property(property_id):
         raise HTTPException(status_code=404, detail="Property not found")
