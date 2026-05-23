@@ -5,6 +5,7 @@ import bcrypt
 import jwt
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError
 
 from app.core.config import settings
 from app.models import Property, User
@@ -52,15 +53,18 @@ class AuthService:
             raise ValueError("User with this email already exists")
 
         hashed_password = self.get_password_hash(password)
-        return await self.repository.create(
-            {
-                "email": email,
-                "hashed_password": hashed_password,
-                "full_name": full_name,
-                "phone_number": phone_number,
-                "telegram_handle": telegram_handle,
-            }
-        )
+        try:
+            return await self.repository.create(
+                {
+                    "email": email,
+                    "hashed_password": hashed_password,
+                    "full_name": full_name,
+                    "phone_number": phone_number,
+                    "telegram_handle": telegram_handle,
+                }
+            )
+        except IntegrityError:
+            raise ValueError("User with this email already exists")
 
     async def authenticate_user(self, email: str, password: str) -> User | None:
         user = await self.repository.get_by_email(email)

@@ -1,4 +1,4 @@
-
+from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.redis import RedisClient
@@ -21,8 +21,6 @@ class InteractionService:
         if not property_exists:
             raise ValueError("Property not found")
 
-        property_obj = property_exists[0]
-
         existing = await self.interaction_repo.find_interaction(user_id, property_id, interaction_type)
 
         if existing:
@@ -30,7 +28,11 @@ class InteractionService:
                 existing_id = existing[0].id if existing[0] else None
                 if existing_id:
                     await self.interaction_repo.remove_interaction(existing_id)
-                property_obj.likes_count = max(0, property_obj.likes_count - 1)
+                await self.session.execute(
+                    update(Property)
+                    .where(Property.id == property_id)
+                    .values(likes_count=Property.likes_count - 1)
+                )
                 await self.session.commit()
                 await RedisClient.clear_user_cache(user_id)
                 return {"status": "removed", "interaction": None}
@@ -39,9 +41,17 @@ class InteractionService:
         interaction = await self.interaction_repo.create_interaction({**interaction_data, "user_id": user_id})
 
         if interaction_type == "view":
-            property_obj.views_count += 1
+            await self.session.execute(
+                update(Property)
+                .where(Property.id == property_id)
+                .values(views_count=Property.views_count + 1)
+            )
         elif interaction_type == "like":
-            property_obj.likes_count += 1
+            await self.session.execute(
+                update(Property)
+                .where(Property.id == property_id)
+                .values(likes_count=Property.likes_count + 1)
+            )
 
         await self.session.commit()
         await RedisClient.clear_user_cache(user_id)

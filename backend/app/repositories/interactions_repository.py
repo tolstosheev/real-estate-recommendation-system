@@ -16,7 +16,7 @@ class InteractionRepository:
 
         interaction_obj = Interaction(**interaction_data)
         self.session.add(interaction_obj)
-        await self.session.commit()
+        await self.session.flush()
         await self.session.refresh(interaction_obj)
         return interaction_obj
 
@@ -73,5 +73,4 @@ class InteractionRepository:
     async def remove_interaction(self, interaction_id: int):
         query = delete(Interaction).where(Interaction.id == interaction_id)
         result = await self.session.execute(query)
-        await self.session.commit()
         return result.rowcount > 0
