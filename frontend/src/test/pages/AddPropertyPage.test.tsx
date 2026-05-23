@@ -331,7 +331,7 @@ describe('AddPropertyPage', () => {
     fireEvent.click(screen.getByText('Next'));
     fireEvent.change(screen.getByPlaceholderText('Start typing address...'), { target: { value: 'Some Address' } });
     await waitFor(() => {
-      expect(mockGeocodeAddress).toHaveBeenCalledWith('Some Address');
+      expect(mockGeocodeAddress).toHaveBeenCalledWith('Some Address', expect.any(AbortSignal));
     });
   });
 
@@ -360,7 +360,7 @@ describe('AddPropertyPage', () => {
     fireEvent.click(screen.getByText('Next'));
     fireEvent.change(screen.getByPlaceholderText('Start typing address...'), { target: { value: 'Some Address' } });
     await waitFor(() => {
-      expect(mockGeocodeAddress).toHaveBeenCalledWith('Some Address');
+      expect(mockGeocodeAddress).toHaveBeenCalledWith('Some Address', expect.any(AbortSignal));
     });
   });
 

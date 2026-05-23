@@ -34,6 +34,23 @@ async def test_update_me_invalid_token(client: AsyncClient):
     assert res.status_code == 401
 
 
+@pytest.mark.asyncio
+async def test_refresh_token(client: AsyncClient, auth_headers):
+    headers, _ = auth_headers
+    res = await client.post("/auth/refresh", headers=headers)
+    assert res.status_code == 200
+    data = res.json()
+    assert "access_token" in data
+    assert data["token_type"] == "bearer"
+
+
+@pytest.mark.asyncio
+async def test_refresh_token_invalid(client: AsyncClient):
+    headers = {"Authorization": "Bearer invalid-token"}
+    res = await client.post("/auth/refresh", headers=headers)
+    assert res.status_code == 401
+
+
 @pytest.mark.parametrize("method, endpoint", [
     ("GET", "/"),
     ("GET", "/auth/"),

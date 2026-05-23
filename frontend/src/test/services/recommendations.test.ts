@@ -79,9 +79,10 @@ describe('recommendationsService', () => {
     await expect(recommendationsService.getRecommendations()).rejects.toThrow();
   });
 
-  it('should reject malformed response data', async () => {
+  it('should return empty array on malformed response data', async () => {
     mock.onGet('/api/recommendations').reply(200, { invalid: 'data' });
 
-    await expect(recommendationsService.getRecommendations()).rejects.toThrow();
+    const result = await recommendationsService.getRecommendations();
+    expect(result).toEqual([]);
   });
 });

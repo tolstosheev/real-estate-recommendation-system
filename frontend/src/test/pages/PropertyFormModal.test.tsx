@@ -356,7 +356,7 @@ describe('PropertyFormModal', () => {
       fireEvent.click(screen.getByText('Next'));
       fireEvent.change(screen.getByPlaceholderText('Start typing address...'), { target: { value: 'Nowhere' } });
       await waitFor(() => {
-        expect(mocks.mockGeocodeAddress).toHaveBeenCalledWith('Nowhere');
+        expect(mocks.mockGeocodeAddress).toHaveBeenCalledWith('Nowhere', expect.any(AbortSignal));
       });
     });
 
@@ -367,7 +367,7 @@ describe('PropertyFormModal', () => {
       fireEvent.click(screen.getByText('Next'));
       fireEvent.change(screen.getByPlaceholderText('Start typing address...'), { target: { value: 'Moscow' } });
       await waitFor(() => {
-        expect(mocks.mockGeocodeAddress).toHaveBeenCalledWith('Moscow');
+        expect(mocks.mockGeocodeAddress).toHaveBeenCalledWith('Moscow', expect.any(AbortSignal));
       });
     });
   });

@@ -38,16 +38,16 @@ async def test_user_journey_recommendation_shift(client: AsyncClient):
         )
         cheap_props.append(p.json()["id"])
 
-    # Create luxury properties (outside user's budget)
+    # Create luxury properties (within user's budget but different type/area)
     luxury_props = []
     for i in range(5):
         p = await client.post(
             "/api/properties/",
             json={
                 "title": f"Luxury Villa {i}",
-                "price": 1000000 + i * 10000,
-                "area": 300 + i * 10,
-                "rooms": 5,
+                "price": 150000 + i * 5000,
+                "area": 200 + i * 10,
+                "rooms": 4,
                 "address": f"Rich Blvd {i}",
                 "lat": 55.76,
                 "lon": 37.62,

@@ -73,10 +73,10 @@ class TestBuildFilterKwargs:
              "min_build_year": 2000, "max_build_year": 2020,
              "preferred_rooms": [1, 2], "property_types": ["Apartment"],
              "property_purposes": ["sale"], "min_area": 30.0, "max_area": 100.0},
-            {"min_price": 100000.0, "max_price": 500000.0, "city": ["Moscow"],
+            {"min_price": 100000.0, "max_price": 500000.0, "city": ["moscow"],
              "material": ["кирпич"], "repair_type": ["евро"],
              "min_build_year": 2000, "max_build_year": 2020,
-             "rooms": [1, 2], "property_type": ["Apartment"],
+             "rooms": [1, 2], "property_type": ["apartment"],
              "property_purpose": ["sale"], "min_area": 30.0, "max_area": 100.0},
         ),
         (
@@ -93,7 +93,7 @@ class TestBuildFilterKwargs:
         ),
         (
             {"property_types": ["House", "Studio"]},
-            {"property_type": ["House", "Studio"]},
+            {"property_type": ["house", "studio"]},
         ),
     ])
     def test_build_filter_kwargs(self, service, prefs_attrs, expected):
@@ -273,21 +273,23 @@ class TestBuildUserVector:
 
 
 class TestDiversify:
-    def test_diversify_returns_all_when_limit_ge_count(self, service):
-        from sklearn.metrics.pairwise import cosine_similarity
+    @pytest.mark.asyncio
+    async def test_diversify_returns_all_when_limit_ge_count(self, service):
+        from sklearn.metrics.pairwise import cosine_similarity  # type: ignore[import-untyped]
         props = [MagicMock(id=str(i)) for i in range(3)]
         scored = [(p, 1.0 - i * 0.1) for i, p in enumerate(props)]
         vectors = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
         user_vec = np.array([1, 1, 1])
-        result = service._diversify(scored, vectors, user_vec, limit=5)
+        result = await service._diversify(scored, vectors, user_vec, limit=5)
         assert len(result) == 3
 
-    def test_diversify_selects_best(self, service):
+    @pytest.mark.asyncio
+    async def test_diversify_selects_best(self, service):
         props = [MagicMock(id=str(i)) for i in range(5)]
         scored = [(p, 1.0 - i * 0.1) for i, p in enumerate(props)]
         vectors = np.eye(5)
         user_vec = np.array([1, 1, 1, 1, 1])
-        result = service._diversify(scored, vectors, user_vec, limit=3)
+        result = await service._diversify(scored, vectors, user_vec, limit=3)
         assert len(result) == 3
 
 
@@ -327,7 +329,7 @@ class TestRecommendWithCache:
 class TestRecommendWithUserVec:
     @pytest.mark.asyncio
     async def test_recommend_with_user_vec_scoring(self, service):
-        from sklearn.preprocessing import StandardScaler
+        from sklearn.preprocessing import StandardScaler  # type: ignore[import-untyped]
         service.pref_repo.get_by_user_id = AsyncMock(return_value=None)
         service.inter_repo.get_user_favorites = AsyncMock(return_value=[])
         service.inter_repo.get_user_view_history = AsyncMock(return_value=[])
@@ -379,14 +381,15 @@ class TestBuildUserVectorEdgeCases:
 
 
 class TestDiversifyMmr:
-    def test_diversify_mmr_selects_diverse(self):
+    @pytest.mark.asyncio
+    async def test_diversify_mmr_selects_diverse(self):
         s = RecommendationService(AsyncMock())
         s.utils = MagicMock()
         props = [MagicMock(id=str(i)) for i in range(10)]
         scored = [(p, 1.0 - i * 0.05) for i, p in enumerate(props)]
         vectors = np.random.rand(10, 14)
         user_vec = np.ones(14)
-        result = s._diversify(scored, vectors, user_vec, limit=3)
+        result = await s._diversify(scored, vectors, user_vec, limit=3)
         assert len(result) == 3
 
 
@@ -416,7 +419,7 @@ class TestRecommendEdgeCases:
         service.prop_repo.get_by_ids = AsyncMock(return_value=[])
         service.utils.compute_user_profile_vector = MagicMock(return_value=np.array([1.0] * 14))
         n_props = 3
-        from sklearn.preprocessing import StandardScaler
+        from sklearn.preprocessing import StandardScaler  # type: ignore[import-untyped]
         scaler = StandardScaler()
         data = np.random.rand(n_props, 14)
         scaler.fit(data)
@@ -441,7 +444,7 @@ class TestFetchCandidatesPriceRelaxation:
 class TestRecommendWeightAdjustments:
     @pytest.mark.asyncio
     async def test_recommend_zero_lon_lat_adjusts_weights(self, service):
-        from sklearn.preprocessing import StandardScaler
+        from sklearn.preprocessing import StandardScaler  # type: ignore[import-untyped]
         service.pref_repo.get_by_user_id = AsyncMock(return_value=None)
         service.inter_repo.get_user_favorites = AsyncMock(return_value=[])
         service.inter_repo.get_user_view_history = AsyncMock(return_value=[])
