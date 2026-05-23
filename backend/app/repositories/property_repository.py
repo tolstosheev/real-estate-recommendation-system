@@ -10,8 +10,7 @@ ALLOWED_UPDATE_FIELDS = {
     "title", "description", "price", "rooms", "area", "floor", "total_floors",
     "property_type", "property_purpose", "build_year", "city", "address",
     "district", "metro", "material", "repair_type", "is_new", "lat", "lon",
-    "balcony", "bathroom", "furnished", "parking", "ceiling_height",
-    "heating_type", "water_supply", "electricity_power",
+    "balcony", "parking",
     "images", "sq_living", "sq_kitchen", "room_type", "category",
 }
 

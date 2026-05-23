@@ -29,9 +29,3 @@ class UserOut(UserBase):
 class Token(BaseModel):
     access_token: str
     token_type: str
-
-
-class AuthResponse(BaseModel):
-    access_token: str
-    token_type: str
-    user: UserOut

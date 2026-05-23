@@ -1,18 +1,12 @@
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
-from app.core.redis import RedisClient
 from app.core.security import get_current_user
-from app.models import Property, User
-from app.schemas.auth import UserOut, UserUpdate
+from app.models import User
 from app.schemas.preferences import UserPreferenceCreate, UserPreferenceOut
-from app.schemas.property import PropertyOut
-from app.services.auth_service import AuthService
 from app.services.preferences_service import UserPreferenceService
-from app.services.property_service import PropertyService
 
 router = APIRouter()
 
@@ -43,53 +37,3 @@ async def update_my_preferences(
 ):
     service = UserPreferenceService(db)
     return await service.set_preferences(current_user.id, pref_in.model_dump())
-
-
-@router.get(
-    "/properties",
-    response_model=list[PropertyOut],
-    summary="Get My Properties",
-    description="Get properties of the current authenticated user",
-)
-async def get_my_properties(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    service = PropertyService(db)
-    return await service.get_user_properties(str(current_user.id))
-
-
-@router.put(
-    "/profile",
-    response_model=UserOut,
-    summary="Update My Profile",
-    description="Update profile of the current authenticated user",
-)
-async def update_my_profile(
-    user_in: UserUpdate, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
-):
-    service = AuthService(db)
-    updated_user = await service.update_user(str(current_user.id), user_in.model_dump(exclude_unset=True))
-    if not updated_user:
-        raise HTTPException(status_code=404, detail="User not found")
-    prop_ids = await db.scalars(select(Property.id).where(Property.user_id == current_user.id))
-    await RedisClient.clear_property_cache([str(pid) for pid in prop_ids.all()])
-    return updated_user
-
-
-@router.get(
-    "/{user_id}",
-    response_model=UserOut,
-    summary="Get User by ID",
-    description="Get user profile by ID",
-)
-async def get_user_by_id(
-    user_id: str,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    service = AuthService(db)
-    user = await service.repository.get_by_id(user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    if str(user.id) != str(current_user.id):
-        user.phone_number = None
-        user.telegram_handle = None
-    return user

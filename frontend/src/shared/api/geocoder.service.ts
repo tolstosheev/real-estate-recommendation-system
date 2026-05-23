@@ -83,14 +83,4 @@ export const geocodeAddress = async (address: string): Promise<GeocoderResult[]>
   }
 };
 
-export const reverseGeocode = async (lat: number, lon: number): Promise<string | null> => {
-  try {
-    const response = await fetch(`${API_BASE}/geocode/reverse?lat=${lat}&lon=${lon}`);
-    if (!response.ok) return null;
-    const data = await response.json();
-    return data.address;
-  } catch (error) {
-    console.error('Reverse geocoder error:', error);
-    return null;
-  }
-};
+

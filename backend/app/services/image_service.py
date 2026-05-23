@@ -120,5 +120,4 @@ class ImageService:
             logger.error(f"Failed to get {filename}: {e}")
             raise
 
-    def get_url(self, filename: str) -> str:
-        return f"{self.public_url}/{filename}"
+

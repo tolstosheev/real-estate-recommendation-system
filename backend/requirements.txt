@@ -6,7 +6,6 @@ pydantic==2.7.1
 pydantic-settings==2.3.4
 psycopg2-binary==2.9.9
 asyncpg==0.29.0
-pandas==2.2.2
 scikit-learn==1.4.2
 pytest==8.1.1
 pytest-asyncio==0.23.5
@@ -19,6 +18,5 @@ GeoAlchemy2==0.19.0
 redis==5.0.4
 minio==7.2.7
 pytest-cov==5.0.0
-python-magic==0.4.27
 ruff>=0.11.0
 mypy>=1.15.0
