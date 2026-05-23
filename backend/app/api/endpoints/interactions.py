@@ -14,27 +14,6 @@ from app.services.property_service import PropertyService
 router = APIRouter()
 
 
-async def _enrich_and_mask(db: AsyncSession, rows: list, liked_set: set[str] | bool = False) -> list:
-    prop_service = PropertyService(db)
-    prop_ids_order = [str(row[0].id) for row in rows]
-    prop_rows = await prop_service.repository.get_by_ids(prop_ids_order)
-    enriched = await prop_service.batch_enrich(prop_rows)
-
-    enriched_map = {str(p.id): p for p in enriched if p is not None}
-    enriched = [enriched_map[pid] for pid in prop_ids_order if pid in enriched_map]
-
-    for p in enriched:
-        if isinstance(liked_set, set):
-            p.is_liked_by_me = str(p.id) in liked_set
-        else:
-            p.is_liked_by_me = bool(liked_set)
-        if p.owner:
-            p.owner.phone_number = None
-            p.owner.telegram_handle = None
-
-    return enriched
-
-
 @router.post(
     "/interact", status_code=status.HTTP_201_CREATED, summary="Interact with Property", description="Like or view a property"
 )
@@ -70,7 +49,8 @@ async def get_my_favorites(
     if not rows:
         return []
 
-    return await _enrich_and_mask(db, rows, liked_set=True)
+    prop_service = PropertyService(db)
+    return await prop_service.enrich_and_mask(rows, liked_set=True)
 
 
 @router.get(
@@ -90,4 +70,5 @@ async def get_my_history(
 
     prop_ids = [str(row[0].id) for row in rows]
     liked_ids = await service.interaction_repo.batch_check_likes(current_user.id, prop_ids)
-    return await _enrich_and_mask(db, rows, liked_set=liked_ids)
+    prop_service = PropertyService(db)
+    return await prop_service.enrich_and_mask(rows, liked_set=liked_ids)

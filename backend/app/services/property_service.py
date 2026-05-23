@@ -166,9 +166,7 @@ class PropertyService:
             if cached:
                 property_obj = json.loads(cached)
                 if current_user_id:
-                    liked_ids = await InteractionRepository(
-                        self.repository.session
-                    ).batch_check_likes(current_user_id, [property_id])
+                    liked_ids = await self._check_likes(current_user_id, [property_id])
                     if liked_ids:
                         property_obj["is_liked_by_me"] = True
                 return property_obj
@@ -267,14 +265,36 @@ class PropertyService:
             return None
         return prop
 
+    async def _check_likes(self, current_user_id: str, property_ids: list[str]) -> set[str]:
+        repo = InteractionRepository(self.repository.session)
+        return await repo.batch_check_likes(current_user_id, property_ids)
+
     async def enrich_with_likes(self, properties: list, current_user_id: str) -> None:
         if not properties or not current_user_id:
             return
-        repo = InteractionRepository(self.repository.session)
-        liked_ids = await repo.batch_check_likes(current_user_id, [str(p.id) for p in properties])
+        liked_ids = await self._check_likes(current_user_id, [str(p.id) for p in properties])
         for p in properties:
             if str(p.id) in liked_ids:
                 p.is_liked_by_me = True
+
+    async def enrich_and_mask(self, rows: list, liked_set: set[str] | bool = False) -> list:
+        prop_ids_order = [str(row[0].id) for row in rows]
+        prop_rows = await self.repository.get_by_ids(prop_ids_order)
+        enriched = await self.batch_enrich(prop_rows)
+
+        enriched_map = {str(p.id): p for p in enriched if p is not None}
+        enriched = [enriched_map[pid] for pid in prop_ids_order if pid in enriched_map]
+
+        for p in enriched:
+            if isinstance(liked_set, set):
+                p.is_liked_by_me = str(p.id) in liked_set
+            else:
+                p.is_liked_by_me = bool(liked_set)
+            if p.owner:
+                p.owner.phone_number = None
+                p.owner.telegram_handle = None
+
+        return enriched
 
     async def batch_enrich_recs(self, recommendations: list, current_user_id: str) -> list:
         if not recommendations:

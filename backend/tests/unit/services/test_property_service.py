@@ -169,3 +169,62 @@ class TestOtherMethods:
         service.redis = "existing-redis"
         result = await service._get_redis()
         assert result == "existing-redis"
+
+
+class TestEnrichAndMask:
+    @pytest.mark.asyncio
+    async def test_enrich_and_mask_with_set(self, service):
+        prop1 = MagicMock(id="p1", user_id="u1", lat=None, lon=None)
+        prop2 = MagicMock(id="p2", user_id="u1", lat=None, lon=None)
+        rows = [(prop1, 10.0, 20.0), (prop2, 30.0, 40.0)]
+        service.repository.get_by_ids = AsyncMock(return_value=rows)
+        service.user_repo.get_by_ids = AsyncMock(return_value={"u1": MagicMock(phone_number="+7", telegram_handle="@t")})
+        result = await service.enrich_and_mask(rows, liked_set={"p1"})
+        assert len(result) == 2
+        assert result[0].id == "p1"
+        assert result[0].is_liked_by_me is True
+        assert result[1].is_liked_by_me is False
+        assert result[0].owner.phone_number is None
+        assert result[0].owner.telegram_handle is None
+
+    @pytest.mark.asyncio
+    async def test_enrich_and_mask_with_bool(self, service):
+        prop1 = MagicMock(id="p1", user_id="u1", lat=None, lon=None)
+        rows = [(prop1, 10.0, 20.0)]
+        service.repository.get_by_ids = AsyncMock(return_value=rows)
+        service.user_repo.get_by_ids = AsyncMock(return_value={"u1": MagicMock(phone_number="+7", telegram_handle="@t")})
+        result = await service.enrich_and_mask(rows, liked_set=True)
+        assert len(result) == 1
+        assert result[0].is_liked_by_me is True
+
+    @pytest.mark.asyncio
+    async def test_enrich_and_mask_preserves_order(self, service):
+        prop1 = MagicMock(id="p1", user_id="u1", lat=None, lon=None)
+        prop2 = MagicMock(id="p2", user_id="u1", lat=None, lon=None)
+        prop3 = MagicMock(id="p3", user_id="u1", lat=None, lon=None)
+        rows = [(prop1, 10.0, 20.0), (prop2, 30.0, 40.0), (prop3, 50.0, 60.0)]
+        service.repository.get_by_ids = AsyncMock(return_value=[(prop3, 50.0, 60.0), (prop1, 10.0, 20.0), (prop2, 30.0, 40.0)])
+        service.user_repo.get_by_ids = AsyncMock(return_value={"u1": MagicMock()})
+        result = await service.enrich_and_mask(rows)
+        ids = [p.id for p in result]
+        assert ids == ["p1", "p2", "p3"]
+
+
+class TestCheckLikes:
+    @pytest.mark.asyncio
+    async def test_check_likes(self, service):
+        mock_repo = AsyncMock()
+        mock_repo.batch_check_likes = AsyncMock(return_value={"p1", "p2"})
+        with patch("app.services.property_service.InteractionRepository", return_value=mock_repo):
+            result = await service._check_likes("u1", ["p1", "p2", "p3"])
+            assert result == {"p1", "p2"}
+
+    @pytest.mark.asyncio
+    async def test_enrich_with_likes(self, service):
+        prop1 = MagicMock(id="p1")
+        prop2 = MagicMock(id="p2")
+        check_likes_mock = AsyncMock(return_value={"p1"})
+        with patch.object(service, "_check_likes", check_likes_mock):
+            await service.enrich_with_likes([prop1, prop2], "u1")
+            check_likes_mock.assert_awaited_once_with("u1", ["p1", "p2"])
+            assert prop1.is_liked_by_me is True
