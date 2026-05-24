@@ -1,4 +1,4 @@
-import asyncio
+﻿import asyncio
 import logging
 import random
 import uuid
@@ -139,11 +139,11 @@ async def _fetch_pexels_image_urls() -> list[str]:
                 if resp.status_code == 200:
                     batch = [p["src"]["medium"] for p in resp.json()["photos"]]
                     urls.extend(batch)
-                    logger.info(f"  Pexels «{query}»: {len(batch)} photos")
+                    logger.info(f"  Pexels В«{query}В»: {len(batch)} photos")
                 else:
-                    logger.warning(f"  Pexels «{query}»: HTTP {resp.status_code}")
+                    logger.warning(f"  Pexels В«{query}В»: HTTP {resp.status_code}")
             except Exception as e:
-                logger.warning(f"  Pexels «{query}» failed: {e}")
+                logger.warning(f"  Pexels В«{query}В» failed: {e}")
 
     if not urls:
         logger.info("  No Pexels photos fetched, will use Unsplash fallback")
@@ -172,17 +172,17 @@ CITIES = {
         "districts": ["Manhattan", "Brooklyn", "Queens", "Bronx", "Upper East Side",
                       "Upper West Side", "Greenwich Village", "SoHo", "Harlem", "Williamsburg"]},
     "Paris": {"country": "France", "center": (48.8566, 2.3522), "price_coef": 1.7,
-        "streets": ["Champs-Élysées", "Rue de Rivoli", "Boulevard Saint-Germain", "Avenue Montaigne",
-                     "Boulevard Haussmann", "Rue Saint-Honoré", "Rue de la Paix", "Rue de Rennes",
-                     "Rue du Faubourg Saint-Honoré", "Avenue des Champs-Élysées"],
-        "districts": ["Le Marais", "Montmartre", "Saint-Germain-des-Prés", "Latin Quarter", "Champs-Élysées",
-                      "Montparnasse", "Belleville", "Bastille", "Opéra", "Batignolles"]},
+        "streets": ["Champs-Г‰lysГ©es", "Rue de Rivoli", "Boulevard Saint-Germain", "Avenue Montaigne",
+                     "Boulevard Haussmann", "Rue Saint-HonorГ©", "Rue de la Paix", "Rue de Rennes",
+                     "Rue du Faubourg Saint-HonorГ©", "Avenue des Champs-Г‰lysГ©es"],
+        "districts": ["Le Marais", "Montmartre", "Saint-Germain-des-PrГ©s", "Latin Quarter", "Champs-Г‰lysГ©es",
+                      "Montparnasse", "Belleville", "Bastille", "OpГ©ra", "Batignolles"]},
     "Berlin": {"country": "Germany", "center": (52.5200, 13.4050), "price_coef": 1.2,
-        "streets": ["Unter den Linden", "Friedrichstraße", "Karl-Marx-Allee", "Kurfürstendamm",
-                     "Potsdamer Platz", "Alexanderplatz", "Torstraße", "Oranienburger Straße",
-                     "Schönhauser Allee", "Frankfurter Allee"],
-        "districts": ["Mitte", "Kreuzberg", "Prenzlauer Berg", "Friedrichshain", "Neukölln",
-                      "Charlottenburg", "Schöneberg", "Wedding", "Tempelhof", "Lichtenberg"]},
+        "streets": ["Unter den Linden", "FriedrichstraГџe", "Karl-Marx-Allee", "KurfГјrstendamm",
+                     "Potsdamer Platz", "Alexanderplatz", "TorstraГџe", "Oranienburger StraГџe",
+                     "SchГ¶nhauser Allee", "Frankfurter Allee"],
+        "districts": ["Mitte", "Kreuzberg", "Prenzlauer Berg", "Friedrichshain", "NeukГ¶lln",
+                      "Charlottenburg", "SchГ¶neberg", "Wedding", "Tempelhof", "Lichtenberg"]},
     "Tokyo": {"country": "Japan", "center": (35.6762, 139.6503), "price_coef": 1.9,
         "streets": ["Shibuya Crossing", "Omotesando", "Ginza", "Akihabara", "Shinjuku",
                      "Roppongi", "Harajuku", "Ueno", "Marunouchi", "Kagurazaka"],
@@ -210,11 +210,11 @@ CITIES = {
         "districts": ["Sydney CBD", "Surry Hills", "Darlinghurst", "Paddington", "Bondi",
                       "Manly", "Newtown", "Pyrmont", "Redfern", "Barangaroo"]},
     "Barcelona": {"country": "Spain", "center": (41.3874, 2.1686), "price_coef": 1.1,
-        "streets": ["La Rambla", "Passeig de Gràcia", "Carrer de Balmes", "Via Laietana", "Avinguda Diagonal",
+        "streets": ["La Rambla", "Passeig de GrГ cia", "Carrer de Balmes", "Via Laietana", "Avinguda Diagonal",
                      "Rambla de Catalunya", "Carrer de Pau Claris", "Gran Via de les Corts Catalanes",
-                     "Carrer de València", "Carrer d'Aragó"],
-        "districts": ["Gothic Quarter", "Eixample", "Gràcia", "El Born", "Barceloneta",
-                      "Sants-Montjuïc", "Les Corts", "Sarrià-Sant Gervasi", "Horta-Guinardó", "Nou Barris"]},
+                     "Carrer de ValГЁncia", "Carrer d'AragГі"],
+        "districts": ["Gothic Quarter", "Eixample", "GrГ cia", "El Born", "Barceloneta",
+                      "Sants-MontjuГЇc", "Les Corts", "SarriГ -Sant Gervasi", "Horta-GuinardГі", "Nou Barris"]},
     "Moscow": {"country": "Russia", "center": (55.7558, 37.6173), "price_coef": 2.0, "currency": "RUB",
         "streets": ["Tverskaya Street", "Novy Arbat", "Sadovaya-Kudrinskaya", "Patriarshy Ponds", "Pokrovka",
                      "Leningradsky Prospekt", "Prospekt Mira", "Volgogradsky Prospekt", "Leninsky Prospekt", "Kutuzovsky Prospekt"],
@@ -613,7 +613,7 @@ async def populate():
              "material": ["brick", "monolith", "wood"], "repair_type": ["cosmetic", "euro", "designer"],
              "min_build_year": 2000, "max_build_year": 2025},
         ]
-        for uid, tmpl in zip(pref_users, pref_templates):
+        for uid, tmpl in zip(pref_users, pref_templates, strict=True):
             await session.execute(
                 text("""
                     INSERT INTO user_preferences (
@@ -677,7 +677,7 @@ async def populate():
     logger.info(f"  Total properties: {len(properties)}")
     logger.info(f"  Cities: {len(CITIES)}")
     logger.info(f"  Users: {len(USERS)}")
-    logger.info(f"  Preferences: 5")
+    logger.info("  Preferences: 5")
     logger.info(f"  Interactions: {total_likes + total_views}")
     logger.info(f"  Images: {image_source} ({len(image_pool)} unique)")
     logger.info(f"  Password for all users: {PASSWORD}")

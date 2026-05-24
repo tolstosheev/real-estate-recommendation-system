@@ -360,7 +360,7 @@ class RecommendationService:
                         all_rows = rows
 
         if not all_rows and 'city' in strict:
-            city = strict.pop('city')
+            strict.pop('city')
             all_rows = await self.prop_repo.get_all(limit=1000, **merge_strict(**relaxable))
 
         return all_rows
