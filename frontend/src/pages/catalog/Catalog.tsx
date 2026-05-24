@@ -42,12 +42,12 @@ const Catalog: React.FC = () => {
     if (activeTab !== 'all' || !aiRecs.length) return [];
     return aiRecs.filter(p => {
       const df = urlFilters;
-      if (df.cities.length && (!p.city || !df.cities.includes(p.city))) return false;
-      if (df.propertyTypes.length && (!p.property_type || !df.propertyTypes.includes(p.property_type))) return false;
-      if (df.propertyPurposes.length && (!p.property_purpose || !df.propertyPurposes.includes(p.property_purpose))) return false;
+      if (df.cities.length && (!p.city || !df.cities.some(c => c.toLowerCase() === p.city!.toLowerCase()))) return false;
+      if (df.propertyTypes.length && (!p.property_type || !df.propertyTypes.some(t => t.toLowerCase() === p.property_type!.toLowerCase()))) return false;
+      if (df.propertyPurposes.length && (!p.property_purpose || !df.propertyPurposes.some(pu => pu.toLowerCase() === p.property_purpose!.toLowerCase()))) return false;
       if (df.isNew.length && (!p.is_new || !df.isNew.includes(p.is_new))) return false;
-      if (df.materials.length && (!p.material || !df.materials.includes(p.material))) return false;
-      if (df.repairTypes.length && (!p.repair_type || !df.repairTypes.includes(p.repair_type))) return false;
+      if (df.materials.length && (!p.material || !df.materials.some(m => m.toLowerCase() === p.material!.toLowerCase()))) return false;
+      if (df.repairTypes.length && (!p.repair_type || !df.repairTypes.some(r => r.toLowerCase() === p.repair_type!.toLowerCase()))) return false;
       if (df.priceRange[0] > 0 && (!p.price || p.price < df.priceRange[0])) return false;
       if (df.priceRange[1] < 50000000 && (!p.price || p.price > df.priceRange[1])) return false;
       if (df.rooms.length && (!p.rooms || !df.rooms.includes(p.rooms))) return false;

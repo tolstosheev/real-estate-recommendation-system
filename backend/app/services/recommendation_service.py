@@ -359,6 +359,10 @@ class RecommendationService:
                     if len(rows) > len(all_rows):
                         all_rows = rows
 
+        if not all_rows and 'city' in strict:
+            city = strict.pop('city')
+            all_rows = await self.prop_repo.get_all(limit=1000, **merge_strict(**relaxable))
+
         return all_rows
 
     async def _find_similar_users(self, user_id: str) -> list[str]:
