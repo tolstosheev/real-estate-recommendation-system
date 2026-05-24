@@ -1,4 +1,5 @@
 import asyncio
+import io
 import logging
 import random
 import uuid
@@ -7,6 +8,7 @@ from math import log
 
 import bcrypt
 import httpx
+from minio import Minio
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import sessionmaker
@@ -158,6 +160,77 @@ def _build_image_pool(pexels_urls: list[str]) -> list[str]:
         f"https://images.unsplash.com/photo-{id}?w=800&h=600&fit=crop"
         for id in UNSPLASH_FALLBACK_IDS
     ]
+
+
+CONCURRENCY = 10
+
+
+def _get_minio_client() -> Minio | None:
+    endpoint = settings.S3_ENDPOINT.replace("http://", "").replace("https://", "")
+    try:
+        client = Minio(
+            endpoint,
+            access_key=settings.S3_ACCESS_KEY or "minioadmin",
+            secret_key=settings.S3_SECRET_KEY or "minioadmin",
+            secure=settings.S3_ENDPOINT.startswith("https"),
+        )
+        client.bucket_exists(settings.S3_BUCKET)
+        return client
+    except Exception:
+        return None
+
+
+async def _upload_one_to_minio(
+    sem: asyncio.Semaphore,
+    http_client: httpx.AsyncClient,
+    minio_client: Minio,
+    idx: int,
+    url: str,
+) -> str:
+    async with sem:
+        try:
+            resp = await http_client.get(url, timeout=30)
+            resp.raise_for_status()
+            img_bytes = resp.content
+            ext = ".jpg"
+            filename = f"populate_{idx}{ext}"
+            minio_client.put_object(
+                settings.S3_BUCKET,
+                filename,
+                io.BytesIO(img_bytes),
+                length=len(img_bytes),
+                content_type="image/jpeg",
+            )
+            return f"{settings.S3_PUBLIC_URL}/{filename}"
+        except Exception as e:
+            logger.warning(f"  Failed to store image {idx} in MinIO: {e}")
+            return url
+
+
+async def _upload_image_pool_to_minio(image_pool: list[str]) -> list[str]:
+    if not image_pool:
+        return image_pool
+
+    minio_client = await asyncio.to_thread(_get_minio_client)
+    if minio_client is None:
+        logger.warning("  MinIO unavailable, keeping external image URLs")
+        return image_pool
+
+    if not await asyncio.to_thread(minio_client.bucket_exists, settings.S3_BUCKET):
+        await asyncio.to_thread(minio_client.make_bucket, settings.S3_BUCKET)
+        logger.info(f"  Created MinIO bucket: {settings.S3_BUCKET}")
+
+    sem = asyncio.Semaphore(CONCURRENCY)
+    async with httpx.AsyncClient(timeout=30, follow_redirects=True) as http_client:
+        tasks = [
+            _upload_one_to_minio(sem, http_client, minio_client, idx, url)
+            for idx, url in enumerate(image_pool)
+        ]
+        results = await asyncio.gather(*tasks)
+
+    local_count = sum(1 for r in results if "/api/images/" in r)
+    logger.info(f"  Stored {local_count}/{len(results)} images in MinIO")
+    return results
 
 
 CITIES = {
@@ -515,6 +588,8 @@ async def populate():
     image_pool = _build_image_pool(pexels_urls)
     image_source = "Pexels" if pexels_urls else "Unsplash"
     logger.info(f"  Image pool: {len(image_pool)} photos from {image_source}")
+
+    image_pool = await _upload_image_pool_to_minio(image_pool)
 
     logger.info("\nCreating password hash...")
     password_hash = await asyncio.to_thread(_hash_password, PASSWORD)
