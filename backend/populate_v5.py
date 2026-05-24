@@ -418,6 +418,8 @@ def _generate_price(property_type: str, purpose: str, city_coef: float, currency
 
     if currency == "RUB":
         price *= 100
+    else:
+        price *= 90
 
     if purpose == "sale":
         price = round(price / 10000) * 10000
