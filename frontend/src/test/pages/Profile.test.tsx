@@ -525,9 +525,9 @@ describe('Profile Page', () => {
       renderProfile();
       fireEvent.click(screen.getByText('My Properties'));
       await screen.findByText('Luxury Apartment');
-      expect(screen.getByText('5.0M ?')).toBeInTheDocument();
+      expect(screen.getByText('5.0M ₽')).toBeInTheDocument();
       expect(screen.getByText('3 rooms')).toBeInTheDocument();
-      expect(screen.getByText('80 m?')).toBeInTheDocument();
+      expect(screen.getByText('80 m²')).toBeInTheDocument();
       expect(screen.getByText('Floor 5/12')).toBeInTheDocument();
       expect(screen.getByText('2020')).toBeInTheDocument();
       expect(screen.getByText('Apartment')).toBeInTheDocument();
@@ -542,7 +542,7 @@ describe('Profile Page', () => {
       renderProfile();
       fireEvent.click(screen.getByText('My Properties'));
       await screen.findByText('Studio Rent');
-      expect(screen.getByText('80K ?')).toBeInTheDocument();
+      expect(screen.getByText('80K ₽')).toBeInTheDocument();
       expect(screen.getByText('Rent')).toBeInTheDocument();
     });
 
@@ -584,7 +584,7 @@ describe('Profile Page', () => {
       renderProfile();
       fireEvent.click(screen.getByText('My Properties'));
       await screen.findByText('Budget Studio');
-      expect(screen.getByText('500 ?')).toBeInTheDocument();
+      expect(screen.getByText('500 ₽')).toBeInTheDocument();
     });
 
     it('renders relative image URL with full path', async () => {

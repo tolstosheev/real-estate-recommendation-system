@@ -262,12 +262,12 @@ const Profile: React.FC = () => {
           <RangeSlider
             label="Price"
             min={0}
-            max={50000000}
+            max={100000000}
             step={100000}
-            value={[prefs.min_price ?? 0, prefs.max_price ?? 50000000]}
+            value={[prefs.min_price ?? 0, prefs.max_price ?? 100000000]}
             onChange={([min, max]) => {
               updatePref('min_price', min > 0 ? min : undefined);
-              updatePref('max_price', max < 50000000 ? max : undefined);
+              updatePref('max_price', max < 100000000 ? max : undefined);
             }}
             formatLabel={(v) => `${(v / 1000000).toFixed(1)}M ₽`}
           />
@@ -275,12 +275,12 @@ const Profile: React.FC = () => {
           <RangeSlider
             label="Area (m²)"
             min={0}
-            max={300}
+            max={400}
             step={5}
-            value={[prefs.min_area ?? 0, prefs.max_area ?? 300]}
+            value={[prefs.min_area ?? 0, prefs.max_area ?? 400]}
             onChange={([min, max]) => {
               updatePref('min_area', min > 0 ? min : undefined);
-              updatePref('max_area', max < 300 ? max : undefined);
+              updatePref('max_area', max < 400 ? max : undefined);
             }}
             formatLabel={(v) => `${v} m²`}
           />
