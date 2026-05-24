@@ -231,8 +231,9 @@ flowchart LR
     CI --> FrontendCheck["🧪 Frontend Tests"]
     BackendUnit --> Integration["🧪 Backend Integration"]
     FrontendCheck --> Integration
-    Integration --> QualityGate["✅ Quality Gate"]
-    QualityGate --> |"Ruff + MyPy + Bandit + pip-audit<br>ESLint + tsc + npm audit<br>pytest ≥90% + vitest ≥90%"| Pass["✅ Pass"] / Fail["❌ Fail"]
+    Integration --> QualityGate{"✅ Quality Gate"}
+    QualityGate --> |"checks passed"| Pass["✅ Pass"]
+    QualityGate --> |"checks failed"| Fail["❌ Fail"]
 ```
 
 ## Документация
