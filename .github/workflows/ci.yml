@@ -13,6 +13,31 @@ jobs:
       run:
         working-directory: backend
 
+    services:
+      postgres:
+        image: postgis/postgis:15-3.3
+        env:
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: nestai_test
+        options: >-
+          --health-cmd "pg_isready -U user -d nestai_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
     steps:
       - uses: actions/checkout@v4
 
@@ -30,6 +55,11 @@ jobs:
 
       - name: Run unit tests
         run: python -m pytest tests/unit/ -v --tb=short
+        env:
+          DATABASE_URL: postgresql+asyncpg://user:password@localhost:5432/nestai_test
+          TEST_DATABASE_URL: postgresql+asyncpg://user:password@localhost:5432/nestai_test
+          REDIS_URL: redis://localhost:6379/0
+          SECRET_KEY: ci-secret-key
 
   frontend:
     runs-on: ubuntu-latest
@@ -55,6 +85,8 @@ jobs:
 
       - name: Run tests
         run: npm test -- --run
+        env:
+          VITE_YANDEX_GEOCODER_API_KEY: test-key
 
   backend-integration:
     runs-on: ubuntu-latest
