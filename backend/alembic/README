@@ -1,1 +1,35 @@
-Generic single-database configuration.
+# Alembic миграции
+
+## Управление миграциями
+
+Все команды выполняются в Docker контейнере:
+
+```bash
+# Применить миграции (автоматически при старте бэкенда)
+docker compose run --rm backend alembic upgrade head
+
+# Создать новую миграцию на основе изменений моделей
+docker compose run --rm backend alembic revision --autogenerate -m "описание_изменений"
+
+# Откатить на одну миграцию назад
+docker compose run --rm backend alembic downgrade -1
+
+# Просмотр истории миграций
+docker compose run --rm backend alembic history
+
+# Проверить текущую версию
+docker compose run --rm backend alembic current
+```
+
+## Структура
+
+```
+backend/alembic/
+├── versions/     # Файлы миграций (автоматически генерируемые)
+├── env.py        # Конфигурация окружения Alembic
+├── script.py.mako  # Шаблон для новых миграций
+└── README        # Этот файл
+```
+
+Автоматическое применение миграций настроено в `docker-entrypoint.sh`:
+ожидание PostgreSQL → `alembic upgrade head` → запуск uvicorn.
