@@ -170,7 +170,7 @@ jobs:
           SECRET_KEY: ci-secret-key-not-for-production
 
       - name: Run integration tests
-        run: python -m pytest tests/ -v --tb=short --ignore=tests/e2e
+        run: python -m pytest tests/ -v --tb=short --ignore=tests/e2e -o "addopts=--cov=app --cov-report=term-missing --cov-report=html:coverage_html --cov-fail-under=85 -v"
         env:
           DATABASE_URL: postgresql+asyncpg://user:password@localhost:5432/nestai_test
           TEST_DATABASE_URL: postgresql+asyncpg://user:password@localhost:5432/nestai_test
