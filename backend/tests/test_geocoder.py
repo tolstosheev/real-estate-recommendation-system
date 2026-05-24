@@ -11,6 +11,7 @@ def geocoder():
 
 @pytest.mark.asyncio
 async def test_get_coords_success(geocoder):
+    geocoder.api_key = "test-key"
     mock_response = {
         "response": {
             "GeoObjectCollection": {
@@ -65,6 +66,7 @@ async def test_get_coords_no_results(geocoder):
 
 @pytest.mark.asyncio
 async def test_reverse_geocode_success(geocoder):
+    geocoder.api_key = "test-key"
     mock_response = {
         "response": {
             "GeoObjectCollection": {
