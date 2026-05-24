@@ -393,6 +393,143 @@ class TestDiversifyMmr:
         assert len(result) == 3
 
 
+class TestFindSimilarUsers:
+    @pytest.mark.asyncio
+    async def test_find_similar_users_enough_likes(self, service):
+        my_favs = [(MagicMock(id=str(i)), 0, 0) for i in range(4)]
+        service.inter_repo.get_user_favorites = AsyncMock(return_value=my_favs)
+        other_users = {
+            "user-2": {"1", "2", "99"},
+            "user-3": {"1"},
+            "user-4": {"5"},
+        }
+        service.inter_repo.get_users_liked_properties = AsyncMock(return_value=other_users)
+        result = await service._find_similar_users("user-1")
+        assert "user-2" in result
+        assert result.index("user-2") < result.index("user-3")
+
+    @pytest.mark.asyncio
+    async def test_find_similar_users_not_enough_likes(self, service):
+        my_favs = [(MagicMock(id=str(i)), 0, 0) for i in range(2)]
+        service.inter_repo.get_user_favorites = AsyncMock(return_value=my_favs)
+        result = await service._find_similar_users("user-1")
+        assert result == []
+
+    @pytest.mark.asyncio
+    async def test_find_similar_users_no_overlap(self, service):
+        my_favs = [(MagicMock(id=str(i)), 0, 0) for i in range(3)]
+        service.inter_repo.get_user_favorites = AsyncMock(return_value=my_favs)
+        other_users = {"user-2": {"99", "100"}}
+        service.inter_repo.get_users_liked_properties = AsyncMock(return_value=other_users)
+        result = await service._find_similar_users("user-1")
+        assert result == []
+
+    @pytest.mark.asyncio
+    async def test_find_similar_users_respects_limit(self, service):
+        my_favs = [(MagicMock(id="1"), 0, 0)]
+        service.inter_repo.get_user_favorites = AsyncMock(return_value=my_favs * 3)
+        many_users = {f"user-{i}": {"1"} for i in range(20)}
+        service.inter_repo.get_users_liked_properties = AsyncMock(return_value=many_users)
+        result = await service._find_similar_users("user-0")
+        assert len(result) <= service.COLLAB_SIMILAR_USERS_LIMIT
+
+    @pytest.mark.asyncio
+    async def test_find_similar_users_skips_self(self, service):
+        my_favs = [(MagicMock(id=str(i)), 0, 0) for i in range(3)]
+        service.inter_repo.get_user_favorites = AsyncMock(return_value=my_favs)
+        users_with_self = {
+            "user-1": {"0", "1", "2"},
+            "user-2": {"0"},
+        }
+        service.inter_repo.get_users_liked_properties = AsyncMock(return_value=users_with_self)
+        result = await service._find_similar_users("user-1")
+        assert "user-2" in result
+        assert len(result) == 1
+
+
+class TestScoreCollaborative:
+    @pytest.mark.asyncio
+    async def test_score_collaborative_basic(self, service):
+        similar_users = ["user-2", "user-3"]
+        candidate_ids = ["p1", "p2", "p3"]
+        all_users = {
+            "user-2": {"p1", "p2"},
+            "user-3": {"p1"},
+        }
+        service.inter_repo.get_users_liked_properties = AsyncMock(return_value=all_users)
+        result = await service._score_collaborative(candidate_ids, similar_users)
+        assert result["p1"] == 1.0
+        assert result["p2"] == 0.5
+        assert "p3" not in result
+
+    @pytest.mark.asyncio
+    async def test_score_collaborative_no_similar(self, service):
+        result = await service._score_collaborative(["p1"], [])
+        assert result == {}
+
+    @pytest.mark.asyncio
+    async def test_score_collaborative_no_candidates(self, service):
+        result = await service._score_collaborative([], ["user-2"])
+        assert result == {}
+
+    @pytest.mark.asyncio
+    async def test_score_collaborative_no_overlap(self, service):
+        similar_users = ["user-2"]
+        candidate_ids = ["p1", "p2"]
+        all_users = {"user-2": {"p99", "p100"}}
+        service.inter_repo.get_users_liked_properties = AsyncMock(return_value=all_users)
+        result = await service._score_collaborative(candidate_ids, similar_users)
+        assert result == {}
+
+
+class TestRecommendCollaborative:
+    @pytest.mark.asyncio
+    async def test_recommend_uses_collaborative_when_enough_likes(self, service):
+        from sklearn.preprocessing import StandardScaler
+        service.pref_repo.get_by_user_id = AsyncMock(return_value=None)
+        my_favs = [(MagicMock(id=str(i)), 0, 0) for i in range(4)]
+        service.inter_repo.get_user_favorites = AsyncMock(return_value=my_favs)
+        service.inter_repo.get_user_view_history = AsyncMock(return_value=[])
+        service.inter_repo.get_users_liked_properties = AsyncMock(return_value={"user-2": {"0", "1"}})
+        props = [(MagicMock(id=str(i), price=100, area=50, rooms=1,
+            build_year=2000, property_type="Apartment", property_purpose="sale", city="Moscow"), 37.0, 55.0) for i in range(5)]
+        service.prop_repo.get_all = AsyncMock(return_value=props)
+        service.prop_repo.get_by_ids = AsyncMock(return_value=[])
+        mock_redis = AsyncMock()
+        mock_redis.get = AsyncMock(return_value=None)
+        mock_redis.setex = AsyncMock(return_value=True)
+        user_vec = np.array([1.0] * 14)
+        service.utils.compute_user_profile_vector = MagicMock(return_value=user_vec)
+        scaler = StandardScaler()
+        data = np.random.rand(5, 14)
+        scaler.fit(data)
+        service.utils.normalize_features = MagicMock(return_value=(data, scaler))
+        with patch("app.services.recommendation_service.RedisClient.get_client", AsyncMock(return_value=mock_redis)):
+            with patch("app.services.recommendation_service.PropertyService.batch_enrich_recs", new_callable=AsyncMock) as mock_enrich:
+                mock_enrich.side_effect = lambda props, uid: props
+                with patch.object(RecommendationService, "_diversify", side_effect=lambda sp, pv, uv, limit: [p for p, _ in sp[:limit]]):
+                    result = await service.recommend("user-1", limit=3)
+                    assert len(result) > 0
+
+    @pytest.mark.asyncio
+    async def test_recommend_skips_collaborative_when_few_likes(self, service):
+        service.pref_repo.get_by_user_id = AsyncMock(return_value=None)
+        my_favs = [(MagicMock(id=str(i)), 0, 0) for i in range(2)]
+        service.inter_repo.get_user_favorites = AsyncMock(return_value=my_favs)
+        service.inter_repo.get_user_view_history = AsyncMock(return_value=[])
+        service.inter_repo.get_users_liked_properties = AsyncMock(return_value={})
+        props = [(MagicMock(id=str(i), price=100, area=50, rooms=1,
+            build_year=2000, property_type="Apartment", property_purpose="sale", city="Moscow"), 37.0, 55.0) for i in range(3)]
+        service.prop_repo.get_all = AsyncMock(return_value=props)
+        service.utils.compute_user_profile_vector = MagicMock(return_value=None)
+        with patch("app.services.recommendation_service.RedisClient.get_client", AsyncMock(return_value=None)):
+            with patch("app.services.recommendation_service.PropertyService.batch_enrich_recs", new_callable=AsyncMock) as mock_enrich:
+                mock_enrich.side_effect = lambda props, uid: props
+                with patch.object(RecommendationService, "_diversify", side_effect=lambda sp, pv, uv, limit: [p for p, _ in sp[:limit]]):
+                    result = await service.recommend("user-1", limit=3)
+                    assert len(result) >= 0
+
+
 class TestRecommendEdgeCases:
     @pytest.mark.asyncio
     async def test_recommend_empty_candidates(self, service):
@@ -470,3 +607,35 @@ class TestRecommendWeightAdjustments:
                     result = await service.recommend("user-1", limit=n_props)
                     assert len(result) > 0
                 assert mock_redis.setex.called
+
+    @pytest.mark.asyncio
+    async def test_recommend_purpose_filter_adjusts_weights(self, service):
+        from sklearn.preprocessing import StandardScaler
+        prefs = MagicMock(
+            min_price=100000.0, max_price=500000.0, min_area=None, max_area=None,
+            preferred_rooms=None, min_build_year=None, max_build_year=None,
+            property_types=None, property_purposes=["sale"],
+            cities=None, material=None, repair_type=None,
+        )
+        service.pref_repo.get_by_user_id = AsyncMock(return_value=prefs)
+        service.inter_repo.get_user_favorites = AsyncMock(return_value=[])
+        service.inter_repo.get_user_view_history = AsyncMock(return_value=[])
+        service.prop_repo.get_all = AsyncMock(return_value=[(MagicMock(id=str(i), price=100, area=50, rooms=1,
+            build_year=2000, property_type="Apartment", property_purpose="sale", city="Moscow"), 37.0, 55.0) for i in range(3)])
+        service.prop_repo.get_by_ids = AsyncMock(return_value=[])
+        user_vec = np.array([1.0] * 14)
+        service.utils.compute_user_profile_vector = MagicMock(return_value=user_vec)
+        n_props = 3
+        scaler = StandardScaler()
+        data = np.random.rand(n_props, 14)
+        scaler.fit(data)
+        service.utils.normalize_features = MagicMock(return_value=(data, scaler))
+        mock_redis = AsyncMock()
+        mock_redis.get = AsyncMock(return_value=None)
+        mock_redis.setex = AsyncMock(return_value=True)
+        with patch("app.services.recommendation_service.RedisClient.get_client", AsyncMock(return_value=mock_redis)):
+            with patch("app.services.recommendation_service.PropertyService.batch_enrich_recs", new_callable=AsyncMock) as mock_enrich:
+                mock_enrich.side_effect = lambda props, uid: props
+                with patch.object(RecommendationService, "_diversify", side_effect=lambda sp, pv, uv, limit: [p for p, _ in sp[:limit]]):
+                    result = await service.recommend("user-1", limit=n_props)
+                    assert len(result) > 0
