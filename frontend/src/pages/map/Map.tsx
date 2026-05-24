@@ -18,9 +18,9 @@ import './Map.scss';
 type MapFilters = FilterValues;
 
 const defaultMapFilters: MapFilters = {
-  priceRange: [0, 50000000],
-  areaRange: [0, 300],
-  buildYearRange: [1960, 2025],
+  priceRange: [0, 100000000],
+  areaRange: [0, 400],
+  buildYearRange: [1960, 2026],
   rooms: [],
   propertyTypes: [],
   propertyPurposes: [],
@@ -221,12 +221,12 @@ const MapPage: React.FC = () => {
       if (af.materials.length && (!p.material || !af.materials.includes(p.material))) return false;
       if (af.repairTypes.length && (!p.repair_type || !af.repairTypes.includes(p.repair_type))) return false;
       if (af.priceRange[0] > 0 && (!p.price || p.price < af.priceRange[0])) return false;
-      if (af.priceRange[1] < 50000000 && (!p.price || p.price > af.priceRange[1])) return false;
+      if (af.priceRange[1] < 100000000 && (!p.price || p.price > af.priceRange[1])) return false;
       if (af.rooms.length && (!p.rooms || !af.rooms.includes(p.rooms))) return false;
       if (af.areaRange[0] > 0 && (!p.area || p.area < af.areaRange[0])) return false;
-      if (af.areaRange[1] < 300 && (!p.area || p.area > af.areaRange[1])) return false;
+      if (af.areaRange[1] < 400 && (!p.area || p.area > af.areaRange[1])) return false;
       if (af.buildYearRange[0] > 1960 && (!p.build_year || p.build_year < af.buildYearRange[0])) return false;
-      if (af.buildYearRange[1] < 2025 && (!p.build_year || p.build_year > af.buildYearRange[1])) return false;
+      if (af.buildYearRange[1] < 2026 && (!p.build_year || p.build_year > af.buildYearRange[1])) return false;
       return true;
     });
   }, [aiRecs, urlFilters, currentBounds]);
@@ -286,11 +286,11 @@ const MapPage: React.FC = () => {
       params.max_lon = east;
     }
     if (f.priceRange[0] > 0) params.min_price = f.priceRange[0];
-    if (f.priceRange[1] < 50000000) params.max_price = f.priceRange[1];
+    if (f.priceRange[1] < 100000000) params.max_price = f.priceRange[1];
     if (f.areaRange[0] > 0) params.min_area = f.areaRange[0];
-    if (f.areaRange[1] < 300) params.max_area = f.areaRange[1];
+    if (f.areaRange[1] < 400) params.max_area = f.areaRange[1];
     if (f.buildYearRange[0] > 1960) params.min_build_year = f.buildYearRange[0];
-    if (f.buildYearRange[1] < 2025) params.max_build_year = f.buildYearRange[1];
+    if (f.buildYearRange[1] < 2026) params.max_build_year = f.buildYearRange[1];
     if (f.rooms.length) params.rooms = f.rooms;
     if (f.propertyTypes.length) params.property_type = f.propertyTypes;
     if (f.propertyPurposes.length) params.property_purpose = f.propertyPurposes;
@@ -412,9 +412,9 @@ const MapPage: React.FC = () => {
   const activeFilterCount = useMemo(() => {
     let count = 0;
     const f = urlFilters;
-    if (f.priceRange[0] > 0 || f.priceRange[1] < 50000000) count++;
-    if (f.areaRange[0] > 0 || f.areaRange[1] < 300) count++;
-    if (f.buildYearRange[0] > 1960 || f.buildYearRange[1] < 2025) count++;
+    if (f.priceRange[0] > 0 || f.priceRange[1] < 100000000) count++;
+    if (f.areaRange[0] > 0 || f.areaRange[1] < 400) count++;
+    if (f.buildYearRange[0] > 1960 || f.buildYearRange[1] < 2026) count++;
     if (f.rooms.length) count++;
     if (f.propertyTypes.length) count++;
     if (f.propertyPurposes.length) count++;

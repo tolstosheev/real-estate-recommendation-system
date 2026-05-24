@@ -1,4 +1,4 @@
-﻿import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
@@ -308,7 +308,7 @@ describe('Profile Page', () => {
         preferred_rooms: [1, 2, 3], property_types: ['Apartment'],
         property_purposes: ['sale', 'rent'], cities: ['Moscow'],
         material: ['Brick'], repair_type: ['Cosmetic'],
-        min_build_year: 2000, max_build_year: 2025,
+        min_build_year: 2000, max_build_year: 2026,
       });
       renderProfile();
       fireEvent.click(screen.getByText('AI Preferences'));
@@ -525,9 +525,9 @@ describe('Profile Page', () => {
       renderProfile();
       fireEvent.click(screen.getByText('My Properties'));
       await screen.findByText('Luxury Apartment');
-      expect(screen.getByText('5.0M ₽')).toBeInTheDocument();
+      expect(screen.getByText('5.0M ?')).toBeInTheDocument();
       expect(screen.getByText('3 rooms')).toBeInTheDocument();
-      expect(screen.getByText('80 m²')).toBeInTheDocument();
+      expect(screen.getByText('80 m?')).toBeInTheDocument();
       expect(screen.getByText('Floor 5/12')).toBeInTheDocument();
       expect(screen.getByText('2020')).toBeInTheDocument();
       expect(screen.getByText('Apartment')).toBeInTheDocument();
@@ -542,7 +542,7 @@ describe('Profile Page', () => {
       renderProfile();
       fireEvent.click(screen.getByText('My Properties'));
       await screen.findByText('Studio Rent');
-      expect(screen.getByText('80K ₽')).toBeInTheDocument();
+      expect(screen.getByText('80K ?')).toBeInTheDocument();
       expect(screen.getByText('Rent')).toBeInTheDocument();
     });
 
@@ -584,7 +584,7 @@ describe('Profile Page', () => {
       renderProfile();
       fireEvent.click(screen.getByText('My Properties'));
       await screen.findByText('Budget Studio');
-      expect(screen.getByText('500 ₽')).toBeInTheDocument();
+      expect(screen.getByText('500 ?')).toBeInTheDocument();
     });
 
     it('renders relative image URL with full path', async () => {

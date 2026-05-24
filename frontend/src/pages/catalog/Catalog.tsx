@@ -49,12 +49,12 @@ const Catalog: React.FC = () => {
       if (df.materials.length && (!p.material || !df.materials.some(m => m.toLowerCase() === p.material!.toLowerCase()))) return false;
       if (df.repairTypes.length && (!p.repair_type || !df.repairTypes.some(r => r.toLowerCase() === p.repair_type!.toLowerCase()))) return false;
       if (df.priceRange[0] > 0 && (!p.price || p.price < df.priceRange[0])) return false;
-      if (df.priceRange[1] < 50000000 && (!p.price || p.price > df.priceRange[1])) return false;
+      if (df.priceRange[1] < 100000000 && (!p.price || p.price > df.priceRange[1])) return false;
       if (df.rooms.length && (!p.rooms || !df.rooms.includes(p.rooms))) return false;
       if (df.areaRange[0] > 0 && (!p.area || p.area < df.areaRange[0])) return false;
-      if (df.areaRange[1] < 300 && (!p.area || p.area > df.areaRange[1])) return false;
+      if (df.areaRange[1] < 400 && (!p.area || p.area > df.areaRange[1])) return false;
       if (df.buildYearRange[0] > 1960 && (!p.build_year || p.build_year < df.buildYearRange[0])) return false;
-      if (df.buildYearRange[1] < 2025 && (!p.build_year || p.build_year > df.buildYearRange[1])) return false;
+      if (df.buildYearRange[1] < 2026 && (!p.build_year || p.build_year > df.buildYearRange[1])) return false;
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
         if (p.title && !p.title.toLowerCase().includes(q) && p.address && !p.address.toLowerCase().includes(q)) return false;

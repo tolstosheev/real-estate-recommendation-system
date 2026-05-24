@@ -50,7 +50,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
           <RangeSlider
             label="Price"
             min={0}
-            max={50000000}
+            max={100000000}
             step={100000}
             value={filters.priceRange}
             onChange={(v) => onFilterChange('priceRange', v)}
@@ -113,7 +113,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
           <RangeSlider
             label="Area (m²)"
             min={0}
-            max={300}
+            max={400}
             step={5}
             value={filters.areaRange}
             onChange={(v) => onFilterChange('areaRange', v)}
@@ -123,7 +123,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
           <RangeSlider
             label="Build year"
             min={1960}
-            max={2025}
+            max={2026}
             step={1}
             value={filters.buildYearRange}
             onChange={(v) => onFilterChange('buildYearRange', v)}

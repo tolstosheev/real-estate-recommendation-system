@@ -2,9 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { parseFilters, parseSearch, filtersToSearchParams } from '@shared/utils/filterParams';
 
 const defaults = {
-  priceRange: [0, 50000000] as [number, number],
-  areaRange: [0, 300] as [number, number],
-  buildYearRange: [1960, 2025] as [number, number],
+  priceRange: [0, 100000000] as [number, number],
+  areaRange: [0, 400] as [number, number],
+  buildYearRange: [1960, 2026] as [number, number],
   rooms: [],
   propertyTypes: [],
   propertyPurposes: [],
@@ -16,16 +16,16 @@ const defaults = {
 
 describe('parseFilters', () => {
   it('parses numeric params with NaN fallback', () => {
-    const params = new URLSearchParams('min_price=invalid&max_price=50000000');
+    const params = new URLSearchParams('min_price=invalid&max_price=100000000');
     const result = parseFilters(params, defaults);
     expect(result.priceRange[0]).toBe(defaults.priceRange[0]);
-    expect(result.priceRange[1]).toBe(50000000);
+    expect(result.priceRange[1]).toBe(100000000);
   });
 
   it('parses empty params returning defaults', () => {
     const params = new URLSearchParams('');
     const result = parseFilters(params, defaults);
-    expect(result.priceRange).toEqual([0, 50000000]);
+    expect(result.priceRange).toEqual([0, 100000000]);
     expect(result.rooms).toEqual([]);
   });
 
