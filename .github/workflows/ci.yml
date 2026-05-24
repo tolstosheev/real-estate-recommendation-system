@@ -120,14 +120,6 @@ jobs:
         ports:
           - 6379:6379
 
-      minio:
-        image: minio/minio:latest
-        env:
-          MINIO_ROOT_USER: minioadmin
-          MINIO_ROOT_PASSWORD: minioadmin
-        ports:
-          - 9000:9000
-
     steps:
       - uses: actions/checkout@v4
 
@@ -150,10 +142,18 @@ jobs:
             sleep 1
           done
 
+      - name: Start MinIO
+        run: |
+          docker run -d --name minio \
+            -p 9000:9000 \
+            -e MINIO_ROOT_USER=minioadmin \
+            -e MINIO_ROOT_PASSWORD=minioadmin \
+            quay.io/minio/minio server /data
+
       - name: Create test bucket
         run: |
           pip install minio
-          for i in $(seq 1 15); do
+          for i in $(seq 1 30); do
             if python -c "from minio import Minio; c = Minio('localhost:9000', access_key='minioadmin', secret_key='minioadmin', secure=False); c.make_bucket('nestai-images-test'); print('Bucket created')" 2>&1; then
               echo "Bucket ready"
               break
