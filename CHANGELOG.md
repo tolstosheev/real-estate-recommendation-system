@@ -1,102 +1,109 @@
 # Changelog
 
-## [Unreleased]
-
-### Documentation
-
-- Add API reference with all 24 endpoints, schemas, examples
-- Add architecture overview with system design, data flows, algorithm details
-- Add project README with quick start, tech stack, test commands
-
 ## [1.0.0] — 2026-05-24
 
-### Added
+### Добавлено
 
-#### Backend
+#### Бэкенд
 
-- **Collaborative filtering**: Jaccard similarity user-user collaborative filtering with hybrid scoring (0.7 content + 0.3 collab)
-  - `InteractionRepository.get_users_liked_properties()` — bulk fetch of all liked property sets
-  - `RecommendationService._find_similar_users()` — Jaccard-based similarity search (top-10, min 3 likes threshold)
-  - `RecommendationService._score_collaborative()` — aggregate likes from similar users, normalize to [0, 1]
-- **CI/CD pipeline**: GitHub Actions with Ruff, MyPy, pytest (90% coverage), ESLint, vitest (90% lines), Bandit SAST, pip-audit/npm audit SCA
-- **Docker non-root user** for security hardening
-- **S3-compatible image storage** via MinIO with upload/delete/serve endpoints
-- **Geospatial search** with PostGIS bounding box queries (`ST_MakeEnvelope`, `ST_Intersects`)
-- **GIST index** on properties.location for spatial query performance
-- **Yandex Maps API 3** integration on frontend with dynamic component loading
-- **Yandex Geocoder** proxy on backend with address auto-fill on property creation
-- **Hybrid recommendation engine**: 14-dim feature vector, feature-weighted cosine similarity, MMR diversification (λ=0.7), progressive filter relaxation, Redis caching
-- **Layer-separated architecture**: API → Service → Repository
-- **Image upload**: multipart upload to MinIO with validation (type, size, count limits)
-- **Reference tables**: materials, repair_types, districts, metro_stations for filter metadata
-- **Guest mode**: public routes accessible without authentication
-- **URL-based filters** with session persistence, reset, city auto-centering
-- **Client-side form validation** with debounced address autocomplete
-- **Filter parameters utility** for URL-based filter state management
-- **Interactions toggle**: like/unlike with atomic counter sync
-- **Password policy**: min 8 chars, must contain uppercase, lowercase, digit
-- **Contact protection**: prevent clearing all contacts when user has active listings
+- **Коллаборативная фильтрация**: Jaccard similarity user-user collaborative filtering с гибридным скорингом (0.7 content + 0.3 collab)
+  - `InteractionRepository.get_users_liked_properties()` — массовая загрузка множеств лайков всех пользователей
+  - `RecommendationService._find_similar_users()` — Jaccard-based поиск похожих (top-10, min 3 лайка)
+  - `RecommendationService._score_collaborative()` — агрегация лайков похожих пользователей с нормализацией [0, 1]
+- **CI/CD pipeline**: GitHub Actions — Ruff, MyPy, pytest (90% coverage), ESLint, vitest (90% lines), Bandit SAST, pip-audit/npm audit SCA
+- **Docker**: non-root пользователь для безопасности
+- **S3-хранилище**: MinIO для изображений — загрузка/удаление/отдача с валидацией
+- **Геопространственный поиск**: PostGIS bounding box (`ST_MakeEnvelope`, `ST_Intersects`) + GIST index
+- **Yandex Maps API 3** на фронтенде с динамической загрузкой компонентов
+- **Yandex Geocoder** на бэкенде — автозаполнение адреса при создании объекта
+- **Гибридный рекомендательный движок**: 14-мерный feature vector, feature-weighted cosine similarity, MMR (λ=0.7), progressive filter relaxation, Redis caching
+- **3-layer архитектура**: API → Service → Repository
+- **Изображения**: multipart upload в MinIO с валидацией (тип, размер, количество)
+- **Reference tables**: материалы, типы ремонта, районы, метро для фильтров
+- **Guest mode**: публичные маршруты без аутентификации
+- **URL-based фильтры** с сохранением состояния, сбросом, автоцентрированием карты
+- **Клиентская валидация** форм с дебаунс-автокомплитом адреса
+- **FilterParams utility** для управления состоянием фильтров через URL
+- **Interactions toggle**: like/unlike с атомарной синхронизацией счётчика
+- **Password policy**: мин. 8 символов, заглавная, строчная, цифра
+- **Защита контактов**: запрет очистки всех контактов при активных объявлениях
 
-#### Frontend
+#### Фронтенд
 
-- **FSD architecture**: app/pages/features/entities/widgets/shared layers
-- **8 pages**: Home, Map, Catalog, Property Details, Login, Register, Onboarding, Profile, Add Property
-- **Redux Toolkit** store with auth slice and middleware
-- **Axios client** with JWT interceptor, token refresh queue (prevents concurrent refresh storms)
-- **Yandex Maps 3** with clustering, markers, bbox search
-- **Swiper carousel** for recommendations on Home page
-- **FilterPanel widget** with price range, rooms, property type, purpose, etc.
-- **PropertyForm feature** with all extended fields, geocoder autofill, image upload
-- **ImageUploader feature** with preview and validation
-- **ErrorBoundary** component
-- **Responsive design** with SCSS variables, mixins, breakpoints
-- **Onboarding wizard** with visual illustrations and animations
-- **Profile page** with contact info, preferences, owned property management
-- **TokenService**: in-memory + localStorage JWT management
-- **Infinite scroll** on Map via IntersectionObserver
-- **City auto-centering** on map when filter changes
+- **FSD архитектура**: app/pages/features/entities/widgets/shared layers
+- **8 страниц**: Home, Map, Catalog, Property Details, Login, Register, Onboarding, Profile, Add Property
+- **Redux Toolkit** store с auth slice и middleware
+- **Axios client** с JWT interceptor, token refresh queue (защита от конкурентных refresh)
+- **Yandex Maps 3** с кластеризацией, маркерами, bbox поиском
+- **Swiper carousel** для рекомендаций на Home
+- **FilterPanel widget** — диапазон цен, комнаты, тип, цель и т.д.
+- **PropertyForm feature** — все расширенные поля, geocoder autofill, загрузка изображений
+- **ImageUploader feature** — предпросмотр и валидация
+- **ErrorBoundary** — отлов ошибок рендеринга
+- **Адаптивный дизайн** — SCSS variables, mixins, breakpoints
+- **Onboarding wizard** — визуальные иллюстрации и анимации
+- **Profile page** — контакты, предпочтения, управление объявлениями
+- **TokenService** — in-memory + localStorage JWT
+- **Infinite scroll** на карте через IntersectionObserver
+- **Автоцентрирование карты** при смене города в фильтрах
 
-### Changed
+### Изменено
 
-- **Backend architecture**: monolithic models.py → separate domain files (user, property, interaction, reference)
-- **Properties endpoints**: split into read (properties_read.py) and write (properties_write.py) modules
-- **Models split**: user.py, property.py, interaction.py with proper __init__.py re-exports
-- **FSD extraction**: FilterPanel, TabBar, PropertyGrid widgets extracted from page components
-- **Recommendation engine**: 13-dim → 14-dim vector, feature weights (price×2, purpose×1.5, city×2), MMR diversification
-- **Material/repair_type**: VARCHAR → ARRAY in preferences schema
-- **Docker configuration**: healthchecks, dependencies, non-root user
-- **Populate scripts**: realistic properties with real geocoding across 10 cities (500+ properties)
-- **CI pipeline**: full quality gate with SAST/SCA
+- **Архитектура бэкенда**: монолитный models.py → отдельные доменные файлы (user, property, interaction, reference)
+- **Endpoints**: properties разделены на read (properties_read.py) и write (properties_write.py)
+- **FSD extraction**: FilterPanel, TabBar, PropertyGrid — вынесены из страниц в widgets
+- **Рекомендательный движок**: 13 → 14 измерений, feature weights (price×2, purpose×1.5, city×2), MMR диверсификация
+- **Material/repair_type**: VARCHAR → ARRAY в preferences
+- **Docker**: healthchecks, зависимости, non-root user
+- **Populate-скрипты**: реалистичные объекты с реальным геокодированием (10 городов, 500+ объектов)
+- **CI**: полный quality gate с SAST/SCA
 
-### Fixed
+### Исправлено
 
-- **Layer violations**: delegate DB/Redis access from endpoints to services
-- **Race conditions**: unique constraint on interactions, atomic counters, upsert pattern
-- **Security issues**:
-  - Exception details leak in error responses
-  - Empty JWT_SECRET_KEY rejection
-  - Hardcoded credentials removed from docker-compose
-  - Mass assignment protection via whitelisted update fields
-  - PII exposure: owner contacts only visible to authenticated users
-- **Performance**: batch queries, vectorized cosine similarity, shared HTTP clients, LIMIT hardcaps
-- **Frontend crashes**: undefined geocoder, broken YMapMarker, zero-floor filter, image field stripping
-- **Runtime issues**: favorites sorting, catalog pagination, delete modal styling
-- **Auth flow**: JWT redirect to onboarding, profile save support, logout token clearing
-- **Interaction API**: endpoint path alignment between frontend and backend
-- **Geocoder**: required lang parameter for Yandex API
-- **Type hints**: Pydantic V2 deprecation warnings, strict MyPy configuration
+- **Layer violations**: доступ к БД/Redis из endpoints → через сервисы
+- **Race conditions**: unique constraint на interactions, atomic counters, upsert
+- **Безопасность**:
+  - Утечка exception details в ответах
+  - Пустой JWT_SECRET_KEY — теперь rejection
+  - Хардкодные credentials удалены из docker-compose
+  - Mass assignment protection — белый список полей для обновления
+  - PII: контакты владельца видны только авторизованным
+- **Производительность**: batch queries, vectorized cosine similarity, shared HTTP clients, LIMIT hardcaps
+- **Фронтенд**: undefined geocoder, YMapMarker, zero-floor filter, image field stripping
+- **Runtime**: favorites sorting, catalog pagination, delete modal styling
+- **Auth**: JWT redirect, profile save, logout token clearing
+- **Interaction API**: путь совместим между фронтендом и бэкендом
+- **Geocoder**: обязательный параметр lang для Yandex API
+- **Type hints**: Pydantic V2 deprecation warnings, MyPy strict
 
-### Removed
+### Удалено
 
-- Dead code: reference models, user columns, frontend components, empty barrels, MSW mocks
-- Deprecated scripts: old population scripts, unused middleware
-- Hardcoded API keys from docker-compose
-- Comments from codebase (self-documenting code policy)
+- Мёртвый код: reference models, user columns, frontend components, empty barrels, MSW mocks
+- Устаревшие скрипты: старые populate-скрипты, неиспользуемые middleware
+- Хардкодные API ключи из docker-compose
+- Комментарии из кода (политика самодокументируемого кода)
 
-### Security
+### Безопасность
 
-- SAST: Bandit in CI pipeline
+- SAST: Bandit в CI
 - SCA: pip-audit (Python), npm audit (Node.js)
-- JWT: SECRET_KEY min 32 bytes validation
-- Password: bcrypt hashing with server-side policy enforcement
-- Rate limiting: interaction uniqueness prevents duplicate operations
+- JWT: SECRET_KEY ≥ 32 символа
+- Пароли: bcrypt + server-side policy
+- Rate limiting: уникальность взаимодействий предотвращает дубликаты
+
+## [Документация] — 2026-05-24
+
+### Добавлено
+
+- `README.md` — полное описание проекта на русском с Mermaid-диаграммами, tech stack, quick start, CI/CD
+- `ARCHITECTURE.md` — подробная архитектура: 3-layer backend, FSD frontend, data model ERD, recommendation engine pipeline, sequence diagrams
+- `API.md` — все 24 эндпоинта с примерами, схемами запросов/ответов, Mermaid-диаграммами
+- `CHANGELOG.md` — полная история версий
+- `CONTRIBUTING.md` — руководство для контрибьюторов
+- `TESTING.md` — гайд по тестированию
+- `SECURITY.md` — политика безопасности
+- `DOCKER.md` — Docker окружение
+- `DEPLOYMENT.md` — деплой
+- Обновлён `backend/alembic/README` — миграции БД
+- Обновлён `frontend/README.md` — FSD архитектура фронтенда
+- Обновлён `.env.example` — подробные комментарии
