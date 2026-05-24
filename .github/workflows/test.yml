@@ -38,17 +38,13 @@ jobs:
           --health-timeout 5s
           --health-retries 5
       minio:
-        image: minio/minio:RELEASE.2022-10-20T22-26-22Z
+        image: minio/minio:latest
         env:
           MINIO_ROOT_USER: minioadmin
           MINIO_ROOT_PASSWORD: minioadmin
         ports:
           - 9000:9000
-        options: >-
-          --health-cmd "curl -f http://localhost:9000/minio/health/live || exit 1"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+        # healthcheck intentionally omitted — minio:latest is distroless, no curl
 
     steps:
       - uses: actions/checkout@v4
@@ -74,12 +70,14 @@ jobs:
       - name: Create test bucket in MinIO
         run: |
           pip install minio
-          python -c "
-          from minio import Minio
-          client = Minio('localhost:9000', access_key='minioadmin', secret_key='minioadmin', secure=False)
-          if not client.bucket_exists('nestai-images-test'):
-              client.make_bucket('nestai-images-test')
-          "
+          for i in $(seq 1 15); do
+            if python -c "from minio import Minio; c = Minio('localhost:9000', access_key='minioadmin', secret_key='minioadmin', secure=False); c.make_bucket('nestai-images-test'); print('Bucket created')" 2>&1; then
+              echo "Bucket ready"
+              break
+            fi
+            echo "Waiting for MinIO... attempt $i"
+            sleep 2
+          done
 
       - name: Ruff check
         run: |
