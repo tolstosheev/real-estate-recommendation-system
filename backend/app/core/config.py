@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     S3_BUCKET: str = "nestai-images"
     S3_PUBLIC_URL: str = "http://localhost:8000/api/images"
     CORS_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000"
+    PEXELS_API_KEY: str = ""
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
