@@ -144,10 +144,10 @@ jobs:
 
       - name: Run migrations
         run: |
-          pip install alembic
           alembic upgrade head
         env:
           DATABASE_URL: postgresql+asyncpg://user:password@localhost:5432/nestai_test
+          SECRET_KEY: ci-secret-key-not-for-production
 
       - name: Run integration tests
         run: python -m pytest tests/ -v --tb=short --ignore=tests/e2e
