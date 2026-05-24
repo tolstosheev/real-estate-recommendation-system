@@ -85,8 +85,9 @@ describe('FilterPanel', () => {
 
   it('toggles location section', () => {
     renderPanel();
-    const arrow = screen.getByText('▶');
-    fireEvent.click(arrow);
+    expect(screen.getAllByText('▶').length).toBe(3);
+    fireEvent.click(screen.getByText('Location'));
+    expect(screen.getAllByText('▶').length).toBe(2);
     expect(screen.getByText('▼')).toBeDefined();
   });
 
