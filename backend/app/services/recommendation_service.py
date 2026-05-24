@@ -25,6 +25,10 @@ class RecommendationService:
     DEFAULT_AREA_MID = 100.0
     FAVORITE_WEIGHT = 1.0
     VIEW_WEIGHT = 0.2
+    COLLAB_SIMILAR_USERS_LIMIT = 10
+    COLLAB_MIN_LIKES = 3
+    COLLAB_CONTENT_WEIGHT = 0.7
+    COLLAB_WEIGHT = 0.3
 
     FEATURE_WEIGHTS = np.array([
         2.0,   # 0: price
@@ -231,6 +235,20 @@ class RecommendationService:
         )
         scored_props = list(zip(properties, scores, strict=False))
 
+        similar_users = await self._find_similar_users(user_id)
+        if similar_users:
+            candidate_ids = [str(p.id) for p in properties]
+            collab_scores = await self._score_collaborative(candidate_ids, similar_users)
+            if collab_scores:
+                scored_props = [
+                    (
+                        p,
+                        self.COLLAB_CONTENT_WEIGHT * s
+                        + self.COLLAB_WEIGHT * collab_scores.get(str(p.id), 0.0),
+                    )
+                    for p, s in scored_props
+                ]
+
         scored_props.sort(key=lambda x: x[1], reverse=True)
 
         top_props = await self._diversify(scored_props, norm_prop_vectors, norm_user_vec, limit)
@@ -342,6 +360,52 @@ class RecommendationService:
                         all_rows = rows
 
         return all_rows
+
+    async def _find_similar_users(self, user_id: str) -> list[str]:
+        my_favs = await self.inter_repo.get_user_favorites(user_id)
+        my_prop_ids = {str(row[0].id) for row in my_favs}
+
+        if len(my_prop_ids) < self.COLLAB_MIN_LIKES:
+            return []
+
+        all_users = await self.inter_repo.get_users_liked_properties()
+        current_user_id = str(user_id)
+
+        user_scores: list[tuple[str, float]] = []
+        for uid, liked_set in all_users.items():
+            if uid == current_user_id:
+                continue
+            intersection = my_prop_ids & liked_set
+            if not intersection:
+                continue
+            union = my_prop_ids | liked_set
+            jaccard = len(intersection) / len(union)
+            if jaccard > 0:
+                user_scores.append((uid, jaccard))
+
+        user_scores.sort(key=lambda x: x[1], reverse=True)
+        return [uid for uid, _ in user_scores[:self.COLLAB_SIMILAR_USERS_LIMIT]]
+
+    async def _score_collaborative(
+        self, candidate_ids: list[str], similar_users: list[str]
+    ) -> dict[str, float]:
+        if not similar_users or not candidate_ids:
+            return {}
+
+        all_users = await self.inter_repo.get_users_liked_properties()
+        candidate_set = set(candidate_ids)
+
+        prop_scores: dict[str, float] = {}
+        for uid in similar_users:
+            liked = all_users.get(uid, set()) & candidate_set
+            for pid in liked:
+                prop_scores[pid] = prop_scores.get(pid, 0.0) + 1.0
+
+        if not prop_scores:
+            return {}
+
+        max_score = max(prop_scores.values())
+        return {pid: s / max_score for pid, s in prop_scores.items()}
 
     async def _diversify(self, scored_props, prop_vectors, user_vec, limit, lambda_param=None):
         if lambda_param is None:

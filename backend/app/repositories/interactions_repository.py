@@ -1,4 +1,6 @@
 
+from collections import defaultdict
+
 from sqlalchemy import delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -71,6 +73,25 @@ class InteractionRepository:
             Interaction.user_id == user_id,
             Interaction.property_id.in_(property_ids),
             Interaction.interaction_type == "like",
+        )
+        result = await self.session.execute(query)
+        return {str(row[0]) for row in result.all()}
+
+    async def get_users_liked_properties(self) -> dict[str, set[str]]:
+        query = (
+            select(Interaction.user_id, Interaction.property_id)
+            .filter(Interaction.interaction_type == "like")
+        )
+        result = await self.session.execute(query)
+        user_props: dict[str, set[str]] = defaultdict(set)
+        for row in result.all():
+            user_props[str(row[0])].add(str(row[1]))
+        return dict(user_props)
+
+    async def get_user_interacted_property_ids(self, user_id: str) -> set[str]:
+        query = (
+            select(Interaction.property_id)
+            .filter(Interaction.user_id == user_id)
         )
         result = await self.session.execute(query)
         return {str(row[0]) for row in result.all()}
