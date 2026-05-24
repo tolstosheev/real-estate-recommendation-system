@@ -1,113 +1,113 @@
 # API Reference
 
-Base URL: `http://localhost:8000`
+**Базовый URL:** `http://localhost:8000`
 
-All endpoints that require authentication use **Bearer token** in the `Authorization` header:
+Все эндпоинты, требующие аутентификации, используют **Bearer token** в заголовке `Authorization`:
 
 ```
 Authorization: Bearer <access_token>
 ```
 
-## Table of Contents
+## Содержание
 
-- [Auth](#auth)
-  - [Register](#register)
-  - [Login](#login)
-  - [Refresh Token](#refresh-token)
-  - [Get Current User](#get-current-user)
-  - [Update Current User](#update-current-user)
-- [Properties](#properties)
-  - [Get Property Meta](#get-property-meta)
-  - [List Properties](#list-properties)
-  - [Get My Properties](#get-my-properties)
-  - [Get Properties in Bounding Box](#get-properties-in-bounding-box)
-  - [Get Property Details](#get-property-details)
-  - [Create Property](#create-property)
-  - [Update Property](#update-property)
-  - [Delete Property](#delete-property)
-- [User Preferences](#user-preferences)
-  - [Get Preferences](#get-preferences)
-  - [Update Preferences](#update-preferences)
-- [Interactions](#interactions)
-  - [Interact with Property](#interact-with-property)
-  - [Get Favorites](#get-favorites)
-  - [Get View History](#get-view-history)
-- [Recommendations](#recommendations)
-  - [Get Recommendations](#get-recommendations)
-- [Images](#images)
-  - [Upload Images](#upload-images)
-  - [Get Image](#get-image)
-  - [Delete Image](#delete-image)
-- [Geocoding](#geocoding)
-  - [Reverse Geocode](#reverse-geocode)
+- [Аутентификация (Auth)](#auth)
+  - [Регистрация](#register)
+  - [Вход](#login)
+  - [Обновление токена](#refresh-token)
+  - [Текущий пользователь](#get-current-user)
+  - [Обновление профиля](#update-current-user)
+- [Объекты недвижимости (Properties)](#properties)
+  - [Метаданные](#get-property-meta)
+  - [Список](#list-properties)
+  - [Мои объекты](#get-my-properties)
+  - [В bounding box](#get-properties-in-bounding-box)
+  - [Детали](#get-property-details)
+  - [Создание](#create-property)
+  - [Обновление](#update-property)
+  - [Удаление](#delete-property)
+- [Предпочтения (User Preferences)](#user-preferences)
+  - [Получить](#get-preferences)
+  - [Обновить](#update-preferences)
+- [Взаимодействия (Interactions)](#interactions)
+  - [Лайк/Просмотр](#interact-with-property)
+  - [Избранное](#get-favorites)
+  - [История просмотров](#get-view-history)
+- [Рекомендации (Recommendations)](#recommendations)
+  - [Получить](#get-recommendations)
+- [Изображения (Images)](#images)
+  - [Загрузить](#upload-images)
+  - [Получить](#get-image)
+  - [Удалить](#delete-image)
+- [Геокодирование (Geocoding)](#geocoding)
+  - [Обратное геокодирование](#reverse-geocode)
 
 ---
 
-## Auth
+## Аутентификация (Auth)
 
-### Register
+### Регистрация
 
-Creates a new user account.
+Создаёт новый аккаунт пользователя.
 
 ```
 POST /auth/register
 ```
 
-**Authentication:** None
+**Аутентификация:** Не требуется
 
-**Request Body:**
+**Тело запроса:**
 
 ```json
 {
   "email": "user@example.com",
   "password": "SecurePass1!",
-  "full_name": "John Doe",
+  "full_name": "Иван Иванов",
   "phone_number": "+79991234567",
-  "telegram_handle": "@johndoe"
+  "telegram_handle": "@ivanov"
 }
 ```
 
-**Schema:**
+**Схема:**
 
-| Field | Type | Required | Description |
+| Поле | Тип | Обязательное | Описание |
 |---|---|---|---|
-| `email` | string (email) | Yes | Must be a valid email format |
-| `password` | string | Yes | Min 8 chars, must contain uppercase, lowercase, and digit |
-| `full_name` | string | Yes | Display name |
-| `phone_number` | string | No | Visible to property owners |
-| `telegram_handle` | string | No | Visible to property owners |
+| `email` | string (email) | Да | Должен быть валидным email |
+| `password` | string | Да | Мин. 8 символов, заглавная, строчная, цифра |
+| `full_name` | string | Да | Отображаемое имя |
+| `phone_number` | string | Нет | Виден владельцам объектов при бронировании |
+| `telegram_handle` | string | Нет | Виден владельцам объектов |
 
-**Success Response (201 Created):**
+**Успешный ответ (201 Created):**
 
 ```json
 {
   "id": "550e8400-e29b-41d4-a716-446655440000",
   "email": "user@example.com",
-  "full_name": "John Doe",
+  "full_name": "Иван Иванов",
   "phone_number": "+79991234567",
-  "telegram_handle": "@johndoe"
+  "telegram_handle": "@ivanov"
 }
 ```
 
-**Error Responses:**
+**Ошибки:**
 
-| Status | Description |
+| Статус | Описание |
 |---|---|
-| `400` | Email already exists or validation failed (e.g., weak password) |
+| `400` | Email уже существует или пароль не прошёл валидацию |
 
 ---
 
-### Login
+### Вход
 
-Authenticates a user and returns a JWT access token.
+Аутентификация пользователя, возвращает JWT access token.
 
 ```
 POST /auth/login
 ```
 
-**Authentication:** None
+**Аутентификация:** Не требуется
 
-**Request Body:**
+**Тело запроса:**
 
 ```json
 {
@@ -116,7 +116,7 @@ POST /auth/login
 }
 ```
 
-**Success Response (200 OK):**
+**Успешный ответ (200 OK):**
 
 ```json
 {
@@ -125,25 +125,25 @@ POST /auth/login
 }
 ```
 
-**Error Responses:**
+**Ошибки:**
 
-| Status | Description |
+| Статус | Описание |
 |---|---|
-| `401` | Invalid email or password |
+| `401` | Неверный email или пароль |
 
 ---
 
-### Refresh Token
+### Обновление токена
 
-Issues a new access token from an existing valid or recently expired token.
+Выдаёт новый access token из существующего (в том числе недавно истёкшего).
 
 ```
 POST /auth/refresh
 ```
 
-**Authentication:** Bearer token
+**Аутентификация:** Bearer token
 
-**Success Response (200 OK):**
+**Успешный ответ (200 OK):**
 
 ```json
 {
@@ -152,110 +152,110 @@ POST /auth/refresh
 }
 ```
 
-**Error Responses:**
+**Ошибки:**
 
-| Status | Description |
+| Статус | Описание |
 |---|---|
-| `401` | Token is invalid or expired too long ago |
+| `401` | Токен невалидный или истёк слишком давно |
 
 ---
 
-### Get Current User
+### Текущий пользователь
 
-Returns the profile of the currently authenticated user.
+Возвращает профиль аутентифицированного пользователя.
 
 ```
 GET /auth/me
 ```
 
-**Authentication:** Bearer token
+**Аутентификация:** Bearer token
 
-**Success Response (200 OK):**
+**Успешный ответ (200 OK):**
 
 ```json
 {
   "id": "550e8400-e29b-41d4-a716-446655440000",
   "email": "user@example.com",
-  "full_name": "John Doe",
+  "full_name": "Иван Иванов",
   "phone_number": "+79991234567",
-  "telegram_handle": "@johndoe"
+  "telegram_handle": "@ivanov"
 }
 ```
 
-**Error Responses:**
+**Ошибки:**
 
-| Status | Description |
+| Статус | Описание |
 |---|---|
-| `401` | Invalid or missing token |
+| `401` | Невалидный или отсутствующий токен |
 
 ---
 
-### Update Current User
+### Обновление профиля
 
-Updates the profile of the currently authenticated user.
+Обновляет профиль аутентифицированного пользователя.
 
 ```
 PUT /auth/me
 ```
 
-**Authentication:** Bearer token
+**Аутентификация:** Bearer token
 
-**Request Body:**
+**Тело запроса:**
 
 ```json
 {
-  "full_name": "Jane Doe",
+  "full_name": "Пётр Петров",
   "phone_number": "+79997654321",
-  "telegram_handle": "@janedoe"
+  "telegram_handle": "@petrov"
 }
 ```
 
-**Schema:**
+**Схема:**
 
-| Field | Type | Required | Description |
+| Поле | Тип | Обязательное | Описание |
 |---|---|---|---|
-| `full_name` | string | No | New display name |
-| `phone_number` | string | No | New phone number |
-| `telegram_handle` | string | No | New Telegram handle |
+| `full_name` | string | Нет | Новое имя |
+| `phone_number` | string | Нет | Новый телефон |
+| `telegram_handle` | string | Нет | Новый Telegram |
 
-All fields are optional — only provided fields will be updated.
+Все поля опциональны — обновляются только переданные.
 
-**Note:** If the user has active property listings, all contact fields (`phone_number` and `telegram_handle`) cannot be cleared simultaneously. At least one contact method must remain.
+**Важно:** Если у пользователя есть активные объявления, нельзя очистить одновременно `phone_number` и `telegram_handle`. Хотя бы один контакт должен остаться.
 
-**Success Response (200 OK):**
+**Успешный ответ (200 OK):**
 
 ```json
 {
   "id": "550e8400-e29b-41d4-a716-446655440000",
   "email": "user@example.com",
-  "full_name": "Jane Doe",
+  "full_name": "Пётр Петров",
   "phone_number": "+79997654321",
-  "telegram_handle": "@janedoe"
+  "telegram_handle": "@petrov"
 }
 ```
 
-**Error Responses:**
+**Ошибки:**
 
-| Status | Description |
+| Статус | Описание |
 |---|---|
-| `400` | Cannot clear all contacts while having active listings |
-| `401` | Invalid or missing token |
+| `400` | Нельзя очистить все контакты при активных объявлениях |
+| `401` | Невалидный токен |
 
 ---
 
-## Properties
+## Объекты недвижимости (Properties)
 
-### Get Property Meta
+### Метаданные
 
-Returns distinct values for filter dropdowns (cities, property types, materials, repair types, etc.).
+Возвращает уникальные значения для выпадающих фильтров (города, типы, материалы, типы ремонта и т.д.).
 
 ```
 GET /api/properties/meta
 ```
 
-**Authentication:** None
+**Аутентификация:** Не требуется
 
-**Success Response (200 OK):**
+**Успешный ответ (200 OK):**
 
 ```json
 {
@@ -265,58 +265,62 @@ GET /api/properties/meta
   "materials": ["panel", "brick", "monolith"],
   "repair_types": ["cosmetic", "euro", "designer"],
   "districts": ["Central", "Northern", "Southern"],
-  "metro": ["Park Pobedy", "Kiyevskaya", "Mayakovskaya"]
+  "metro": ["Park Pobedy", "Kiyevskaya", "Mayakovskaya"],
+  "city_centers": {
+    "Moscow": [37.6173, 55.7558],
+    "Saint Petersburg": [30.3158, 59.9390]
+  }
 }
 ```
 
 ---
 
-### List Properties
+### Список объектов
 
-Returns a paginated list of properties with optional filters.
+Возвращает пагинированный список объектов недвижимости с фильтрацией.
 
 ```
-GET /api/properties/?limit=20&offset=0&city=Moscow&min_price=5000000&max_price=15000000&rooms=1,2&property_type=apartment&property_purpose=sale&search=центр
+GET /api/properties/?limit=20&offset=0&city=Moscow&min_price=5000000&max_price=15000000&rooms=1,2&property_purpose=sale&search=центр
 ```
 
-**Authentication:** Optional — if authenticated, results are enriched with `is_liked_by_me` flag.
+**Аутентификация:** Опционально — если аутентифицирован, результаты содержат `is_liked_by_me`.
 
-**Query Parameters:**
+**Параметры запроса:**
 
-| Parameter | Type | Required | Default | Description |
+| Параметр | Тип | По умолч. | Макс. | Описание |
 |---|---|---|---|---|
-| `limit` | integer | No | 100 | Max results (max 200) |
-| `offset` | integer | No | 0 | Pagination offset |
-| `min_price` | float | No | — | Minimum price |
-| `max_price` | float | No | — | Maximum price |
-| `rooms` | integer[] | No | — | Comma-separated room counts (e.g., `1,2`) |
-| `property_type` | string[] | No | — | Comma-separated: `apartment`, `studio`, `house`, `townhouse` |
-| `property_purpose` | string[] | No | — | Comma-separated: `sale`, `rent`, `daily_rent` |
-| `city` | string[] | No | — | Comma-separated city names |
-| `district` | string | No | — | District name |
-| `metro` | string | No | — | Metro station name |
-| `material` | string[] | No | — | Comma-separated: `panel`, `brick`, `monolith` |
-| `repair_type` | string[] | No | — | Comma-separated: `cosmetic`, `euro`, `designer` |
-| `min_build_year` | integer | No | — | Minimum build year |
-| `max_build_year` | integer | No | — | Maximum build year |
-| `lat` | float | No | — | Center latitude for spatial search |
-| `lon` | float | No | — | Center longitude for spatial search |
-| `radius_km` | float | No | — | Search radius in km (requires `lat` and `lon`) |
-| `min_area` | float | No | — | Minimum area in m² |
-| `max_area` | float | No | — | Maximum area in m² |
-| `is_new` | string[] | No | — | `yes`, `no` |
-| `search` | string | No | — | Full-text search in title, description, address |
+| `limit` | integer | 100 | 200 | Количество результатов |
+| `offset` | integer | 0 | — | Смещение пагинации |
+| `min_price` | float | — | — | Мин. цена |
+| `max_price` | float | — | — | Макс. цена |
+| `rooms` | integer[] | — | — | Комнаты через запятую (`1,2`) |
+| `property_type` | string[] | — | — | `apartment`, `studio`, `house`, `townhouse` |
+| `property_purpose` | string[] | — | — | `sale`, `rent`, `daily_rent` |
+| `city` | string[] | — | — | Города через запятую |
+| `district` | string | — | — | Район |
+| `metro` | string | — | — | Станция метро |
+| `material` | string[] | — | — | `panel`, `brick`, `monolith` |
+| `repair_type` | string[] | — | — | `cosmetic`, `euro`, `designer` |
+| `min_build_year` | integer | — | — | Мин. год постройки |
+| `max_build_year` | integer | — | — | Макс. год постройки |
+| `min_area` | float | — | — | Мин. площадь (м²) |
+| `max_area` | float | — | — | Макс. площадь (м²) |
+| `lat` | float | — | — | Широта для пространственного поиска |
+| `lon` | float | — | — | Долгота для пространственного поиска |
+| `radius_km` | float | — | — | Радиус в км (требует lat+lon) |
+| `is_new` | string[] | — | — | `yes`, `no` |
+| `search` | string | — | — | Полнотекстовый поиск по названию, описанию, адресу |
 
-All text filters are **case-insensitive** (uses `LOWER()` in SQL).
+Все текстовые фильтры **регистронезависимые** (используется `LOWER()` в SQL).
 
-**Success Response (200 OK):**
+**Успешный ответ (200 OK):**
 
 ```json
 [
   {
     "id": "550e8400-e29b-41d4-a716-446655440001",
-    "title": "2-bedroom apartment in city center",
-    "description": "Bright apartment with panoramic views...",
+    "title": "2-комнатная квартира в центре",
+    "description": "Светлая квартира с панорамным видом...",
     "price": 12000000,
     "area": 65.5,
     "rooms": 2,
@@ -325,7 +329,7 @@ All text filters are **case-insensitive** (uses `LOWER()` in SQL).
     "property_type": "apartment",
     "property_purpose": "sale",
     "city": "Moscow",
-    "address": "ul. Tverskaya, 10",
+    "address": "ул. Тверская, 10",
     "district": "Central",
     "metro": "Tverskaya",
     "lat": 55.7658,
@@ -345,129 +349,175 @@ All text filters are **case-insensitive** (uses `LOWER()` in SQL).
     "is_liked_by_me": false,
     "owner": {
       "id": "550e8400-e29b-41d4-a716-446655440000",
-      "full_name": "John Doe",
+      "full_name": "Иван Иванов",
       "phone_number": "+79991234567",
-      "telegram_handle": "@johndoe"
+      "telegram_handle": "@ivanov"
     },
     "created_at": "2025-01-15T10:30:00Z"
   }
 ]
 ```
 
+**Схема PropertyOut:**
+
+| Поле | Тип | Описание |
+|---|---|---|
+| `id` | UUID | ID объекта |
+| `title` | string | Название |
+| `description` | string | Описание |
+| `price` | number | Цена |
+| `area` | number | Площадь (м²) |
+| `rooms` | integer | Комнаты |
+| `floor` / `total_floors` | integer | Этаж / Всего этажей |
+| `property_type` | string | Тип: apartment, studio, house, townhouse |
+| `property_purpose` | string | Цель: sale, rent, daily_rent |
+| `category` | string | Категория (вычисляется) |
+| `city` | string | Город |
+| `address` | string | Адрес |
+| `district` / `metro` | string | Район / Метро |
+| `lat` / `lon` | number | Координаты (из PostGIS geometry) |
+| `images` | string[] | URL изображений |
+| `build_year` | string | Год постройки |
+| `material` | string | Материал стен |
+| `repair_type` | string | Тип ремонта |
+| `room_type` | string | Тип комнат: separate, open |
+| `sq_living` / `sq_kitchen` | number | Жилая / Кухня (м²) |
+| `balcony` / `parking` | boolean | Балкон / Парковка |
+| `is_new` | string | Новостройка: yes/no |
+| `views_count` | integer | Количество просмотров |
+| `likes_count` | integer | Количество лайков |
+| `is_liked_by_me` | boolean | Лайкнул ли текущий пользователь |
+| `owner` | OwnerOut | Информация о владельце |
+| `created_at` | datetime | Дата создания |
+
+**Схема OwnerOut:**
+
+| Поле | Тип | Описание |
+|---|---|---|
+| `id` | UUID | ID владельца |
+| `full_name` | string | Имя владельца |
+| `phone_number` | string | Телефон (PII — только для авторизованных) |
+| `telegram_handle` | string | Telegram (PII) |
+
 ---
 
-### Get My Properties
+### Мои объекты
 
-Returns properties created by the authenticated user.
+Возвращает объекты, созданные аутентифицированным пользователем.
 
 ```
 GET /api/properties/my?limit=20&offset=0
 ```
 
-**Authentication:** Bearer token (required)
+**Аутентификация:** Bearer token (обязательно)
 
-**Query Parameters:**
+**Параметры запроса:**
 
-| Parameter | Type | Required | Default | Description |
+| Параметр | Тип | По умолч. | Макс. | Описание |
 |---|---|---|---|---|
-| `limit` | integer | No | 100 | Max results (max 200) |
-| `offset` | integer | No | 0 | Pagination offset (min 0) |
+| `limit` | integer | 100 | 200 | Количество результатов |
+| `offset` | integer | 0 | — | Смещение (мин. 0) |
 
-**Success Response (200 OK):**
+**Успешный ответ (200 OK):**
 
-Same schema as [List Properties](#list-properties).
+Та же схема, что и [Список объектов](#list-properties).
 
 ---
 
-### Get Properties in Bounding Box
+### Объекты в bounding box
 
-Returns properties within a geographic bounding box for map rendering.
+Возвращает объекты в заданном географическом прямоугольнике для отображения на карте.
 
 ```
-GET /api/properties/map?min_lat=55.6&max_lat=55.8&min_lon=37.4&max_lon=37.7&property_purpose=sale
+GET /api/properties/map?min_lat=55.6&max_lat=55.8&min_lon=37.4&max_lon=37.7
 ```
 
-**Authentication:** Optional — enriched with `is_liked_by_me` if authenticated.
+**Аутентификация:** Опционально — `is_liked_by_me` если аутентифицирован.
 
-**Query Parameters:**
+**Параметры запроса:**
 
-| Parameter | Type | Required | Description |
+| Параметр | Тип | Обязательный | Описание |
 |---|---|---|---|
-| `min_lat` | float | **Yes** | South latitude |
-| `max_lat` | float | **Yes** | North latitude |
-| `min_lon` | float | **Yes** | West longitude |
-| `max_lon` | float | **Yes** | East longitude |
-| `limit` | integer | No | Max results, default 50, max 200 |
-| `offset` | integer | No | Pagination offset, default 0 |
-| `min_price`, `max_price` | float | No | Price range |
-| `rooms` | integer[] | No | Comma-separated |
-| `property_type` | string[] | No | Comma-separated |
-| `property_purpose` | string[] | No | Comma-separated |
-| `city` | string[] | No | Comma-separated |
-| `min_area`, `max_area` | float | No | Area range |
-| `min_build_year`, `max_build_year` | integer | No | Year range |
-| `material` | string[] | No | Comma-separated |
-| `repair_type` | string[] | No | Comma-separated |
-| `district` | string | No | |
-| `metro` | string | No | |
-| `is_new` | string[] | No | `yes`, `no` |
+| `min_lat` | float | **Да** | Южная широта |
+| `max_lat` | float | **Да** | Северная широта |
+| `min_lon` | float | **Да** | Западная долгота |
+| `max_lon` | float | **Да** | Восточная долгота |
+| `limit` | integer | Нет | По умолч. 50, макс. 200 |
+| `offset` | integer | Нет | По умолч. 0 |
+| `min_price`, `max_price` | float | Нет | Диапазон цен |
+| `rooms` | integer[] | Нет | Комнаты |
+| `property_type` | string[] | Нет | Типы |
+| `property_purpose` | string[] | Нет | Цели |
+| `city` | string[] | Нет | Города |
+| `min_area`, `max_area` | float | Нет | Площадь |
+| `material` | string[] | Нет | Материалы |
+| `repair_type` | string[] | Нет | Ремонт |
+| `is_new` | string[] | Нет | Новостройка |
 
-Uses PostGIS `ST_MakeEnvelope` with `ST_Intersects` for efficient spatial querying.
+Использует PostGIS `ST_MakeEnvelope` + `ST_Intersects` для эффективных пространственных запросов.
 
-**Success Response (200 OK):**
+**Успешный ответ (200 OK):**
 
-Same schema as [List Properties](#list-properties).
+Та же схема, что и [Список объектов](#list-properties).
+
+```mermaid
+flowchart LR
+    Map["Карта"] -->|"bbox changed"| API["GET /api/properties/map"]
+    API --> DB["PostGIS ST_Intersects"]
+    DB -->|"geometry фильтр"| Results["Объекты в прямоугольнике"]
+    Results --> Map["📌 Маркеры на карте"]
+```
 
 ---
 
-### Get Property Details
+### Детали объекта
 
-Returns a single property by ID.
+Возвращает один объект по ID.
 
 ```
 GET /api/properties/{property_id}
 ```
 
-**Authentication:** Optional — enriched with `is_liked_by_me` if authenticated.
+**Параметры пути:**
 
-**Path Parameters:**
-
-| Parameter | Type | Description |
+| Параметр | Тип | Описание |
 |---|---|---|
-| `property_id` | UUID | Property ID |
+| `property_id` | UUID | ID объекта |
 
-**Success Response (200 OK):**
+**Аутентификация:** Опционально.
 
-Same schema as [List Properties](#list-properties).
+**Успешный ответ (200 OK):**
 
-**Error Responses:**
+Та же схема, что и [Список объектов](#list-properties).
 
-| Status | Description |
+**Ошибки:**
+
+| Статус | Описание |
 |---|---|
-| `404` | Property not found |
+| `404` | Объект не найден |
 
 ---
 
-### Create Property
+### Создание объекта
 
-Creates a new property listing.
+Создаёт новый объект недвижимости.
 
 ```
 POST /api/properties/
 ```
 
-**Authentication:** Bearer token (required)
+**Аутентификация:** Bearer token (обязательно)
 
-**Request Body:**
+**Тело запроса:**
 
 ```json
 {
-  "title": "2-bedroom apartment in city center",
+  "title": "2-комнатная квартира в центре",
   "price": 12000000,
-  "address": "ul. Tverskaya, 10, Moscow",
+  "address": "ул. Тверская, 10, Москва",
   "lat": 55.7658,
   "lon": 37.6065,
-  "description": "Bright apartment with panoramic views",
+  "description": "Светлая квартира с панорамным видом",
   "city": "Moscow",
   "rooms": 2,
   "area": 65.5,
@@ -490,106 +540,106 @@ POST /api/properties/
 }
 ```
 
-**Required fields:** `title`, `price`, `address`, `lat`, `lon`
+**Обязательные поля:** `title`, `price`, `address`, `lat`, `lon`
 
-If `lat`/`lon` are not provided but `address` is, the backend will attempt to geocode the address via Yandex Geocoder API.
+Если координаты не указаны, но указан `address`, бэкенд попытается определить их через Yandex Geocoder API.
 
-**Success Response (201 Created):**
+**Успешный ответ (201 Created):**
 
-Same schema as [List Properties](#list-properties).
+Та же схема, что и [Список объектов](#list-properties).
 
-**Error Responses:**
+**Ошибки:**
 
-| Status | Description |
+| Статус | Описание |
 |---|---|
-| `400` | Invalid coordinates (lat: -90..90, lon: -180..180) or validation failure |
-| `401` | Missing or invalid token |
+| `400` | Невалидные координаты (lat: -90..90, lon: -180..180) |
+| `401` | Отсутствует или невалидный токен |
 
 ---
 
-### Update Property
+### Обновление объекта
 
-Updates an existing property. Only the owner can update their property.
+Обновляет существующий объект. Только владелец может обновлять.
 
 ```
 PUT /api/properties/{property_id}
 ```
 
-**Authentication:** Bearer token (required, owner check)
+**Параметры пути:**
 
-**Path Parameters:**
-
-| Parameter | Type | Description |
+| Параметр | Тип | Описание |
 |---|---|---|
-| `property_id` | UUID | Property ID |
+| `property_id` | UUID | ID объекта |
 
-**Request Body:**
+**Аутентификация:** Bearer token (проверка владельца)
+
+**Тело запроса:**
 
 ```json
 {
   "price": 13000000,
-  "description": "Updated description"
+  "description": "Обновлённое описание"
 }
 ```
 
-All fields from [Create Property](#create-property) are optional on update. Only provided fields will be changed.
+Все поля из [Создания](#create-property) опциональны.
 
-**Success Response (200 OK):**
+**Успешный ответ (200 OK):**
 
-Same schema as [List Properties](#list-properties).
+Та же схема, что и [Список объектов](#list-properties).
 
-**Error Responses:**
+**Ошибки:**
 
-| Status | Description |
+| Статус | Описание |
 |---|---|
-| `400` | No valid fields to update |
-| `403` | Not the property owner |
-| `404` | Property not found |
+| `400` | Нет полей для обновления |
+| `403` | Не владелец объекта |
+| `404` | Объект не найден |
 
 ---
 
-### Delete Property
+### Удаление объекта
 
-Deletes a property. Only the owner can delete their property.
+Удаляет объект недвижимости. Только владелец может удалять.
 
 ```
 DELETE /api/properties/{property_id}
 ```
 
-**Authentication:** Bearer token (required, owner check)
+**Параметры пути:**
 
-**Path Parameters:**
-
-| Parameter | Type | Description |
+| Параметр | Тип | Описание |
 |---|---|---|
-| `property_id` | UUID | Property ID |
+| `property_id` | UUID | ID объекта |
 
-**Success Response (204 No Content):**
+**Аутентификация:** Bearer token (проверка владельца)
 
-No body returned.
+**Успешный ответ (204 No Content):**
 
-**Error Responses:**
+Без тела ответа.
 
-| Status | Description |
+**Ошибки:**
+
+| Статус | Описание |
 |---|---|
-| `403` | Not the property owner |
-| `404` | Property not found |
+| `403` | Не владелец |
+| `404` | Объект не найден |
 
 ---
 
-## User Preferences
+## Предпочтения (User Preferences)
 
-### Get Preferences
+### Получить предпочтения
 
-Returns the search preferences of the authenticated user.
+Возвращает поисковые предпочтения аутентифицированного пользователя.
 
 ```
 GET /user/preferences
 ```
 
-**Authentication:** Bearer token (required)
+**Аутентификация:** Bearer token (обязательно)
 
-**Success Response (200 OK):**
+**Успешный ответ (200 OK):**
 
 ```json
 {
@@ -609,25 +659,25 @@ GET /user/preferences
 }
 ```
 
-**Error Responses:**
+**Ошибки:**
 
-| Status | Description |
+| Статус | Описание |
 |---|---|
-| `404` | Preferences not set (first-time user) |
+| `404` | Предпочтения не заданы (новый пользователь) |
 
 ---
 
-### Update Preferences
+### Обновить предпочтения
 
-Sets or updates user search preferences (upsert — creates if not exists, updates if exists).
+Устанавливает или обновляет поисковые предпочтения (upsert — создаёт если нет, обновляет если есть).
 
 ```
 PUT /user/preferences
 ```
 
-**Authentication:** Bearer token (required)
+**Аутентификация:** Bearer token (обязательно)
 
-**Request Body:**
+**Тело запроса:**
 
 ```json
 {
@@ -646,50 +696,27 @@ PUT /user/preferences
 }
 ```
 
-**Schema:**
+Все поля опциональны.
 
-All fields are optional.
+**Успешный ответ (200 OK):**
 
-| Field | Type | Description |
-|---|---|---|
-| `min_price` | decimal | Minimum price |
-| `max_price` | decimal | Maximum price |
-| `min_area` | decimal | Minimum area (m²) |
-| `max_area` | decimal | Maximum area (m²) |
-| `preferred_rooms` | integer[] | Preferred room counts |
-| `property_types` | string[] | `apartment`, `studio`, `house`, `townhouse` |
-| `property_purposes` | string[] | `sale`, `rent`, `daily_rent` |
-| `cities` | string[] | Preferred cities |
-| `material` | string[] | `panel`, `brick`, `monolith` |
-| `repair_type` | string[] | `cosmetic`, `euro`, `designer` |
-| `min_build_year` | integer | Earliest build year |
-| `max_build_year` | integer | Latest build year |
-
-**Success Response (200 OK):**
-
-Same schema as [Get Preferences](#get-preferences).
-
-**Error Responses:**
-
-| Status | Description |
-|---|---|
-| `401` | Missing or invalid token |
+Та же схема, что и [Get Preferences](#get-preferences).
 
 ---
 
-## Interactions
+## Взаимодействия (Interactions)
 
-### Interact with Property
+### Лайк / Просмотр
 
-Records a `like` or `view` interaction with a property. Likes act as a **toggle** — liking an already-liked property removes the like.
+Записывает взаимодействие `like` или `view` с объектом. Лайки работают как **переключатель** — повторный лайк убирает его.
 
 ```
 POST /api/interactions/interact
 ```
 
-**Authentication:** Bearer token (required)
+**Аутентификация:** Bearer token (обязательно)
 
-**Request Body:**
+**Тело запроса:**
 
 ```json
 {
@@ -698,171 +725,200 @@ POST /api/interactions/interact
 }
 ```
 
-**Schema:**
+**Схема:**
 
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `property_id` | UUID | Yes | Property to interact with |
-| `interaction_type` | string | Yes | Must be `like` or `view` |
-
-**Success Responses:**
-
-| Status | Body | Scenario |
+| Поле | Тип | Описание |
 |---|---|---|
-| `201 Created` | `{"status": "liked"}` | New like created |
-| `201 Created` | `{"status": "viewed"}` | New view recorded |
-| `200 OK` | `{"status": "removed"}` | Like toggled off (unliked) |
+| `property_id` | UUID | ID объекта |
+| `interaction_type` | string | `like` или `view` |
 
-**Error Responses:**
+**Успешные ответы:**
 
-| Status | Description |
+| Статус | Тело | Сценарий |
+|---|---|---|
+| `201 Created` | `{"status": "liked"}` | Новый лайк |
+| `201 Created` | `{"status": "viewed"}` | Новый просмотр |
+| `200 OK` | `{"status": "removed"}` | Лайк убран (toggle) |
+
+```mermaid
+flowchart TB
+    POST["POST /api/interactions"] --> Check[Поиск существующего]
+    Check -->|"Найден like"| Remove["Удалить → status: removed"]
+    Check -->|"Не найден"| Create["Создать"]
+    Create -->|"type = like"| Like["status: liked<br/>likes_count++"]
+    Create -->|"type = view"| View["status: viewed"]
+    Like & Remove --> Invalidate["Инвалидация кеша"]
+    View --> Invalidate
+```
+
+**Ошибки:**
+
+| Статус | Описание |
 |---|---|
-| `404` | Property not found |
-| `401` | Missing or invalid token |
+| `404` | Объект не найден |
+| `401` | Невалидный токен |
 
 ---
 
-### Get Favorites
+### Избранное
 
-Returns all properties liked by the authenticated user.
+Возвращает объекты, лайкнутые аутентифицированным пользователем.
 
 ```
 GET /api/interactions/favorites?limit=20&offset=0
 ```
 
-**Authentication:** Bearer token (required)
+**Аутентификация:** Bearer token (обязательно)
 
-**Query Parameters:**
+**Успешный ответ (200 OK):**
 
-| Parameter | Type | Required | Default | Description |
-|---|---|---|---|---|
-| `limit` | integer | No | 100 | Max results (max 200) |
-| `offset` | integer | No | 0 | Pagination offset |
-
-**Success Response (200 OK):**
-
-Same schema as [List Properties](#list-properties), with `is_liked_by_me: true` for all results.
+Та же схема, что и [Список объектов](#list-properties), с `is_liked_by_me: true` для всех.
 
 ---
 
-### Get View History
+### История просмотров
 
-Returns properties viewed by the authenticated user. Each property appears at most once (latest view timestamp).
+Возвращает объекты, просмотренные аутентифицированным пользователем. Каждый объект показывается один раз (по последнему просмотру).
 
 ```
 GET /api/interactions/history?limit=20&offset=0
 ```
 
-**Authentication:** Bearer token (required)
+**Аутентификация:** Bearer token (обязательно)
 
-**Query Parameters:**
+**Успешный ответ (200 OK):**
 
-| Parameter | Type | Required | Default | Description |
-|---|---|---|---|---|
-| `limit` | integer | No | 100 | Max results (max 200) |
-| `offset` | integer | No | 0 | Pagination offset |
-
-**Success Response (200 OK):**
-
-Same schema as [List Properties](#list-properties), with `is_liked_by_me` indicator per property.
+Та же схема, что и [Список объектов](#list-properties), с `is_liked_by_me` для каждого.
 
 ---
 
-## Recommendations
+## Рекомендации (Recommendations)
 
-### Get Recommendations
+### Получить рекомендации
 
-Returns personalized property recommendations for the authenticated user using a hybrid content-based + collaborative filtering algorithm.
+Возвращает персонализированные рекомендации объектов недвижимости с использованием гибридного алгоритма (content-based + collaborative filtering).
 
 ```
 GET /api/recommendations/?limit=10
 ```
 
-**Authentication:** Bearer token (required)
+**Аутентификация:** Bearer token (обязательно)
 
-**Query Parameters:**
+**Параметры запроса:**
 
-| Parameter | Type | Required | Default | Description |
+| Параметр | Тип | По умолч. | Макс. | Описание |
 |---|---|---|---|---|
-| `limit` | integer | No | 10 | Number of recommendations (max 100) |
+| `limit` | integer | 10 | 100 | Количество рекомендаций |
 
-**How It Works:**
+**Алгоритм:**
 
-1. **Build User Profile**: Combines explicit preferences (price range, room count, property type) with implicit signals from favorites (weight 1.0) and views (weight 0.2) into a 14-dimensional feature vector.
+```mermaid
+flowchart TB
+    subgraph "Pipeline рекомендаций"
+        A["👤 Пользователь"]
+        B["📊 Построение профиля<br/>явные предпочтения + неявные сигналы"]
+        C["🔍 Поиск кандидатов<br/>с релаксацией фильтров"]
+        D["📐 Content-Based Scoring<br/>cosine similarity × feature weights"]
+        E["👥 Collaborative Scoring<br/>Jaccard → похожие пользователи"]
+        F["⚖ Гибридный скор<br/>0.7 × content + 0.3 × collab"]
+        G["🎯 MMR Диверсификация<br/>λ = 0.7"]
+        H["✅ Рекомендации"]
+    end
 
-2. **Fetch Candidates**: Retrieves properties matching the user's preferences with progressive filter relaxation if too few results are found.
+    A --> B --> C --> D --> F --> G --> H
+    C --> E --> F
+    D & E --> F
 
-3. **Content-Based Scoring**: Computes feature-weighted cosine similarity between the user vector and each candidate property vector.
-
-4. **Collaborative Filtering**: Finds up to 10 similar users via Jaccard similarity on liked property sets. Aggregates properties liked by those similar users and normalizes to [0, 1]. Only active when the user has 3 or more liked properties.
-
-5. **Hybrid Score**: `0.7 × content_score + 0.3 × collab_score`. Properties with no collaborative signal keep their full content score.
-
-6. **MMR Diversification**: Applies Maximum Marginal Relevance (λ = 0.7) to balance relevance and diversity in the final set.
-
-7. **Caching**: Results are cached in Redis for 1 hour. Cache is invalidated on any new interaction or preference update.
-
-**Success Response (200 OK):**
-
-Same schema as [List Properties](#list-properties), with additional metadata:
-
-```json
-[
-  {
-    "id": "550e8400-e29b-41d4-a716-446655440001",
-    "title": "2-bedroom apartment in city center",
-    "price": 12000000,
-    "area": 65.5,
-    "rooms": 2,
-    "city": "Moscow",
-    "property_type": "apartment",
-    "property_purpose": "sale",
-    "is_liked_by_me": false,
-    "owner": { ... },
-    ...
-  }
-]
+    style E fill:#e1f5fe
+    style F fill:#fff3e0
 ```
 
-**Error Responses:**
+**Детальный пайплайн:**
 
-| Status | Description |
+1. **Построение профиля пользователя** (14-мерный вектор):
+   - Явные предпочтения: цена, комнаты, тип, город из `UserPreferences` (вес 0.6)
+   - Неявные сигналы: среднее по лайкам (вес 1.0) и просмотрам (вес 0.2) (вес 0.4)
+   - Кешируется в Redis на 1 час
+
+2. **Поиск кандидатов** с прогрессивной релаксацией:
+   - Строгие фильтры: город, цель, цена
+   - Если мало → убрать материал/ремонт
+   - Если всё ещё мало → убрать комнаты/площадь/год
+   - Если всё ещё мало → убрать тип недвижимости
+
+3. **Content-Based Scoring:**
+   - Нормализация через `StandardScaler`
+   - Feature-weighted cosine similarity (веса: price×2, area×1.5, rooms×1.5, city×2)
+
+4. **Collaborative Filtering:**
+   - Jaccard similarity на множествах лайков
+   - Top-10 похожих пользователей
+   - Агрегация их лайков среди кандидатов
+   - Нормализация в [0, 1]
+   - Активен только если у пользователя ≥ 3 лайков
+
+5. **Гибридный скор:**
+   ```
+   hybrid[i] = 0.7 × content_score[i] + 0.3 × collab_score[i]
+   ```
+   Если collab_score[i] отсутствует → `0.7 × content_score[i]`
+
+6. **MMR Диверсификация** (λ = 0.7):
+   - Баланс между релевантностью и разнообразием
+   - ```
+     MMR = λ × relevance - (1 - λ) × max_similarity_to_selected
+     ```
+
+7. **Кеширование:**
+   - Redis `user_recs:{user_id}:{limit}` TTL 1 час
+   - Инвалидация при новом взаимодействии или обновлении предпочтений
+
+8. **Обогащение:**
+   - Статус лайка (`is_liked_by_me`)
+   - Информация о владельце
+   - Количество объявлений владельца
+
+**Успешный ответ (200 OK):**
+
+Та же схема, что и [Список объектов](#list-properties).
+
+**Примечания:**
+- **Cold start**: новые пользователи без предпочтений и взаимодействий получают рекомендации без персонализации
+- Все ранее просмотренные или лайкнутые объекты исключаются из выдачи
+
+**Ошибки:**
+
+| Статус | Описание |
 |---|---|
-| `401` | Missing or invalid token |
-
-**Notes:**
-
-- Cold start: new users with no preferences and no interactions receive recommendations based on available properties with no personalization.
-- All previously interacted properties (liked or viewed) are excluded from recommendations.
-- Results are enriched with the current user's like status (`is_liked_by_me`), owner contact info, and owner's other listings count.
+| `401` | Отсутствует или невалидный токен |
 
 ---
 
-## Images
+## Изображения (Images)
 
-### Upload Images
+### Загрузить изображения
 
-Uploads property images to MinIO storage.
+Загружает изображения в MinIO хранилище.
 
 ```
 POST /api/upload/
 ```
 
-**Authentication:** Bearer token (required)
+**Аутентификация:** Bearer token (обязательно)
 
-**Request:** `multipart/form-data`
+**Запрос:** `multipart/form-data`
 
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `files` | UploadFile[] | Yes | 1-10 files |
+| Поле | Тип | Описание |
+|---|---|---|
+| `files` | UploadFile[] | 1–10 файлов |
 
-**Allowed formats:** `jpg`, `jpeg`, `png`, `webp`
+**Допустимые форматы:** `jpg`, `jpeg`, `png`, `webp`
 
-**Limits:**
-- Max file size: 10 MB per file
-- Max files: 10 per request
+**Лимиты:**
+- Макс. размер: 10 MB на файл
+- Макс. количество: 10 файлов за запрос
 
-**Success Response (200 OK):**
+**Успешный ответ (200 OK):**
 
 ```json
 {
@@ -874,95 +930,95 @@ POST /api/upload/
 }
 ```
 
-**Error Responses:**
+**Ошибки:**
 
-| Status | Description |
+| Статус | Описание |
 |---|---|
-| `400` | Invalid file type, file too large, or too many files |
-| `500` | Upload failed (MinIO error) |
+| `400` | Неверный формат, файл слишком большой или слишком много файлов |
+| `500` | Ошибка MinIO |
 
 ---
 
-### Get Image
+### Получить изображение
 
-Serves an image from MinIO storage.
+Отдаёт изображение из MinIO.
 
 ```
 GET /api/images/{filename}
 ```
 
-**Authentication:** None
+**Аутентификация:** Не требуется
 
-**Path Parameters:**
+**Параметры пути:**
 
-| Parameter | Type | Description |
+| Параметр | Тип | Описание |
 |---|---|---|
-| `filename` | string | Image filename (path encoded) |
+| `filename` | string | Имя файла |
 
-**Success Response (200 OK):**
+**Успешный ответ (200 OK):**
 
-Binary image data with appropriate `Content-Type` header (`image/jpeg`, `image/png`, `image/webp`).
+Бинарные данные изображения с `Content-Type`: `image/jpeg`, `image/png` или `image/webp`.
 
-**Error Responses:**
+**Ошибки:**
 
-| Status | Description |
+| Статус | Описание |
 |---|---|
-| `400` | Invalid filename |
-| `404` | Image not found |
-| `500` | Server error |
+| `400` | Неверное имя файла |
+| `404` | Изображение не найдено |
+| `500` | Ошибка сервера |
 
 ---
 
-### Delete Image
+### Удалить изображение
 
-Deletes an image from MinIO. The image must belong to a property owned by the requesting user.
+Удаляет изображение из MinIO. Изображение должно принадлежать объекту текущего пользователя.
 
 ```
 DELETE /api/images/{filename}
 ```
 
-**Authentication:** Bearer token (required)
+**Аутентификация:** Bearer token (обязательно)
 
-**Path Parameters:**
+**Параметры пути:**
 
-| Parameter | Type | Description |
+| Параметр | Тип | Описание |
 |---|---|---|
-| `filename` | string | Image filename (path encoded) |
+| `filename` | string | Имя файла |
 
-**Success Response (204 No Content):**
+**Успешный ответ (204 No Content):**
 
-No body returned.
+Без тела ответа.
 
-**Error Responses:**
+**Ошибки:**
 
-| Status | Description |
+| Статус | Описание |
 |---|---|
-| `400` | Invalid filename |
-| `403` | Image belongs to another user's property (not authorized) |
-| `500` | Deletion failed |
+| `400` | Неверное имя файла |
+| `403` | Изображение принадлежит другому пользователю |
+| `500` | Ошибка удаления |
 
 ---
 
-## Geocoding
+## Геокодирование (Geocoding)
 
-### Reverse Geocode
+### Обратное геокодирование
 
-Converts geographic coordinates to a human-readable address using Yandex Geocoder API.
+Преобразует координаты в человекочитаемый адрес через Yandex Geocoder API.
 
 ```
 GET /api/geocode/reverse?lat=55.7558&lon=37.6173
 ```
 
-**Authentication:** None
+**Аутентификация:** Не требуется
 
-**Query Parameters:**
+**Параметры запроса:**
 
-| Parameter | Type | Required | Description |
+| Параметр | Тип | Обязательный | Описание |
 |---|---|---|---|
-| `lat` | float | **Yes** | Latitude |
-| `lon` | float | **Yes** | Longitude |
+| `lat` | float | **Да** | Широта |
+| `lon` | float | **Да** | Долгота |
 
-**Success Response (200 OK):**
+**Успешный ответ (200 OK):**
 
 ```json
 {
@@ -970,26 +1026,38 @@ GET /api/geocode/reverse?lat=55.7558&lon=37.6173
 }
 ```
 
-**Error Responses:**
+```mermaid
+sequenceDiagram
+    participant Browser as Браузер
+    participant Backend as Бэкенд nestAI
+    participant Yandex as Yandex Geocoder API
 
-| Status | Description |
+    Browser->>Backend: GET /api/geocode/reverse?lat=55.76&lon=37.61
+    Backend->>Yandex: https://geocode-maps.yandex.ru/v1/?geocode=37.61,55.76&lang=ru_RU
+    Yandex-->>Backend: XML/JSON с адресом
+    Backend-->>Browser: {"address": "Россия, Москва, Тверская ул., 10"}
+```
+
+**Ошибки:**
+
+| Статус | Описание |
 |---|---|
-| `404` | Address could not be resolved for the given coordinates |
-| `500` | Yandex API key not configured or external API error |
+| `404` | Адрес не найден для данных координат |
+| `500` | API-ключ Yandex не настроен или ошибка внешнего API |
 
 ---
 
-## Common Error Response Format
+## Общий формат ошибок
 
-All errors follow this format:
+Все ошибки возвращают:
 
 ```json
 {
-  "detail": "Error description message"
+  "detail": "Описание ошибки"
 }
 ```
 
-For validation errors (422):
+Ошибки валидации (422):
 
 ```json
 {
@@ -1002,3 +1070,32 @@ For validation errors (422):
   ]
 }
 ```
+
+## Сводная таблица эндпоинтов
+
+| Метод | Путь | Auth | Описание |
+|---|---|---|---|
+| `GET` | `/` | Нет | Приветственное сообщение |
+| `POST` | `/auth/register` | Нет | Регистрация |
+| `POST` | `/auth/login` | Нет | Вход |
+| `POST` | `/auth/refresh` | Bearer | Обновление токена |
+| `GET` | `/auth/me` | Bearer | Текущий пользователь |
+| `PUT` | `/auth/me` | Bearer | Обновление профиля |
+| `GET` | `/api/properties/meta` | Нет | Метаданные фильтров |
+| `GET` | `/api/properties/map` | Optional | Объекты в bbox |
+| `GET` | `/api/properties/` | Optional | Список объектов |
+| `GET` | `/api/properties/my` | Bearer | Мои объекты |
+| `GET` | `/api/properties/{id}` | Optional | Детали объекта |
+| `POST` | `/api/properties/` | Bearer | Создать объект |
+| `PUT` | `/api/properties/{id}` | Bearer | Обновить объект |
+| `DELETE` | `/api/properties/{id}` | Bearer | Удалить объект |
+| `GET` | `/user/preferences` | Bearer | Получить предпочтения |
+| `PUT` | `/user/preferences` | Bearer | Обновить предпочтения |
+| `POST` | `/api/interactions/interact` | Bearer | Лайк/Просмотр |
+| `GET` | `/api/interactions/favorites` | Bearer | Избранное |
+| `GET` | `/api/interactions/history` | Bearer | История просмотров |
+| `GET` | `/api/recommendations/` | Bearer | **Рекомендации** |
+| `POST` | `/api/upload/` | Bearer | Загрузить изображения |
+| `GET` | `/api/images/{filename}` | Нет | Получить изображение |
+| `DELETE` | `/api/images/{filename}` | Bearer | Удалить изображение |
+| `GET` | `/api/geocode/reverse` | Нет | Обратное геокодирование |
