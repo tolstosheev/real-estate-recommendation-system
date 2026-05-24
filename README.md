@@ -1,71 +1,81 @@
 # nestAI
 
-Hybrid recommendation system for real estate — content-based filtering combined with collaborative filtering (Jaccard similarity). Built with FastAPI + React + PostGIS.
+Гибридная рекомендательная система для недвижимости — комбинация контентной фильтрации (content-based) и коллаборативной фильтрации (Jaccard similarity). Бэкенд на FastAPI + React + PostGIS.
 
-## Tech Stack
+```mermaid
+flowchart LR
+    A[Пользователь] --> B[Frontend React + FSD]
+    B --> C[FastAPI API]
+    C --> D[PostgreSQL + PostGIS]
+    C --> E[Redis Cache]
+    C --> F[MinIO S3]
+    C --> G[Yandex Geocoder]
+```
 
-| Layer | Technology |
+## Стек технологий
+
+| Слой | Технологии |
 |---|---|
-| Backend | Python 3.12, FastAPI, SQLAlchemy 2.0 (async), asyncpg |
-| Frontend | React 19, TypeScript, Redux Toolkit, Vite, FSD architecture |
-| Database | PostgreSQL 15 + PostGIS |
-| Caching | Redis 7 |
-| Storage | MinIO (S3-compatible) |
-| Maps | Yandex Maps API 3 + Yandex Geocoder |
+| Бэкенд | Python 3.12, FastAPI, SQLAlchemy 2.0 (async), asyncpg |
+| Фронтенд | React 19, TypeScript, Redux Toolkit, Vite, FSD архитектура |
+| База данных | PostgreSQL 15 + PostGIS |
+| Кеширование | Redis 7 |
+| Файлы | MinIO (S3-совместимое) |
+| Карты | Yandex Maps API 3 + Yandex Geocoder |
 | ML | scikit-learn (cosine similarity, StandardScaler) |
 | CI | GitHub Actions — Ruff, MyPy, ESLint, pytest (90% cov), vitest (90% cov), Bandit, pip-audit, npm audit |
 
-## Quick Start
+## Быстрый старт
 
 ```bash
 docker compose up -d
 ```
 
-Services:
-- **Backend** — http://localhost:8000
-- **Frontend** — http://localhost:3000
+Сервисы:
+- **Бэкенд** — http://localhost:8000
+- **Фронтенд** — http://localhost:3000
 - **MinIO Console** — http://localhost:9001
 
-## Run Tests
+## Запуск тестов
 
 ```bash
-# Backend (all tests including integration + e2e)
+# Бэкенд (все тесты, включая интеграционные и e2e)
 docker compose run --rm test
 
-# Frontend
+# Фронтенд
 cd frontend && npm test -- --run
 
-# Linters & SAST
+# Линтеры и SAST
 cd backend && ruff check . && mypy . && bandit -c pyproject.toml -r app/
 cd frontend && npm run lint && npx tsc --noEmit
 ```
 
-## Project Structure
+## Структура проекта
 
 ```
 real-estate-recommendation-system/
-  backend/          # Python FastAPI (3-layer: api → service → repository)
+  backend/          # Python FastAPI (3 слоя: api → service → repository)
   frontend/         # React TypeScript (FSD: app/pages/features/entities/widgets/shared)
   docker-compose.yml
 ```
 
-## Documentation
+## Документация
 
-- [Architecture](ARCHITECTURE.md)
+- [Архитектура](ARCHITECTURE.md)
 - [API Reference](API.md)
-- [Contributing](CONTRIBUTING.md)
-- [Testing](TESTING.md)
-- [Docker Setup](DOCKER.md)
-- [Deployment](DEPLOYMENT.md)
-- [Security](SECURITY.md)
+- [Участие в разработке](CONTRIBUTING.md)
+- [Тестирование](TESTING.md)
+- [Docker окружение](DOCKER.md)
+- [Деплой](DEPLOYMENT.md)
+- [Безопасность](SECURITY.md)
 - [Changelog](CHANGELOG.md)
 
-## Environment Variables
+## Переменные окружения
 
-Copy `.env.example` to `.env` and fill in the values:
+Скопируйте `.env.example` в `.env` и заполните значения:
 
 ```bash
 cp .env.example .env
 ```
 
-Key variables: `JWT_SECRET_KEY`, `YANDEX_API_KEY`, `S3_*` (MinIO), `DATABASE_URL*`.
+Ключевые переменные: `JWT_SECRET_KEY`, `YANDEX_API_KEY`, `S3_*` (MinIO), `DATABASE_URL*`.
