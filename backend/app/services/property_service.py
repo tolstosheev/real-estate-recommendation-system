@@ -47,7 +47,7 @@ class PropertyService:
     def _get_cache_key(self, prefix: str, **kwargs) -> str:
         sorted_params = sorted(kwargs.items())
         param_str = "&".join(f"{k}={v}" for k, v in sorted_params if v is not None)
-        param_hash = hashlib.md5(param_str.encode()).hexdigest()
+        param_hash = hashlib.md5(param_str.encode(), usedforsecurity=False).hexdigest()
         return f"{prefix}:{param_hash}"
 
     async def _enrich_property(self, result):

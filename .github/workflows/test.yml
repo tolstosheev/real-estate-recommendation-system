@@ -91,6 +91,17 @@ jobs:
           cd backend
           mypy app
 
+      - name: Bandit SAST
+        run: |
+          cd backend
+          bandit -c pyproject.toml -r app
+
+      - name: pip-audit (SCA)
+        run: |
+          pip install pip-audit
+          cd backend
+          pip-audit --stable --ignore-vuln PYSEC-2024-111 2>/dev/null || echo "pip-audit found issues (non-blocking)"
+
       - name: Run tests with coverage
         run: |
           cd backend
@@ -135,6 +146,9 @@ jobs:
 
       - name: TypeScript check
         run: npx tsc --noEmit
+
+      - name: npm audit
+        run: npm audit --audit-level=high || echo "npm audit warnings (non-blocking)"
 
       - name: Build
         run: npm run build

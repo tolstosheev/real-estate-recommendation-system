@@ -45,7 +45,7 @@ async def login(login_data: UserLogin, db: AsyncSession = Depends(get_db)):
         )
 
     access_token = await service.create_access_token(data={"sub": str(user.id), "id": str(user.id)})
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"access_token": access_token, "token_type": "bearer"}  # nosec B105
 
 
 @router.post(
@@ -59,7 +59,7 @@ async def refresh(token: str = Depends(oauth2_scheme), db: AsyncSession = Depend
     new_token = await service.refresh_token(token)
     if not new_token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
-    return {"access_token": new_token, "token_type": "bearer"}
+    return {"access_token": new_token, "token_type": "bearer"}  # nosec B105
 
 
 @router.get(
