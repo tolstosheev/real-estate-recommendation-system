@@ -64,6 +64,7 @@ services:
       - S3_SECRET_KEY=${S3_SECRET_KEY:-minioadmin}
       - S3_BUCKET=${S3_BUCKET:-nestai-images}
       - S3_PUBLIC_URL=${S3_PUBLIC_URL:-http://localhost:8000/api/images}
+      - PEXELS_API_KEY=${PEXELS_API_KEY}
     depends_on:
       db:
         condition: service_healthy
