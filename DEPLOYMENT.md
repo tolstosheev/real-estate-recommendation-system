@@ -72,7 +72,7 @@ docker compose run --rm backend alembic upgrade head
 
 ```bash
 # Production сборка
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+docker compose up -d
 
 # Проверка состояния
 docker compose ps
@@ -114,27 +114,46 @@ docker compose run --rm backend alembic history
 
 ## CI/CD Pipeline
 
+Pipeline запускается на `push` и `pull_request` в ветки `develop` и `main`. Состоит из двух параллельных workflow.
+
+#### Workflow 1: `ci.yml` — быстрая проверка
+
 ```mermaid
 flowchart LR
     Push["git push"] --> CI
-    CI --> BackendUnit["🧪 Backend Unit Tests"]
-    CI --> FrontendCheck["🧪 Frontend Lint + Tests"]
-    BackendUnit --> Integration["🧪 Backend Integration"]
+    CI --> BackendUnit["🧪 Backend Unit Tests<br/>pytest --cov-fail-under=70"]
+    CI --> FrontendCheck["🧪 Frontend Lint + Tests<br/>ESLint + vitest"]
+    BackendUnit --> Integration["🧪 Backend Integration<br/>pytest --cov-fail-under=85"]
     FrontendCheck --> Integration
-    Integration --> QualityGate["✅ Quality Gate"]
-    QualityGate --> |"Ruff 0 errors<br/>MyPy strict<br/>pytest ≥90% cov<br/>ESLint 0 errors<br/>tsc --noEmit<br/>vitest ≥90% lines<br/>Bandit 0 issues<br/>pip-audit 0 vulns<br/>npm audit 0 vulns"| Release["🚀 Release"]
 ```
 
-Pipeline запускается на `push` и `pull_request` в ветки `develop` и `main`.
+#### Workflow 2: `test.yml` — полный Quality Gate
+
+```mermaid
+flowchart LR
+    Push["git push"] --> Gate["✅ Quality Gate"]
+    Gate --> Backend["Python checks"]
+    Gate --> Frontend["Frontend checks"]
+    Backend --> B1["Ruff 0 errors"]
+    Backend --> B2["MyPy strict"]
+    Backend --> B3["Bandit 0 issues"]
+    Backend --> B4["pip-audit 0 vulns"]
+    Backend --> B5["pytest ≥90% cov"]
+    Frontend --> F1["ESLint 0 errors"]
+    Frontend --> F2["tsc --noEmit"]
+    Frontend --> F3["npm audit 0 vulns"]
+    Frontend --> F4["vitest ≥90% lines"]
+```
 
 ### Jobs
 
-| Job | Инструменты | Длительность |
-|---|---|---|
-| **Backend Unit** | pytest | ~2 min |
-| **Frontend** | ESLint, tsc, vitest | ~3 min |
-| **Backend Integration** | pytest (PostGIS + Redis + MinIO) | ~5 min |
-| **Quality Gate** | Ruff, MyPy, Bandit, pip-audit, npm audit | ~1 min |
+| Workflow | Job | Инструменты | Длительность |
+|---|---|---|---|
+| `ci.yml` | **Backend Unit** | pytest (70% coverage) | ~2 min |
+| `ci.yml` | **Frontend** | ESLint, vitest | ~3 min |
+| `ci.yml` | **Backend Integration** | pytest (PostGIS + Redis + MinIO, 85% coverage) | ~5 min |
+| `test.yml` | **Backend Quality** | Ruff, MyPy, pytest (90% coverage), Bandit, pip-audit | ~5 min |
+| `test.yml` | **Frontend Quality** | ESLint, tsc --noEmit, vitest (90% lines), npm audit | ~3 min |
 
 ## Безопасность
 

@@ -13,7 +13,7 @@
 - **CI/CD pipeline**: GitHub Actions — Ruff, MyPy, pytest (90% coverage), ESLint, vitest (90% lines), Bandit SAST, pip-audit/npm audit SCA
 - **Docker**: non-root пользователь для безопасности
 - **S3-хранилище**: MinIO для изображений — загрузка/удаление/отдача с валидацией
-- **Геопространственный поиск**: PostGIS bounding box (`ST_MakeEnvelope`, `ST_Intersects`) + GIST index
+- **Геопространственный поиск**: PostGIS bounding box (`ST_MakeEnvelope`, `ST_Intersects`) с GIST-индексом (создаётся в entrypoint через PostGIS extension)
 - **Yandex Maps API 3** на фронтенде с динамической загрузкой компонентов
 - **Yandex Geocoder** на бэкенде — автозаполнение адреса при создании объекта
 - **Гибридный рекомендательный движок**: 14-мерный feature vector, feature-weighted cosine similarity, MMR (λ=0.7), progressive filter relaxation, Redis caching
@@ -31,7 +31,7 @@
 #### Фронтенд
 
 - **FSD архитектура**: app/pages/features/entities/widgets/shared layers
-- **8 страниц**: Home, Map, Catalog, Property Details, Login, Register, Onboarding, Profile, Add Property
+- **9 страниц**: Home, Map, Catalog, Property Details, Login, Register, Onboarding, Profile, Add Property
 - **Redux Toolkit** store с auth slice и middleware
 - **Axios client** с JWT interceptor, token refresh queue (защита от конкурентных refresh)
 - **Yandex Maps 3** с кластеризацией, маркерами, bbox поиском
