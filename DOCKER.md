@@ -7,18 +7,20 @@
 ```mermaid
 graph TB
     subgraph "Docker Compose — 6 сервисов"
-        Traefik["🌐 Traefik (reverse proxy)"]
         Frontend["🖥 Frontend<br/>node:20-alpine<br/>port 3000"]
         Backend["⚙ Backend<br/>python:3.12-slim<br/>port 8000"]
         PG[("🗄 PostgreSQL + PostGIS<br/>postgis/postgis:15-3.3<br/>port 5432")]
         Redis[("⚡ Redis Cache<br/>redis:7-alpine<br/>port 6379")]
         MinIO[("📦 MinIO S3<br/>minio/minio:latest<br/>API 9000 / Console 9001")]
+        Test["🧪 Test<br/>python:3.12-slim<br/>profile: test"]
 
-        Traefik --> Frontend
-        Traefik --> Backend
+        Frontend -.-> Backend
         Backend --> PG
         Backend --> Redis
         Backend --> MinIO
+        Test --> PG
+        Test --> Redis
+        Test --> MinIO
     end
 
     subgraph "Volumes"
@@ -78,7 +80,7 @@ graph TB
 | Dockerfile | `backend/Dockerfile` |
 | Базовый образ | `python:3.12-slim` |
 | Порт | 8000 |
-| Пользователь | `appuser` (non-root, UID 1000) |
+| Пользователь | `appuser` (non-root) |
 | Entrypoint | `docker-entrypoint.sh` — ожидает БД, запускает миграции |
 | Команда | `uvicorn app.main:app --host 0.0.0.0 --port 8000` |
 | Restart | `unless-stopped` |
@@ -124,6 +126,9 @@ while ! pg_isready -h db -p 5432 -U user; do
     echo "Database is unavailable - sleeping"
     sleep 1
 done
+
+echo "Enabling PostGIS extension..."
+PGPASSWORD="${PGPASSWORD:-${POSTGRES_PASSWORD:-password}}" psql -h db -U "${POSTGRES_USER:-user}" -d "${POSTGRES_DB:-nestai_db}" -c "CREATE EXTENSION IF NOT EXISTS postgis" 2>/dev/null || echo "PostGIS extension may already exist"
 
 echo "Running migrations..."
 alembic upgrade head
@@ -207,6 +212,7 @@ CMD ["serve", "-s", "dist", "-l", "5173"]
 | `S3_BUCKET` | `nestai-images` | MinIO bucket |
 | `VITE_YANDEX_MAPS_API_KEY` | — | API-ключ Yandex Maps |
 | `VITE_YANDEX_GEOCODER_API_KEY` | — | API-ключ Yandex Geocoder |
+| `PEXELS_API_KEY` | — | API-ключ Pexels (для populate-скриптов) |
 
 ### Бэкенд (backend)
 
@@ -283,7 +289,7 @@ docker compose run --rm backend python populate_v4.py
 
 ## Принципы безопасности
 
-- **Non-root пользователи**: `appuser` (UID 1000) в backend, `node` в frontend
+- **Non-root пользователи**: `appuser` в backend, `node` в frontend
 - **Минимальные образы**: `python:3.12-slim`, `node:20-alpine` — без лишних утилит
 - **Изолированная сеть**: все сервисы внутри Docker сети, наружу торчат только необходимые порты
 - **Healthchecks**: каждый сервис проверяет своё состояние, что позволяет корректно управлять порядком запуска
