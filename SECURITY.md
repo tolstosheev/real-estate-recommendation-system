@@ -103,7 +103,7 @@ flowchart TB
 
 ## Docker безопасность
 
-- **Non-root user**: приложение запускается от `appuser` (UID 1000)
+- **Non-root user**: приложение запускается от `appuser`
 - **Минимальные образы**: `python:3.12-slim`, `node:20-alpine`
 - **Healthchecks**: каждый сервис проверяет своё состояние
 - **Сети**: все сервисы в изолированной Docker сети

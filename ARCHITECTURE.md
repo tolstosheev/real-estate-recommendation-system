@@ -786,7 +786,7 @@ sequenceDiagram
 graph TB
     subgraph "Docker Compose (6 сервисов)"
         direction TB
-        Traefik[":8000 Backend"]
+        Backend[":8000 Backend"]
         FE[":3000 → 5173 Frontend"]
         DB[":5432 PostgreSQL + PostGIS"]
         RDS[":6379 Redis"]
@@ -805,10 +805,10 @@ graph TB
     Test --> RDS
     Test --> MinIO
 
-    FE -->|"DEPENDS_ON"| Traefik
-    Traefik -->|"DEPENDS_ON"| DB
-    Traefik -->|"DEPENDS_ON"| RDS
-    Traefik -->|"DEPENDS_ON"| MinIO
+    FE -->|"DEPENDS_ON"| Backend
+    Backend -->|"DEPENDS_ON"| DB
+    Backend -->|"DEPENDS_ON"| RDS
+    Backend -->|"DEPENDS_ON"| MinIO
     Test -->|"network"| DB
     Test -->|"network"| RDS
     Test -->|"network"| MinIO
